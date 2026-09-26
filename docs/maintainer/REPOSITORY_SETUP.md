@@ -42,6 +42,7 @@ Recommended initial repository features:
 - Wiki: **disabled initially**; enable once curated Wiki content is ready
 - Projects: optional; leave disabled until there is a concrete roadmap board
 - Sponsorships: not required
+- Private vulnerability reporting: **enable before/when public**
 
 Keep the repository private during initial curation. Change to public only after checking:
 
@@ -92,7 +93,7 @@ Format: Open-ended discussion
 
 Purpose: early tester coordination, new MHI2 variants and results that are not yet sufficiently reproducible for an Issue.
 
-A dedicated form can be added after this custom category is created.
+Template: `.github/DISCUSSION_TEMPLATE/vehicle-testing.yml`
 
 ## Issue policy
 
@@ -161,6 +162,9 @@ Recommended:
 - Maintainers may commit documentation/research checkpoints directly while the project is in early bootstrap
 
 Before the project becomes larger, consider branch protection for `main` with:
+
+- required check: `Publication integrity audit`;
+- relevant path-scoped native build checks when applicable;
 
 - PR required for non-maintainers;
 - required successful CI when CI exists;
