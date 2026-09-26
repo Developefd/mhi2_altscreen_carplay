@@ -28,6 +28,14 @@ REQUIRED = [
     "docs/research/IOS27_SENDER_LIFECYCLE.md",
     "docs/research/PUBLIC_REFERENCES.md",
     "docs/PUBLICATION_PRIVACY.md",
+    "docs/README.md",
+    "docs/testing/VEHICLE_TEST_PROTOCOL.md",
+    "docs/architecture/AUTO_DIRECT_RUNTIME.md",
+    "docs/architecture/RUNTIME_CONTRACT.md",
+    "docs/research/MU1440_GEN2_HOOK_MAP.md",
+    "docs/research/JAVA_J9_BUILD_NOTES.md",
+    "runtime/README.md",
+    "src/native/altscreen111-gen2/DEVELOPMENT.md",
 ]
 
 HASHED_ARTIFACTS = [
