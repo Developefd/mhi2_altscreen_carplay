@@ -1,0 +1,63 @@
+title: "[Vehicle] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this category for early vehicle/platform testing that is not yet reproducible enough for an Issue.
+        Do not include VINs, navigation addresses, credentials or other identifying information.
+
+  - type: input
+    id: vehicle
+    attributes:
+      label: Vehicle / platform
+      description: Brand, model/year and MHI2 platform. Do not include VIN.
+      placeholder: "Škoda Octavia 5E / MHI2"
+    validations:
+      required: true
+
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware / MU
+      placeholder: "MHI2_ER_... / MU...."
+    validations:
+      required: true
+
+  - type: input
+    id: cluster
+    attributes:
+      label: Cluster
+      description: Virtual Cockpit / AID type if known.
+
+  - type: dropdown
+    id: access
+    attributes:
+      label: SSH access
+      options:
+        - WLAN
+        - USB-LAN
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: observation
+    attributes:
+      label: What did you observe?
+      description: Describe the behavior and what you were testing.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs / hashes / evidence
+      description: Add artifact SHA-256, logs or state output where useful.
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Before posting
+      options:
+        - label: I removed VINs, addresses, credentials and other private information.
+          required: true
