@@ -144,9 +144,31 @@ If you want to understand the project without reading the entire repository, use
 1. [System overview](docs/architecture/SYSTEM_OVERVIEW.md) — the complete CarPlay -> MHI2 -> Virtual Cockpit architecture and the separation between media and control planes.
 2. [Direct VC video path](docs/architecture/DIRECT_VC_VIDEO_PATH.md) — the vehicle-proven Stream-111 -> H.264 -> MPEG-TS -> `isoTX2` -> MOST path, including reversible native-map takeover.
 3. [ScreenAlt control plane](docs/architecture/SCREENALT_CONTROL_PLANE.md) — the current handshake, ownership, `suggestUI` / `showUI`, ViewArea and presentation-refresh problem.
-4. [Current development status](docs/status/CURRENT_DEVELOPMENT_STATUS.md) — where the implementation has already moved beyond the published binary checkpoint.
-5. [Known issues](docs/findings/KNOWN_ISSUES.md) — the exact lifecycle/provider-switch problems still being worked.
-6. [Current research status](docs/findings/CURRENT_RESEARCH_STATUS.md) — evidence-ranked table of what is vehicle-proven, binary-confirmed, implemented, open and deferred.
+4. [Auto-Direct runtime](docs/architecture/AUTO_DIRECT_RUNTIME.md) — the current supervisor/watchdog/gate state machine rather than a future installer abstraction.
+5. [Runtime contract](docs/architecture/RUNTIME_CONTRACT.md) — ports, state files, markers and component boundaries.
+6. [Current development status](docs/status/CURRENT_DEVELOPMENT_STATUS.md) — where the implementation has already moved beyond the published binary checkpoint.
+7. [Known issues](docs/findings/KNOWN_ISSUES.md) — the exact lifecycle/provider-switch problems still being worked.
+8. [Compatibility matrix](docs/testing/COMPATIBILITY_MATRIX.md) — what is actually proven, partial, open or only planned.
+9. [MU1440 stock reference](docs/research/MU1440_STOCK_REFERENCE.md) — exact stock component hashes for the first proven target.
+10. [iOS 27 sender research](docs/research/IOS27_SENDER_LIFECYCLE.md) — exact build/hash authority behind the current lifecycle model.
+11. [Public references](docs/research/PUBLIC_REFERENCES.md) — prior art and external projects worth reading.
+12. [Roadmap](ROADMAP.md) — current priorities and concrete help-wanted areas.
+
+### Want to help?
+
+The project is actively looking for developers/testers with:
+
+- another SSH-accessible Škoda, SEAT/CUPRA or Volkswagen MHI2 unit;
+- another Virtual Cockpit/AID revision;
+- CarPlay/AirPlay control-plane experience;
+- QNX/MOST/DisplayManager experience;
+- IBM J9/JXE/HMI experience;
+- repeatable Apple Maps / Google Maps / Waze transition traces.
+
+Start with [ROADMAP.md](ROADMAP.md), [SUPPORT.md](SUPPORT.md),
+[CONTRIBUTING.md](CONTRIBUTING.md) and the [compatibility matrix](docs/testing/COMPATIBILITY_MATRIX.md).
+
+Public prior art and credits are listed in [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md).
 
 ### Current research focus
 
