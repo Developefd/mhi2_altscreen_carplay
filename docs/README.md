@@ -22,6 +22,8 @@
 
 - [MU1440 stock component fingerprints](research/MU1440_STOCK_REFERENCE.md)
 - [MU1440 GEN2 AirPlay hook / ABI map](research/MU1440_GEN2_HOOK_MAP.md)
+- [ScreenStream / Type-111 protocol](research/STREAM111_PROTOCOL.md)
+- [VC view-state / ViewArea research](research/VC_VIEWAREA_STATE.md)
 - [iOS 27.2 sender lifecycle](research/IOS27_SENDER_LIFECYCLE.md)
 - [PlatformControl flight recorder](research/PLATFORMCONTROL_FLIGHT_RECORDER.md)
 - [Java / IBM J9 build notes](research/JAVA_J9_BUILD_NOTES.md)
