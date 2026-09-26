@@ -26,6 +26,7 @@
 - [PlatformControl flight recorder](research/PLATFORMCONTROL_FLIGHT_RECORDER.md)
 - [Java / IBM J9 build notes](research/JAVA_J9_BUILD_NOTES.md)
 - [Public prior art](research/PUBLIC_REFERENCES.md)
+- [Comparator findings / non-portable traps](research/COMPARATOR_FINDINGS.md)
 - [Research method](RESEARCH_METHOD.md)
 
 ## Testing
