@@ -40,7 +40,7 @@
  *
  * IRC-parity design:
  *  - Keep the exact MU1440 stock AirPlay implementation and its platform media ABI.
- *  - Replay the recovered MHI2Q IRC negotiation semantics around that stock core.
+ *  - Replay the independently reconstructed MHI2Q IRC negotiation semantics around that stock core.
  *  - Advertise root enabledFeatures before stream 111 is selected.
  *  - Clone stock display[0], remove the reference-proven non-portable fields, and
  *    append a minimally modified AltScreen display without forcing display type=111.
@@ -654,7 +654,7 @@ static CFMutableDictionaryRef clone_without_111(CFDictionaryRef request)
 }
 
 /*
- * Recovered MHI2Q IRC behavior: every successful /info or SETUP response
+ * Comparator-observed MHI2Q IRC behavior: every successful /info or SETUP response
  * advertises the AltScreen capability at the root before the peer has to
  * choose stream 111. The reference replaces enabledFeatures with
  * ["altScreen","viewAreas"] rather than waiting for a 111 request.
@@ -1378,7 +1378,7 @@ done:
 }
 
 /*
- * Keep the recovered reference ViewArea/SafeArea structure, but do not import
+ * Keep the comparator-observed ViewArea/SafeArea structure, but do not import
  * the Audi-specific 420x330 safe window into the 1010x376 Skoda VC baseline.
  *
  * Vehicle-PoC policy: initially expose the complete secondary-display canvas
@@ -1417,7 +1417,7 @@ static void add_reference_viewarea(CFMutableDictionaryRef alt)
 
     /*
      * These are ViewArea policy booleans, not numeric zero values. MIBSI
-     * serializes both as real CFBoolean false objects.
+     * comparator evidence shows both serialized as real CFBoolean false objects.
      */
     set_false(view,"drawUIOutsideSafeArea");
     set_false(view,"viewAreaTransitionControl");
@@ -2629,7 +2629,7 @@ static OSStatus mibr_platform_control(AirPlayReceiverSessionRef session, uint32_
     /*
      * Public vehicle-proven MHI2Q AltScreen parity:
      *
-     * The Yuedi/LIVI-derived receiver lets stock observe suggestUI, records
+     * The public Yuedi/LIVI comparator implementation lets stock observe suggestUI, records
      * stock_rc, but acknowledges the command to the phone with success and
      * deliberately does NOT translate the suggested URL list into showUI.
      *
