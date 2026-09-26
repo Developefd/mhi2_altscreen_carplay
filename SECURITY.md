@@ -20,7 +20,7 @@ Redact logs before attaching them.
 
 If you discover a vulnerability that would materially enable unauthorized access to vehicles or systems, do not publish exploit details in a normal Issue.
 
-Contact the maintainer privately through the GitHub account profile/contact channel first so the finding can be handled responsibly.
+Prefer GitHub **Private vulnerability reporting** once it is enabled for the public repository. Until then, contact the maintainer privately through the GitHub account profile/contact channel first so the finding can be handled responsibly.
 
 ## Scope
 
