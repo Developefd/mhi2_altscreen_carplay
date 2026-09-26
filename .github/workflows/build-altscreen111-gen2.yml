@@ -3,6 +3,10 @@ name: Build experimental GEN2 AltScreen
 on:
   workflow_dispatch:
   pull_request:
+    paths:
+      - '.github/workflows/build-altscreen111-gen2.yml'
+      - 'src/native/altscreen111-gen2/**'
+      - 'tools/build_altscreen111_gen2.sh'
   push:
     branches: [ main ]
     paths:
