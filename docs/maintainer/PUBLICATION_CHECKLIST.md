@@ -52,6 +52,7 @@ Before public visibility:
 - [ ] temporary transfer files removed
 - [ ] public history reset to clean baseline
 - [ ] old Actions runs containing pre-public build/provenance data removed
+- [ ] GitHub Private vulnerability reporting enabled
 
 ## Technical gate
 
@@ -72,3 +73,15 @@ Before public visibility:
 - [ ] verify binary download works
 - [ ] verify repository license is detected by GitHub
 - [ ] verify Topics/Description render correctly
+
+
+## Recommended branch protection after public launch
+
+Once external PRs are expected, require:
+
+- required check: Publication integrity audit;
+- relevant component build check when the PR touches that component;
+- conversation resolution before merge;
+- no force pushes to `main`.
+
+The heavy QNX builds are path-filtered, so documentation-only PRs should not need all native builds.
