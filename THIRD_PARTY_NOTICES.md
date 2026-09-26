@@ -78,9 +78,50 @@ dependency and does not relicense or vendor it.
 
 ### Luka / CarPlay-RGI work
 
-Luka's prior work around CarPlay, route-guidance information and cluster integration has materially influenced the direction of this project.
+Project: `luka-dev/mib2q-carplay-rgi`
 
-The exact canonical upstream repository/reference should be recorded here once verified. Until then, do not invent a repository URL or license.
+Repository:
+
+https://github.com/luka-dev/mib2q-carplay-rgi
+
+Luka's prior work around CarPlay, route-guidance information and cluster integration has materially
+influenced the direction of this project.
+
+No single root `LICENSE` file was found during the current review. The project is therefore treated
+here as **public prior art**, not as a source from which code may be copied into this GPL repository
+without a file-by-file license review.
+
+### Lanye — MHI2Q CarPlay / MMI Mirror
+
+Project: `Lanye-z/MHI2Q-CarPlay-MMI-Mirror`
+
+Repository:
+
+https://github.com/Lanye-z/MHI2Q-CarPlay-MMI-Mirror
+
+Role: public comparator for MHI2Q hook structure, cluster/MMI presentation, recovery and Luka-derived
+RGI/HMI architecture.
+
+Root license observed upstream: MIT.
+
+No Lanye code is currently required by the MU1440 runtime.
+
+### Yuedi — public MHI2Q CarPlay AltScreen
+
+Project: `yuedizhibo/MHI2Q-CarPlay-AltScreen`
+
+Repository:
+
+https://github.com/yuedizhibo/MHI2Q-CarPlay-AltScreen
+
+Role: important public comparator for AltScreen/Type-111 lifecycle, PlatformControl command
+classification and secondary-screen implementation structure.
+
+Root license observed upstream: **PolyForm Noncommercial License 1.0.0**.
+
+Because that license is materially different from this repository's GPL-3.0-or-later licensing,
+Yuedi source/binaries are treated as **comparative research/prior art only**. They must not be copied
+into project-owned GPL source merely because they are publicly visible.
 
 ## Apple / CarPlay reverse engineering
 
@@ -144,4 +185,14 @@ Enabled build surface for this project:
 
 Exact configuration is kept in `tools/build_direct_ts_remux.sh`.
 
-FFmpeg remains copyright its respective contributors and is not relicensed by this project. Before the repository is made public, the downloadable binary publication should be accompanied by the applicable LGPL notice/license and an exact corresponding-source/relink path.
+FFmpeg remains copyright its respective contributors and is not relicensed by this project.
+
+The repository now includes:
+
+- `LICENSES/LGPL-2.1-or-later.txt`;
+- exact FFmpeg source/version/hash information;
+- the public build configuration in `tools/build_direct_ts_remux.sh`;
+- the full project-side source needed to rebuild/relink the combined developer binary.
+
+See `artifacts/mu1440/direct-ts-remux/vehicle-proven-run143/FFMPEG_SOURCE.md` for the source/rebuild
+authority.
