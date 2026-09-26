@@ -1,0 +1,129 @@
+# Contributing
+
+Thanks for helping with MHI2 AltScreen CarPlay.
+
+This is an experimental reverse-engineering and interoperability project. Contributions are most useful when they are **specific, reproducible and traceable to an exact platform/build**.
+
+## Where to post
+
+### Use an Issue for
+
+- a reproducible bug;
+- a concrete vehicle test result that requires action;
+- a verified research finding with evidence;
+- a regression;
+- a clearly scoped implementation task.
+
+### Use Discussions for
+
+- questions;
+- new ideas;
+- architecture/design discussion;
+- "does my platform look compatible?";
+- early observations that are not yet reproducible;
+- requests for support on a new Škoda/SEAT/VW MHI2 variant;
+- coordination between testers.
+
+Please do not use Issues as a general support forum.
+
+## Before opening a vehicle-test Issue
+
+Include as much of the following as possible:
+
+- vehicle brand/model/year;
+- head-unit platform;
+- exact firmware train/version;
+- MU version if known;
+- cluster type;
+- how SSH access is obtained;
+- whether the test was WLAN or USB-LAN;
+- exact build/commit/artifact tested;
+- expected result;
+- observed result;
+- relevant logs;
+- whether the unit recovered to stock behavior.
+
+Remove VINs, addresses, Wi-Fi credentials, personal filenames and other identifying information from logs/screenshots.
+
+## Evidence levels
+
+Please distinguish these explicitly:
+
+- **Observed on vehicle** — directly reproduced on hardware;
+- **Binary-confirmed** — supported by disassembly/decompilation/string/xref evidence;
+- **Build-confirmed** — source/toolchain compiles and the output is verified;
+- **Hypothesis** — plausible but not yet proven;
+- **Historical/prior art** — observed in another implementation or source.
+
+Do not promote a hypothesis to fact merely because multiple implementations appear similar.
+
+## Pull Requests
+
+A PR should explain:
+
+1. what problem it solves;
+2. which platform/build it targets;
+3. whether it changes runtime behavior;
+4. how it was built;
+5. how it was tested;
+6. how stock/recovery behavior was verified;
+7. whether it adds any third-party material.
+
+Prefer small, reviewable changes over large opaque drops.
+
+### Code and build artifacts
+
+For project-owned code, prefer:
+
+- source code;
+- reproducible build scripts;
+- pinned tool versions/commits;
+- SHA-256 hashes for generated artifacts;
+- unstripped/debuggable output where practical;
+- a short provenance note.
+
+Generated binaries without source/build provenance may be rejected.
+
+## Third-party and proprietary inputs
+
+Do **not** submit full OEM firmware images, Apple system binaries, commercial proprietary packages or material you do not have the right to redistribute.
+
+It is normally better to submit:
+
+- exact filename/path;
+- firmware/build identity;
+- SHA-256;
+- extraction/reproduction instructions;
+- documented observations;
+- small legally permissible metadata/patch information.
+
+If a finding originated from leaked or commercially distributed software, describe it as **comparative research/prior art** and identify the source as precisely as possible without presenting that code as ours.
+
+## Safety / recovery
+
+Vehicle-side changes should be bounded and reversible whenever possible.
+
+For experimental runtime controls:
+
+- define the stock state;
+- define the modified state;
+- define the recovery path;
+- avoid persistence unless persistence is part of the test;
+- capture logs before and after;
+- state whether a reboot returns to stock behavior.
+
+Never encourage someone to run a package whose target build has not been checked.
+
+## Style
+
+- English is preferred for repository documentation and code comments.
+- Use exact component/class/function names where known.
+- Prefer ASCII diagrams for architecture/state-machine documentation when they improve clarity.
+- Keep source observations separate from interpretation.
+- Add dates/build identifiers to time-sensitive reverse-engineering notes.
+
+## License
+
+By contributing original project code or documentation, you agree that it may be distributed under **GPL-3.0-or-later**, unless a file or contribution explicitly and compatibly states otherwise.
+
+Third-party code retains its original license and attribution requirements.

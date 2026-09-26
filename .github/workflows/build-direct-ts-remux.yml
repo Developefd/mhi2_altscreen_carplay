@@ -1,0 +1,140 @@
+name: Build unstripped MU1440 direct-ts-remux
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/build-direct-ts-remux.yml'
+      - 'src/native/direct-ts-remux/**'
+      - 'tools/build_direct_ts_remux.sh'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-direct-ts-remux
+  cancel-in-progress: true
+
+env:
+  TOOLCHAIN_REPO: https://github.com/luka-dev/qnx65-armv7-toolchain.git
+  TOOLCHAIN_COMMIT: 56a66557245af14077678cd28a83ce3a337d9e2d
+  TOOLCHAIN_DOCKERFILE_SHA256: 9a867a7ae70f2c0222a241b80232856526ccec0db2cfe013f8991ca31c74bcb1
+  IMAGE: mhi2-qnx65-armv7-public:4.9
+  OUTDIR: build/ci-direct-ts-remux
+  TARGET_FIRMWARE: MHI2_ER_SKG13_P4526_MU1440
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build pinned QNX 6.5 ARMv7 toolchain image
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git clone "$TOOLCHAIN_REPO" "$RUNNER_TEMP/qnx-toolchain"
+          git -C "$RUNNER_TEMP/qnx-toolchain" checkout "$TOOLCHAIN_COMMIT"
+          test "$(sha256sum "$RUNNER_TEMP/qnx-toolchain/Dockerfile" | awk '{print $1}')" = "$TOOLCHAIN_DOCKERFILE_SHA256"
+
+          # Debian 11 bullseye-security reached EOL on 2026-08-31 and its
+          # live repository is currently inconsistent. Patch only the bootstrap
+          # APT source to a complete final snapshot; toolchain source remains pinned.
+          python3 - "$RUNNER_TEMP/qnx-toolchain/Dockerfile" <<'PY'
+          from pathlib import Path
+          import sys
+          p=Path(sys.argv[1])
+          s=p.read_text()
+          needle="RUN dpkg --add-architecture i386 && apt-get update && \\\n"
+          replacement=(
+              "RUN sed -i 's#http://deb.debian.org/debian-security#"
+              "http://snapshot.debian.org/archive/debian-security/20260903T220410Z#g' "
+              "/etc/apt/sources.list && \\\n"
+              "    echo 'Acquire::Check-Valid-Until \"false\";' "
+              "> /etc/apt/apt.conf.d/99snapshot && \\\n"
+              "    dpkg --add-architecture i386 && apt-get update && \\\n"
+          )
+          if needle not in s:
+              raise SystemExit("qnx-sdp apt bootstrap anchor not found")
+          p.write_text(s.replace(needle,replacement,1))
+          PY
+          docker buildx build --platform=linux/amd64             --target base-env             --build-arg BASE=base-4.9             --cache-from type=gha             --cache-to type=gha,mode=max             --load             -t "$IMAGE"             "$RUNNER_TEMP/qnx-toolchain"
+
+      - name: Build exact vehicle-proven source without stripping
+        shell: bash
+        run: |
+          set -euxo pipefail
+          rm -rf build/public-direct-ts-remux
+          mkdir -p build/public-direct-ts-remux
+          docker run --rm --platform=linux/amd64             -v "$PWD:/src"             -w /src             "$IMAGE"             bash -c 'bash ./tools/build_direct_ts_remux.sh src/native/direct-ts-remux/direct_ts_remux.c build/public-direct-ts-remux/direct-ts-remux'
+          sudo chown -R "$(id -u):$(id -g)" build/public-direct-ts-remux
+
+      - name: Validate debug/symbol state and materialize reports
+        shell: bash
+        run: |
+          set -euxo pipefail
+          BIN=build/public-direct-ts-remux/direct-ts-remux
+          mkdir -p "$OUTDIR"
+
+          docker run --rm --platform=linux/amd64 -v "$PWD:/src" -w /src "$IMAGE" arm-unknown-nto-qnx6.5.0eabi-readelf -h "$BIN" > "$OUTDIR/ELF_HEADER.txt"
+          docker run --rm --platform=linux/amd64 -v "$PWD:/src" -w /src "$IMAGE" arm-unknown-nto-qnx6.5.0eabi-readelf -S "$BIN" > "$OUTDIR/SECTIONS.txt"
+          docker run --rm --platform=linux/amd64 -v "$PWD:/src" -w /src "$IMAGE" arm-unknown-nto-qnx6.5.0eabi-readelf -Ws "$BIN" > "$OUTDIR/SYMBOLS.txt"
+          docker run --rm --platform=linux/amd64 -v "$PWD:/src" -w /src "$IMAGE" sh -lc "arm-unknown-nto-qnx6.5.0eabi-readelf -Ws '$BIN' | awk '\$7==\"UND\"{print \$8}' | sort -u" > "$OUTDIR/UNDEFINED.txt"
+          docker run --rm --platform=linux/amd64 -v "$PWD:/src" -w /src "$IMAGE" arm-unknown-nto-qnx6.5.0eabi-readelf -d "$BIN" > "$OUTDIR/DYNAMIC.txt"
+          docker run --rm --platform=linux/amd64 -v "$PWD:/src" -w /src "$IMAGE" arm-unknown-nto-qnx6.5.0eabi-readelf -r "$BIN" > "$OUTDIR/RELOCATIONS.txt"
+
+          file "$BIN" | tee "$OUTDIR/FILE.txt"
+          grep -q 'Machine:.*ARM' "$OUTDIR/ELF_HEADER.txt"
+          grep -q '\.symtab' "$OUTDIR/SECTIONS.txt"
+          grep -q '\.debug_info' "$OUTDIR/SECTIONS.txt"
+          strings "$BIN" | grep -q 'REMUX_START'
+          strings "$BIN" | grep -q 'MOST strict write'
+          strings "$BIN" | grep -q 'mpegts'
+
+          cp "$BIN" "$OUTDIR/direct-ts-remux"
+          chmod 755 "$OUTDIR/direct-ts-remux"
+          sha256sum "$OUTDIR/direct-ts-remux" > "$OUTDIR/direct-ts-remux.sha256"
+
+          cat > "$OUTDIR/BUILDINFO.txt" <<EOF
+          artifact=direct-ts-remux
+          artifact_scope=H264_to_MPEGTS_to_isoTX2_developer_component
+          target=QNX_6.5_ARMv7_softfp
+          target_firmware=$TARGET_FIRMWARE
+          source_public_commit=$GITHUB_SHA
+          source_path=src/native/direct-ts-remux/direct_ts_remux.c
+          validation_scope=vehicle_tested_downstream_transport
+          compiler=GCC_4.9.4_QNX_ARMv7
+          optimization=-O2
+          debug=-g
+          stripped=no
+          ffmpeg=6.1.5
+          ffmpeg_sha256=b8c8e926b948c14df1264cd0beac1c773df9170ac9cac97bdf1275cd3d385902
+          toolchain_repo=$TOOLCHAIN_REPO
+          toolchain_commit=$TOOLCHAIN_COMMIT
+          toolchain_dockerfile_sha256=$TOOLCHAIN_DOCKERFILE_SHA256
+          ci_run=$GITHUB_RUN_ID
+          ci_attempt=$GITHUB_RUN_ATTEMPT
+          EOF
+          sed -i 's/^          //' "$OUTDIR/BUILDINFO.txt"
+
+      - name: Upload CI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: direct-ts-remux-MU1440-unstripped
+          path: |
+            ${{ env.OUTDIR }}/direct-ts-remux
+            ${{ env.OUTDIR }}/direct-ts-remux.sha256
+            ${{ env.OUTDIR }}/BUILDINFO.txt
+            ${{ env.OUTDIR }}/FILE.txt
+            ${{ env.OUTDIR }}/ELF_HEADER.txt
+            ${{ env.OUTDIR }}/SECTIONS.txt
+            ${{ env.OUTDIR }}/SYMBOLS.txt
+            ${{ env.OUTDIR }}/UNDEFINED.txt
+            ${{ env.OUTDIR }}/DYNAMIC.txt
+            ${{ env.OUTDIR }}/RELOCATIONS.txt
+

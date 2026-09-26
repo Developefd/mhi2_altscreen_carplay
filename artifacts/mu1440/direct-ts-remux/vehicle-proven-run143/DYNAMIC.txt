@@ -1,0 +1,31 @@
+
+Dynamic section at offset 0xc0dd4 contains 28 entries:
+  Tag        Type                         Name/Value
+ 0x00000001 (NEEDED)                     Shared library: [libbz2.so.1.0.4]
+ 0x00000001 (NEEDED)                     Shared library: [libz.so.2]
+ 0x00000001 (NEEDED)                     Shared library: [libsocket.so.3]
+ 0x00000001 (NEEDED)                     Shared library: [libm.so.2]
+ 0x00000001 (NEEDED)                     Shared library: [libc.so.3]
+ 0x0000000c (INIT)                       0x101aec
+ 0x0000000d (FINI)                       0x197558
+ 0x00000019 (INIT_ARRAY)                 0x1c1dc8
+ 0x0000001b (INIT_ARRAYSZ)               4 (bytes)
+ 0x0000001a (FINI_ARRAY)                 0x1c1dcc
+ 0x0000001c (FINI_ARRAYSZ)               4 (bytes)
+ 0x00000004 (HASH)                       0x100120
+ 0x00000005 (STRTAB)                     0x100f8c
+ 0x00000006 (SYMTAB)                     0x1005ac
+ 0x0000000a (STRSZ)                      1436 (bytes)
+ 0x0000000b (SYMENT)                     16 (bytes)
+ 0x00000015 (DEBUG)                      0x0
+ 0x00000003 (PLTGOT)                     0x1c1edc
+ 0x00000002 (PLTRELSZ)                   1112 (bytes)
+ 0x00000014 (PLTREL)                     REL
+ 0x00000017 (JMPREL)                     0x101694
+ 0x00000011 (REL)                        0x101684
+ 0x00000012 (RELSZ)                      16 (bytes)
+ 0x00000013 (RELENT)                     8 (bytes)
+ 0x6ffffffe (VERNEED)                    0x101664
+ 0x6fffffff (VERNEEDNUM)                 1
+ 0x6ffffff0 (VERSYM)                     0x101528
+ 0x00000000 (NULL)                       0x0

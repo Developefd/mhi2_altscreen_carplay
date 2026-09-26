@@ -1,0 +1,29 @@
+title: "[Q&A] "
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: Ask a focused question about the research, architecture or your compatible setup.
+    validations:
+      required: true
+
+  - type: input
+    id: platform
+    attributes:
+      label: Platform / firmware
+      description: If vehicle-specific, provide the exact MHI2 firmware/MU. Do not include VIN.
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you already checked?
+      description: Mention docs, logs, tests or related discussions/issues.
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Before posting
+      options:
+        - label: I removed credentials and personal/vehicle-identifying information.
+          required: true

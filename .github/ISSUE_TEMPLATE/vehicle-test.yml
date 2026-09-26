@@ -1,0 +1,89 @@
+name: Vehicle test report
+description: Report a reproducible on-vehicle result or regression.
+title: "[Vehicle] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for reproducible vehicle-side results. For questions or early observations, use Discussions.
+
+  - type: input
+    id: vehicle
+    attributes:
+      label: Vehicle
+      description: Brand, model and model year. Do not include VIN.
+      placeholder: "Škoda Octavia 5E, 2016"
+    validations:
+      required: true
+
+  - type: input
+    id: firmware
+    attributes:
+      label: Head unit / firmware
+      placeholder: "MHI2_ER_SKG13_P4526_MU1440"
+    validations:
+      required: true
+
+  - type: input
+    id: cluster
+    attributes:
+      label: Cluster / Virtual Cockpit
+      placeholder: "AID / Virtual Cockpit type if known"
+
+  - type: dropdown
+    id: access
+    attributes:
+      label: SSH access path
+      options:
+        - WLAN
+        - USB-LAN
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: artifact
+    attributes:
+      label: Tested commit / artifact
+      description: Exact commit, tag, filename and/or SHA-256.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Exact sequence used for the test.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed result
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / evidence
+      description: Attach or paste relevant, redacted evidence.
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Confirmation
+      options:
+        - label: I removed VINs, credentials, addresses and other private information.
+          required: true
+        - label: I understand this is experimental research and I had a recovery route before testing.
+          required: true

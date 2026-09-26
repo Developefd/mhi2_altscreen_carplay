@@ -1,0 +1,37 @@
+title: "[Idea] "
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: Describe the capability or improvement.
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      description: What problem would this solve, and on which platform?
+    validations:
+      required: true
+
+  - type: textarea
+    id: approach
+    attributes:
+      label: Possible approach
+      description: Optional architecture, prior-art or implementation thoughts.
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Likely scope
+      options:
+        - Škoda MU1440
+        - Other Škoda MHI2
+        - SEAT / CUPRA MHI2
+        - Volkswagen MHI2
+        - Cross-platform
+        - Unknown
+    validations:
+      required: true

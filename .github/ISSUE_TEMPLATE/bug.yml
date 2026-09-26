@@ -1,0 +1,61 @@
+name: Project bug
+description: Report a reproducible bug in project-owned code, tooling or documentation.
+title: "[Bug] "
+labels: []
+body:
+  - type: input
+    id: commit
+    attributes:
+      label: Commit / version
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Documentation
+        - Build/toolchain
+        - Java
+        - Native
+        - Scripts/tools
+        - PoC
+        - Tests
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output / logs
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Confirmation
+      options:
+        - label: I removed credentials and personal/vehicle-identifying information from logs.
+          required: true

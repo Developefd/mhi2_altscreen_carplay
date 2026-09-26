@@ -1,0 +1,14 @@
+artifact=direct-ts-remux
+artifact_scope=H264_to_MPEGTS_to_isoTX2_developer_component
+target=MHI2_ER_SKG13_P4526_MU1440
+target_abi=QNX_6.5_ARMv7_EABI5_softfp
+source_path=src/native/direct-ts-remux/direct_ts_remux.c
+validation_scope=vehicle_tested_downstream_transport
+build_environment=archived_QNX_6.5_ARMv7_environment
+build_environment_digest=sha256:19b5fb1d4559264a844080b6e381837655d4dcca50151cce3ff0ac509e4f3393
+optimization=-O2
+debug=-g
+stripped=no
+ffmpeg=6.1.5
+ffmpeg_sha256=b8c8e926b948c14df1264cd0beac1c773df9170ac9cac97bdf1275cd3d385902
+binary_sha256=672275fc0e840e604cef68b6bd7b1e9e2059342471997d9bd859e32c34a0f02b

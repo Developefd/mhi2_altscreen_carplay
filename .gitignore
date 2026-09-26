@@ -1,0 +1,47 @@
+# Local build output
+build/
+out/
+dist/
+*.o
+*.a
+*.map
+*.log
+
+# Temporary transfer/staging data
+.transfer/
+tmp/
+.cache/
+
+# Firmware / extracted proprietary images
+*.bin
+*.img
+*.ifs
+*.iso
+*.fw
+*.dump
+*.rom
+*.qnx6
+
+# Archives and large local research bundles
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+
+# Apple extraction/cache material
+dyld_shared_cache*
+*.ipsw
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Secrets / local environment
+.env
+.env.*
+*.pem
+*.key

@@ -1,0 +1,1 @@
+artifacts/mu1440/direct-ts-remux/vehicle-proven-run143/direct-ts-remux: ELF 32-bit LSB executable, ARM, EABI5 version 1 (SYSV), dynamically linked, interpreter /usr/lib/ldqnx.so.2, with debug_info, not stripped

@@ -1,0 +1,72 @@
+name: Research finding
+description: Submit a concrete reverse-engineering or protocol finding with evidence.
+title: "[Research] "
+labels: []
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - CarPlay / iOS
+        - MHI2 native
+        - Java / DisplayManagement
+        - MOST / DCIVIDEO / Virtual Cockpit
+        - ViewArea / UI control
+        - RGI / navigation guidance
+        - Cross-platform comparison
+        - Build / toolchain
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: evidence
+    attributes:
+      label: Evidence level
+      options:
+        - Observed on vehicle
+        - Binary-confirmed
+        - Build-confirmed
+        - Historical / prior art
+        - Hypothesis
+    validations:
+      required: true
+
+  - type: textarea
+    id: finding
+    attributes:
+      label: Finding
+      description: State the finding precisely. Keep observation separate from interpretation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: provenance
+    attributes:
+      label: Source / provenance
+      description: Firmware/build, binary path, SHA-256, public reference, commit or reproduction source.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence_detail
+    attributes:
+      label: Evidence
+      description: Symbols, xrefs, logs, disassembly summary, test result or other supporting data.
+    validations:
+      required: true
+
+  - type: textarea
+    id: implication
+    attributes:
+      label: Why it matters
+      description: Explain what implementation or architecture decision this affects.
+
+  - type: checkboxes
+    id: rights
+    attributes:
+      label: Material
+      options:
+        - label: I have not attached proprietary binaries/source that I do not have the right to redistribute.
+          required: true
