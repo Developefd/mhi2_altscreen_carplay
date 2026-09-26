@@ -2,16 +2,32 @@
 
 **Open research and engineering for bringing CarPlay secondary-screen navigation to the Virtual Cockpit on Volkswagen Group MHI2 platforms.**
 
+> [!CAUTION]
+> ## NOT SD-CARD READY — ACTIVE DEVELOPMENT / HELP WANTED
+>
+> This repository is **not a finished SD-card solution, installer or one-click modification package**.
+> It is an active reverse-engineering and engineering project. **Further development, vehicle testing and
+> contributor support are still required before this can become a broadly usable solution.**
+>
+> The current reference implementation starts with **Škoda MHI2 / MU1440**, but the project is intended
+> to cover compatible **Škoda, Volkswagen, SEAT and CUPRA MHI2** platforms. Additional vehicles,
+> firmware trains and Virtual Cockpit/AID variants still need to be tested and compared.
+>
+> **If you have SSH access to another MHI2 unit, QNX/MOST/CarPlay experience, or can provide reproducible
+> vehicle traces, your help is explicitly wanted.**
+
 > [!WARNING]
 > **Research / experimental / use at your own risk.**
 >
-> This repository is **not a finished SD-card installer** and it is not intended to be a one-click modification package at this stage.
-> Current work targets units where the owner already has **SSH shell access**, typically through WLAN or a USB-to-LAN adapter.
-> Expect incomplete features, vehicle-specific behavior, reboots and the possibility of an unusable infotainment state if experiments are applied incorrectly.
+> Current work targets units where the owner already has **SSH shell access**, typically through WLAN or
+> a USB-to-LAN adapter. Expect incomplete features, vehicle-specific behavior, reboots and the possibility
+> of an unusable infotainment state if experiments are applied incorrectly.
 > Keep recoverable backups and understand the changes before running them on a vehicle.
 
 > [!IMPORTANT]
-> The first active target is **Škoda MHI2 / MU1440**. The intended project scope is broader: a reusable solution for compatible **Škoda, SEAT and Volkswagen MHI2** systems. Testers and researchers with other MHI2 variants are welcome.
+> The first vehicle-proven target is **Škoda MHI2 / MU1440**. Compatibility with other Škoda,
+> **Volkswagen, SEAT and CUPRA** MHI2 variants must be established from exact firmware/component
+> evidence and real vehicle tests; it should not be assumed from platform names alone.
 
 ## Project goals
 
@@ -24,7 +40,7 @@ Primary goals:
 3. Understand and implement the receiver-side **CarPlay ScreenAlt/Auxiliary control plane**
 4. Understand and, where useful, control **ViewArea** / cluster presentation regions
 5. Later investigate **navigation maneuver / arrow integration** and complementary RGI/BAP paths
-6. Extend the implementation from the initial Škoda target to compatible **SEAT and Volkswagen** MHI2 variants
+6. Extend the implementation from the initial Škoda target to compatible **Volkswagen, SEAT and CUPRA** MHI2 variants
 7. Preserve enough architecture, build and test knowledge that another developer can continue the work without repeating the reverse engineering from zero
 
 An SD-card based installation/update path may come later. It is deliberately **not the first milestone**.
@@ -40,7 +56,7 @@ Initial reference platform:
 - Current engineering access paths: WLAN or USB-LAN
 - Cluster target: MQB Virtual Cockpit / MOST video path
 
-Other MHI2 variants are intentionally in scope, but should not be assumed compatible until their binaries, Java stack, display routing and vehicle behavior are compared.
+Other Škoda, Volkswagen, SEAT and CUPRA MHI2 variants are intentionally in scope, but should not be assumed compatible until their binaries, Java stack, display routing and vehicle behavior are compared.
 
 ## Current state
 
