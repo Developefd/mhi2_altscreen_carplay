@@ -31,6 +31,7 @@ env:
 
 jobs:
   build:
+    name: Build support tools (QNX)
     runs-on: ubuntu-24.04
     timeout-minutes: 120
 
