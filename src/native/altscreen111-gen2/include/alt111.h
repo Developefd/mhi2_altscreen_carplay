@@ -68,6 +68,59 @@ int alt111_control_next(struct alt111_control *c, uint64_t now_ms,
 int alt111_control_complete(struct alt111_control *c, uint64_t session,
                            uint64_t request, int success, uint64_t now_ms);
 
+#define ALT111_RESYNC_RETRY_MIN_MS 1000u
+#define ALT111_RESYNC_RETRY_MAX_MS 4000u
+
+enum alt111_resync_state {
+    ALT111_RESYNC_SYNCED = 0,
+    ALT111_RESYNC_NEED_IDR = 1
+};
+
+enum alt111_resync_action {
+    ALT111_RESYNC_NONE = 0,
+    ALT111_RESYNC_REQUEST_KEYFRAME = 1,
+    ALT111_RESYNC_COMPLETED = 2,
+    ALT111_RESYNC_CANCELLED = 3
+};
+
+enum alt111_resync_reason {
+    ALT111_RESYNC_REASON_NONE = 0,
+    ALT111_RESYNC_REASON_MANUAL = 1,
+    ALT111_RESYNC_CANCEL_DISABLED = 100,
+    ALT111_RESYNC_CANCEL_PROJECTION = 101,
+    ALT111_RESYNC_CANCEL_CONFIG = 102,
+    ALT111_RESYNC_CANCEL_CONSUMER = 103,
+    ALT111_RESYNC_CANCEL_STREAM = 104,
+    ALT111_RESYNC_CANCEL_CODEC = 105,
+    ALT111_RESYNC_CANCEL_CONSUMER_GEN = 106
+};
+
+struct alt111_resync_snapshot {
+    uint64_t stream, codec, consumer;
+    uint64_t source_aus, source_idrs;
+    unsigned projection_desired, config_valid, consumer_primed;
+};
+
+struct alt111_resync {
+    unsigned enabled, state, reason, cancel_reason;
+    uint64_t epoch;
+    uint64_t stream_at_arm, codec_at_arm, consumer_at_arm;
+    uint64_t au_at_arm, idr_at_arm;
+    uint64_t requests, completions, cancels, retries;
+    uint64_t last_request_ms, next_request_ms, completed_ms;
+    uint32_t retry_ms;
+};
+
+void alt111_resync_init(struct alt111_resync *r);
+void alt111_resync_set_enabled(struct alt111_resync *r, unsigned enabled);
+int alt111_resync_arm(struct alt111_resync *r, uint64_t now_ms,
+                      unsigned reason,
+                      const struct alt111_resync_snapshot *s);
+enum alt111_resync_action
+alt111_resync_tick(struct alt111_resync *r, uint64_t now_ms,
+                   const struct alt111_resync_snapshot *s);
+void alt111_resync_cancel(struct alt111_resync *r, unsigned reason);
+
 struct alt111_output_ticket {
     uint64_t stream, codec, consumer, sequence;
     size_t offset;
