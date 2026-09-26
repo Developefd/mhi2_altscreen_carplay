@@ -125,3 +125,153 @@ A high-quality source contribution should record:
 - whether the evidence is source, binary behavior or secondary commentary.
 
 For more of the intentionally less-polished notes, there is one more file in the repository tree.
+
+
+## Apple official CarPlay material
+
+### WWDC19 — Advances in CarPlay Systems
+
+https://developer.apple.com/videos/play/wwdc2019/252/
+
+High-value public facts:
+
+- multiple independent H.264 streams for instrument-cluster use;
+- map and maneuver/instruction-card presentation;
+- ViewArea / SafeArea;
+- multiple declared ViewAreas;
+- runtime resizing/transition concepts;
+- route-guidance metadata remains a separate plane from projected video.
+
+This is official evidence for the broad secondary-display architecture. It does not publicly name
+the numeric stream type 111.
+
+### WWDC22 — navigation apps and instrument-cluster scenes
+
+https://developer.apple.com/videos/play/wwdc2022/10016/
+
+Useful for understanding the app-side instrument-cluster scene lifecycle and why head-unit support
+alone does not guarantee identical Apple Maps / Google Maps / Waze behavior.
+
+Relevant public API family includes:
+
+- `CPSupportsInstrumentClusterNavigationScene`;
+- instrument-cluster CarPlay scene/session roles;
+- `CPInstrumentClusterControllerDelegate`.
+
+### WWDC25 — multi-screen navigation evolution
+
+https://developer.apple.com/videos/play/wwdc2025/216/
+
+Useful chronology/background for app-provided navigation across multiple vehicle screens.
+
+## Independent CarPlay receiver reverse engineering
+
+### CPC200 / Carlinkit resources
+
+Repository:
+
+https://github.com/lvalen91/CPC200-CCPA_resources
+
+Pinned reference used during the research:
+
+```text
+951780eb856b879b60c02a7d2c3112229eba1eac
+```
+
+Especially useful:
+
+- protocol/runtime timelines;
+- independent observation of AirPlay screen stream **type 111**;
+- `_AltScreenSetup`, `_AltScreenStart`, `_AltScreenTearDown`;
+- `featureAltScreen`;
+- `featureViewAreas`;
+- instrument-cluster URL family;
+- NaviScreen/ViewArea/SafeArea concepts.
+
+Relevant documentation:
+
+https://github.com/lvalen91/CPC200-CCPA_resources/blob/main/documentation/02_Protocol_Reference/audio_protocol.md
+
+https://github.com/lvalen91/CPC200-CCPA_resources/blob/main/documentation/06_Reference/firmware_internals.md
+
+This is important independent evidence because it is neither the MU1440 implementation nor the
+commercial MHI2Q comparator.
+
+### carlink_linux capabilities research
+
+Repository:
+
+https://github.com/lvalen91/carlink_linux
+
+Pinned reference used during the research:
+
+```text
+fbbfa59400dac4704f34a5d76e745080ce7d6338
+```
+
+Capability reference:
+
+https://github.com/lvalen91/carlink_linux/blob/main/docs/CARPLAY_CAPABILITIES.md
+
+Useful for modern capability/feature-key cross-correlation. Treat modern wire-level conclusions as
+reverse-engineered evidence unless independently confirmed on the exact target.
+
+## Historical CarPlay Communication Plug-in / AccessorySDK mirrors
+
+These repositories expose historical source concepts that are useful for stable semantic names and
+receiver behavior.
+
+They are **reference material only**. Do not wholesale copy Apple-origin source into this project.
+
+### maaiika/Carplay
+
+https://github.com/maaiika/Carplay
+
+Pinned reference:
+
+```text
+482d3d7ea289317cc827f9df29734daad49a8e17
+```
+
+Useful historical concepts include:
+
+- `requestUI`;
+- `forceKeyFrame`;
+- `setUpStreams`;
+- `tearDownStreams`;
+- display UUIDs;
+- display-bound HID devices;
+- primary input device semantics;
+- ScreenStream receiver behavior.
+
+### 45clouds/WirelessCarPlay
+
+https://github.com/45clouds/WirelessCarPlay
+
+Pinned reference:
+
+```text
+51145ef55f8dd9f1cbadd58353cacb5e0ca215e9
+```
+
+Contains older AccessorySDK / CarPlay Communication Plug-in-derived material and protocol
+documentation. Use it to understand stable historical concepts, not as a specification for modern
+AltScreen behavior.
+
+## Evidence rule for external protocol sources
+
+Prefer triangulation:
+
+```text
+official Apple architecture
+      +
+independent receiver RE
+      +
+historical receiver semantics
+      +
+exact iOS build RE
+      +
+exact MU1440 vehicle/binary evidence
+```
+
+No single public mirror or third-party implementation overrides contradictory exact-target evidence.
