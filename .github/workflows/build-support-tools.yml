@@ -84,7 +84,7 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          docker run --rm --platform=linux/amd64             -v "$PWD:/src" -w /src "$IMAGE"             bash -c './tools/build_support_tools.sh build/support-tools'
+          docker run --rm --platform=linux/amd64             -v "$PWD:/src" -w /src "$IMAGE"             bash -c 'bash ./tools/build_support_tools.sh build/support-tools'
           sudo chown -R "$(id -u):$(id -g)" build/support-tools
 
       - name: Validate ELF and symbols
