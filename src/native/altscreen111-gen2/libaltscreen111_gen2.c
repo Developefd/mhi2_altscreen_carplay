@@ -61,6 +61,7 @@ typedef void *CFMutableDictionaryRef;
 typedef const void *CFArrayRef;
 typedef void *CFMutableArrayRef;
 typedef const void *CFDataRef;
+typedef unsigned long CFTypeID;
 typedef long CFIndex;
 typedef int32_t OSStatus;
 typedef unsigned char Boolean;
@@ -80,6 +81,7 @@ typedef void *AirPlayReceiverSessionRef;
 #define ALT_UUID_DEFAULT "b7e6c5a0-2222-4000-8000-000000000002"
 #define ALT_URL_DEFAULT  "maps:/car/instrumentcluster"
 #define ALT_URL_MAP      "maps:/car/instrumentcluster/map"
+#define ALT_URL_INSTRUCTIONCARD "maps:/car/instrumentcluster/instructioncard"
 #define AIRPLAY_FEATURE_BIT26 (1ULL << 26)
 
 /* Opaque storage. Stock AES_CTR_Context is smaller than this on the target. */
@@ -101,6 +103,17 @@ typedef void (*fn_teardown_t)(AirPlayReceiverSessionRef, CFDictionaryRef, OSStat
 typedef CFDictionaryRef (*fn_serverinfo_t)(AirPlayReceiverSessionRef, CFArrayRef, uint8_t *, OSStatus *);
 typedef void (*fn_command_completion_t)(OSStatus, CFDictionaryRef, void *);
 typedef OSStatus (*fn_sendcmd_t)(AirPlayReceiverSessionRef, CFDictionaryRef, fn_command_completion_t, void *);
+typedef OSStatus (*fn_platform_control_t)(AirPlayReceiverSessionRef, uint32_t, CFStringRef, CFTypeRef, CFDictionaryRef, CFDictionaryRef *);
+typedef OSStatus (*fn_session_control_t)(AirPlayReceiverSessionRef, uint32_t, CFStringRef, CFTypeRef, CFDictionaryRef, CFDictionaryRef *);
+typedef struct {
+    int32_t screen;
+    int32_t main_audio;
+    int32_t phone;
+    int32_t speech;
+    int32_t speech_detail;
+    int32_t turns;
+} mibr_mode_state_t;
+typedef OSStatus (*fn_make_mode_state_t)(AirPlayReceiverSessionRef, CFDictionaryRef, mibr_mode_state_t *);
 typedef OSStatus (*fn_aes_cbc_init_t)(void *, const uint8_t[16], const uint8_t[16], Boolean);
 typedef OSStatus (*fn_aes_ctr_init_t)(void *, const uint8_t[16], const uint8_t[16]);
 typedef OSStatus (*fn_aes_ctr_update_t)(void *, const void *, size_t, void *);
@@ -109,6 +122,12 @@ typedef void (*fn_derive_screen_t)(const void *, size_t, uint64_t, uint8_t[16], 
 
 /* CFLite function types. */
 typedef CFStringRef (*fn_cfstr_create_t)(void *, const char *, uint32_t);
+typedef const char *(*fn_cfstr_cstr_ptr_t)(CFStringRef, uint32_t);
+typedef Boolean (*fn_cfstr_cstr_t)(CFStringRef, char *, CFIndex, uint32_t);
+typedef CFTypeID (*fn_cfget_typeid_t)(CFTypeRef);
+typedef CFTypeID (*fn_cftypeid_t)(void);
+typedef int64_t (*fn_cfget_i64_t)(CFTypeRef, OSStatus *);
+typedef Boolean (*fn_cfbool_get_t)(CFTypeRef);
 typedef CFIndex (*fn_cfdict_count_t)(CFDictionaryRef);
 typedef void (*fn_cfdict_keys_t)(CFDictionaryRef, const void **, const void **);
 typedef CFTypeRef (*fn_cfdict_get_t)(CFDictionaryRef, CFTypeRef);
@@ -130,6 +149,8 @@ typedef void (*fn_cfrelease_t)(CFTypeRef);
 static fn_setup_t g_setup_trampoline;
 static fn_start_t g_start_trampoline;
 static fn_teardown_t g_teardown_trampoline;
+static fn_platform_control_t g_platform_control_trampoline;
+static fn_session_control_t g_session_control_trampoline;
 /*
  * Preserve exact stock entry points separately from executable trampolines.
  * This guarantees a true fail-closed fallback when an inline hook cannot be
@@ -139,6 +160,9 @@ static fn_teardown_t g_teardown_trampoline;
 static fn_setup_t g_real_setup;
 static fn_start_t g_real_start;
 static fn_teardown_t g_real_teardown;
+static fn_platform_control_t g_real_platform_control;
+static fn_session_control_t g_real_session_control;
+static fn_make_mode_state_t g_make_mode_state;
 static fn_serverinfo_t g_real_serverinfo;
 static fn_sendcmd_t g_sendcmd;
 static fn_aes_cbc_init_t g_real_aes_cbc_init;
@@ -148,6 +172,19 @@ static fn_aes_ctr_final_t g_aes_ctr_final;
 static fn_derive_screen_t g_derive_screen;
 
 static fn_cfstr_create_t p_CFStringCreateWithCString;
+static fn_cfstr_cstr_ptr_t p_CFStringGetCStringPtr;
+static fn_cfstr_cstr_t p_CFStringGetCString;
+static fn_cfget_typeid_t p_CFGetTypeID;
+static fn_cftypeid_t p_CFStringGetTypeID;
+static fn_cftypeid_t p_CFDictionaryGetTypeID;
+static fn_cftypeid_t p_CFArrayGetTypeID;
+static fn_cftypeid_t p_CFNumberGetTypeID;
+static fn_cftypeid_t p_CFBooleanGetTypeID;
+static fn_cftypeid_t p_CFDataGetTypeID;
+static fn_cfget_i64_t p_CFGetInt64;
+static fn_cfbool_get_t p_CFBooleanGetValue;
+static fn_cfdata_len_t p_CFDataGetLength;
+static fn_cfdata_ptr_t p_CFDataGetBytePtr;
 static fn_cfdict_count_t p_CFDictionaryGetCount;
 static fn_cfdict_keys_t p_CFDictionaryGetKeysAndValues;
 static fn_cfdict_get_t p_CFDictionaryGetValue;
@@ -202,6 +239,7 @@ static int g_viewareas = 1;
 static const char *g_viewareas_marker = "/mnt/app/root/mibr-carplay111-viewareas.enabled";
 static const char *g_autoshow_disable_marker = "/mnt/app/root/mibr-carplay111-autoshow.disabled";
 static const char *g_url_map_marker = "/mnt/app/root/mibr-carplay111-url-map.enabled";
+static const char *g_url_mode_path = "/tmp/mibr-alt111-url-mode";
 static const char *g_bit26_on_marker = "/mnt/app/root/mibr-carplay111-bit26.force-on";
 static const char *g_bit26_off_marker = "/mnt/app/root/mibr-carplay111-bit26.force-off";
 static char g_alt_uuid[96] = ALT_UUID_DEFAULT;
@@ -220,6 +258,10 @@ static pthread_cond_t g2_core_cv = PTHREAD_COND_INITIALIZER;
 static struct alt111_profile g2_profile;
 static struct alt111_control g2_control;
 static struct alt111_video g2_video;
+static struct alt111_resync g2_resync;
+static mibr_mode_state_t g2_last_mode_state;
+static unsigned g2_last_mode_valid;
+static uint64_t g2_mode_sequence;
 static uint64_t g2_control_session;
 static uint64_t g2_video_stream;
 static uint64_t g2_last_dispatched_request;
@@ -231,6 +273,11 @@ static pthread_t g2_output_thread;
 static int g2_workers_started;
 static const char *g2_status_path = "/tmp/mibr-alt111-gen2.status";
 static const char *g2_reacquire_marker = "/tmp/mibr-alt111-gen2-reacquire";
+static const char *g2_diag_stop_marker = "/tmp/mibr-alt111-stop-only";
+static const char *g2_diag_show_marker = "/tmp/mibr-alt111-show-only";
+static const char *g2_diag_keyframe_marker = "/tmp/mibr-alt111-keyframe-only";
+static const char *g2_resync_enable_marker = "/tmp/mibr-alt111-resync.enabled";
+static const char *g2_resync_arm_marker = "/tmp/mibr-alt111-resync-arm";
 
 static void gen2_publish_status(void);
 static void gen2_control_projection_on(void);
@@ -239,6 +286,7 @@ static void gen2_set_command_ready(unsigned ready);
 static void gen2_video_begin_current(void);
 static void gen2_video_end_current(void);
 static void gen2_close_consumer(void);
+static void gen2_resync_poll(void);
 static void tee_drop_client_locked(void);
 
 static void logf_u2(const char *fmt, ...)
@@ -362,6 +410,30 @@ static CFStringRef s_cf(const char *s);
  */
 static const char *active_alt_url(void)
 {
+    char mode[32];
+    int fd, n;
+
+    /*
+     * Volatile vehicle-test override.  This intentionally changes only the
+     * URL used by subsequent showUI /info construction; the operator triggers
+     * the existing bounded reacquire sequence separately.
+     */
+    fd = open(g_url_mode_path, O_RDONLY);
+    if (fd >= 0) {
+        n = (int)read(fd, mode, sizeof(mode) - 1u);
+        close(fd);
+        if (n > 0) {
+            mode[n] = '\0';
+            while (n > 0 && (mode[n-1] == '\n' || mode[n-1] == '\r' ||
+                             mode[n-1] == ' ' || mode[n-1] == '\t'))
+                mode[--n] = '\0';
+            if (strcmp(mode, "base") == 0) return ALT_URL_DEFAULT;
+            if (strcmp(mode, "map") == 0) return ALT_URL_MAP;
+            if (strcmp(mode, "instructioncard") == 0) return ALT_URL_INSTRUCTIONCARD;
+        }
+    }
+
+    /* Preserve the earlier persistent base/map A/B marker as fallback. */
     return access(g_url_map_marker, F_OK) == 0 ? ALT_URL_MAP : g_alt_url;
 }
 
@@ -423,6 +495,19 @@ static int init_api(void)
     RESOLVE(g_aes_ctr_final, "AES_CTR_Final");
     RESOLVE(g_derive_screen, "AirPlay_DeriveAESKeySHA512ForScreen");
     RESOLVE(p_CFStringCreateWithCString, "CFStringCreateWithCString");
+    RESOLVE(p_CFStringGetCStringPtr, "CFStringGetCStringPtr");
+    RESOLVE(p_CFStringGetCString, "CFStringGetCString");
+    RESOLVE(p_CFGetTypeID, "CFGetTypeID");
+    RESOLVE(p_CFStringGetTypeID, "CFStringGetTypeID");
+    RESOLVE(p_CFDictionaryGetTypeID, "CFDictionaryGetTypeID");
+    RESOLVE(p_CFArrayGetTypeID, "CFArrayGetTypeID");
+    RESOLVE(p_CFNumberGetTypeID, "CFNumberGetTypeID");
+    RESOLVE(p_CFBooleanGetTypeID, "CFBooleanGetTypeID");
+    RESOLVE(p_CFDataGetTypeID, "CFDataGetTypeID");
+    RESOLVE(p_CFGetInt64, "CFGetInt64");
+    RESOLVE(p_CFBooleanGetValue, "CFBooleanGetValue");
+    RESOLVE(p_CFDataGetLength, "CFDataGetLength");
+    RESOLVE(p_CFDataGetBytePtr, "CFDataGetBytePtr");
     RESOLVE(p_CFDictionaryGetCount, "CFDictionaryGetCount");
     RESOLVE(p_CFDictionaryGetKeysAndValues, "CFDictionaryGetKeysAndValues");
     RESOLVE(p_CFDictionaryGetValue, "CFDictionaryGetValue");
@@ -735,6 +820,7 @@ static void gen2_close_consumer(void)
 
     pthread_mutex_lock(&g2_core_lock);
     alt111_video_detach(&g2_video);
+    alt111_resync_cancel(&g2_resync, ALT111_RESYNC_CANCEL_CONSUMER);
     pthread_cond_broadcast(&g2_core_cv);
     pthread_mutex_unlock(&g2_core_lock);
 }
@@ -744,6 +830,7 @@ static void gen2_video_begin_current(void)
     uint64_t session;
     gen2_close_consumer();
     pthread_mutex_lock(&g2_core_lock);
+    alt111_resync_cancel(&g2_resync, ALT111_RESYNC_CANCEL_STREAM);
     session = g2_control_session ? g2_control_session : (g2_control.session + 1u);
     g2_video_stream = alt111_video_begin(&g2_video, session);
     pthread_cond_broadcast(&g2_core_cv);
@@ -754,6 +841,7 @@ static void gen2_video_begin_current(void)
 static void gen2_video_end_current(void)
 {
     pthread_mutex_lock(&g2_core_lock);
+    alt111_resync_cancel(&g2_resync, ALT111_RESYNC_CANCEL_STREAM);
     if (g2_video_stream) (void)alt111_video_end(&g2_video, g2_video_stream);
     g2_video_stream = 0;
     pthread_cond_broadcast(&g2_core_cv);
@@ -1248,6 +1336,48 @@ static void remove_key(CFMutableDictionaryRef d, const char *name)
 }
 
 /*
+ * iOS 27.2 builds navigator cluster UI candidates and intersects them with the
+ * receiver-advertised altScreenSuggestUIURLs list.  Stock MU1440 has no such
+ * key because it has no auxiliary cluster display.  Our synthetic type-111
+ * display must therefore advertise the roles it intentionally supports.
+ *
+ * This is capability metadata only: it does not issue showUI/stopUI, rebuild
+ * Stream111, change codec state, or synthesize a provider suggestion.
+ */
+static void add_alt_suggest_ui_urls(CFMutableDictionaryRef alt)
+{
+    CFMutableArrayRef urls=NULL;
+    CFStringRef key=NULL,base=NULL,map=NULL,card=NULL;
+    if(!alt)return;
+
+    urls=p_CFArrayCreateMutable(NULL,0,p_array_callbacks);
+    if(!urls)return;
+
+    base=s_cf(ALT_URL_DEFAULT);
+    map=s_cf(ALT_URL_MAP);
+    card=s_cf(ALT_URL_INSTRUCTIONCARD);
+    if(!base||!map||!card)goto done;
+
+    p_CFArrayAppendValue(urls,base);
+    p_CFArrayAppendValue(urls,map);
+    p_CFArrayAppendValue(urls,card);
+
+    key=s_cf("altScreenSuggestUIURLs");
+    if(!key)goto done;
+    p_CFDictionarySetValue(alt,key,urls);
+
+    logf_u2("GEN2 advertised altScreenSuggestUIURLs[0]=%s [1]=%s [2]=%s",
+            ALT_URL_DEFAULT,ALT_URL_MAP,ALT_URL_INSTRUCTIONCARD);
+
+done:
+    if(key)p_CFRelease(key);
+    if(card)p_CFRelease(card);
+    if(map)p_CFRelease(map);
+    if(base)p_CFRelease(base);
+    if(urls)p_CFRelease(urls);
+}
+
+/*
  * Keep the recovered reference ViewArea/SafeArea structure, but do not import
  * the Audi-specific 420x330 safe window into the 1010x376 Skoda VC baseline.
  *
@@ -1323,6 +1453,319 @@ static void log_stream_types(const char *tag, CFDictionaryRef request)
     logf_u2("%s",b);
 }
 
+static const char *flight_command_cstr(CFStringRef command, char *buf, size_t cap)
+{
+    const char *p;
+    if(!buf||cap==0)return "<invalid-buffer>";
+    buf[0]='\0';
+    if(!command)return "<null>";
+    p=p_CFStringGetCStringPtr(command,CF_UTF8);
+    if(p&&*p)return p;
+    if(p_CFStringGetCString(command,buf,(CFIndex)cap,CF_UTF8) && buf[0])return buf;
+    snprintf(buf,cap,"<cfstr:%p>",(void *)command);
+    return buf;
+}
+
+static int flight_dict_i64(CFDictionaryRef d, const char *key, int64_t *out)
+{
+    CFStringRef k;
+    OSStatus e=0;
+    int64_t v;
+    if(!d||!key||!out)return 0;
+    k=s_cf(key);
+    if(!k)return 0;
+    v=p_CFDictionaryGetInt64(d,k,&e);
+    p_CFRelease(k);
+    if(e)return 0;
+    *out=v;
+    return 1;
+}
+
+#define FLIGHT_MAX_DEPTH 4
+#define FLIGHT_MAX_CONTAINER_ITEMS 48
+#define FLIGHT_MAX_STRING 180
+
+static int flight_sensitive_key(const char *key)
+{
+    char b[96];
+    size_t i,n;
+    static const char *needles[]={"token","signature","password","credential","secret","nonce","auth"};
+    static const char *identifiers[]={
+        "deviceid","macaddress","sessionuuid","sessioncorrelationuuid","name"
+    };
+    if(!key)return 0;
+    n=strlen(key);
+    if(n>=sizeof(b))n=sizeof(b)-1;
+    for(i=0;i<n;++i){
+        unsigned char c=(unsigned char)key[i];
+        b[i]=(char)((c>='A'&&c<='Z')?(c-'A'+'a'):c);
+    }
+    b[n]='\0';
+    for(i=0;i<sizeof(needles)/sizeof(needles[0]);++i)
+        if(strstr(b,needles[i]))return 1;
+    /*
+     * Flight Recorder logs are routinely copied out of the vehicle and may
+     * later be used in public issue/research evidence.  Keep protocol shape
+     * but never persist phone/user correlators such as the device name, MAC/
+     * device identifier, or per-session UUIDs.
+     */
+    for(i=0;i<sizeof(identifiers)/sizeof(identifiers[0]);++i)
+        if(strcmp(b,identifiers[i])==0)return 1;
+    return 0;
+}
+
+static const char *flight_cfstring(CFStringRef s, char *buf, size_t cap)
+{
+    const char *p;
+    if(!buf||cap==0)return "<invalid-buffer>";
+    buf[0]='\0';
+    if(!s)return "<null>";
+    p=p_CFStringGetCStringPtr(s,CF_UTF8);
+    if(p)return p;
+    if(p_CFStringGetCString(s,buf,(CFIndex)cap,CF_UTF8))return buf;
+    snprintf(buf,cap,"<cfstr:%p>",(void *)s);
+    return buf;
+}
+
+static void flight_dump_value(const char *command, const char *path, CFTypeRef obj, int depth);
+
+static void flight_dump_dict(const char *command, const char *path, CFDictionaryRef d, int depth)
+{
+    CFIndex count,i;
+    const void **keys=NULL,**vals=NULL;
+    if(!d)return;
+    count=p_CFDictionaryGetCount(d);
+    logf_u2("GEN2 FLIGHT DUMP command=%s path=%s type=dict count=%ld depth=%d",
+            command?command:"<null>",path?path:"params",(long)count,depth);
+    if(depth>=FLIGHT_MAX_DEPTH){
+        logf_u2("GEN2 FLIGHT DUMP command=%s path=%s stop=max-depth limit=%d",
+                command?command:"<null>",path?path:"params",FLIGHT_MAX_DEPTH);
+        return;
+    }
+    if(count<0 || count>FLIGHT_MAX_CONTAINER_ITEMS){
+        logf_u2("GEN2 FLIGHT DUMP command=%s path=%s enumeration=skipped count=%ld limit=%d",
+                command?command:"<null>",path?path:"params",(long)count,FLIGHT_MAX_CONTAINER_ITEMS);
+        return;
+    }
+    if(count==0)return;
+    keys=(const void **)calloc((size_t)count,sizeof(*keys));
+    vals=(const void **)calloc((size_t)count,sizeof(*vals));
+    if(!keys||!vals){
+        logf_u2("GEN2 FLIGHT DUMP command=%s path=%s enumeration=oom count=%ld",
+                command?command:"<null>",path?path:"params",(long)count);
+        free(keys); free(vals); return;
+    }
+    p_CFDictionaryGetKeysAndValues(d,keys,vals);
+    for(i=0;i<count;++i){
+        char kbuf[96],pbuf[256];
+        const char *k="<non-string-key>";
+        CFTypeRef ko=(CFTypeRef)keys[i];
+        if(ko && p_CFGetTypeID(ko)==p_CFStringGetTypeID())
+            k=flight_cfstring((CFStringRef)ko,kbuf,sizeof(kbuf));
+        snprintf(pbuf,sizeof(pbuf),"%s.%s",path?path:"params",k);
+        if(flight_sensitive_key(k)){
+            logf_u2("GEN2 FLIGHT DUMP command=%s path=%s type=redacted value=REDACTED",
+                    command?command:"<null>",pbuf);
+            continue;
+        }
+        flight_dump_value(command,pbuf,(CFTypeRef)vals[i],depth+1);
+    }
+    free(keys); free(vals);
+}
+
+static void flight_dump_array(const char *command, const char *path, CFArrayRef a, int depth)
+{
+    CFIndex count,i;
+    if(!a)return;
+    count=p_CFArrayGetCount(a);
+    logf_u2("GEN2 FLIGHT DUMP command=%s path=%s type=array count=%ld depth=%d",
+            command?command:"<null>",path?path:"params",(long)count,depth);
+    if(depth>=FLIGHT_MAX_DEPTH){
+        logf_u2("GEN2 FLIGHT DUMP command=%s path=%s stop=max-depth limit=%d",
+                command?command:"<null>",path?path:"params",FLIGHT_MAX_DEPTH);
+        return;
+    }
+    if(count<0 || count>FLIGHT_MAX_CONTAINER_ITEMS){
+        logf_u2("GEN2 FLIGHT DUMP command=%s path=%s enumeration=skipped count=%ld limit=%d",
+                command?command:"<null>",path?path:"params",(long)count,FLIGHT_MAX_CONTAINER_ITEMS);
+        return;
+    }
+    for(i=0;i<count;++i){
+        char pbuf[256];
+        snprintf(pbuf,sizeof(pbuf),"%s[%ld]",path?path:"params",(long)i);
+        flight_dump_value(command,pbuf,p_CFArrayGetValueAtIndex(a,i),depth+1);
+    }
+}
+
+static void flight_dump_value(const char *command, const char *path, CFTypeRef obj, int depth)
+{
+    CFTypeID t;
+    if(!obj){
+        logf_u2("GEN2 FLIGHT DUMP command=%s path=%s type=null",
+                command?command:"<null>",path?path:"params");
+        return;
+    }
+    t=p_CFGetTypeID(obj);
+    if(t==p_CFDictionaryGetTypeID()){
+        flight_dump_dict(command,path,(CFDictionaryRef)obj,depth);
+    }else if(t==p_CFArrayGetTypeID()){
+        flight_dump_array(command,path,(CFArrayRef)obj,depth);
+    }else if(t==p_CFStringGetTypeID()){
+        char b[FLIGHT_MAX_STRING+1];
+        const char *v=flight_cfstring((CFStringRef)obj,b,sizeof(b));
+        char safe[FLIGHT_MAX_STRING+1];
+        size_t i,n=strlen(v);
+        if(n>FLIGHT_MAX_STRING)n=FLIGHT_MAX_STRING;
+        for(i=0;i<n;++i){
+            unsigned char c=(unsigned char)v[i];
+            safe[i]=(c>=32 && c<127)?(char)c:'?';
+        }
+        safe[n]='\0';
+        logf_u2("GEN2 FLIGHT DUMP command=%s path=%s type=string value=%s%s",
+                command?command:"<null>",path?path:"params",safe,strlen(v)>n?"<truncated>":"");
+    }else if(t==p_CFNumberGetTypeID()){
+        OSStatus e=0;
+        int64_t v=p_CFGetInt64(obj,&e);
+        if(!e){
+            logf_u2("GEN2 FLIGHT DUMP command=%s path=%s type=int value=%lld%s",
+                    command?command:"<null>",path?path:"params",(long long)v,
+                    v==111?" MATCH_STREAM111":"");
+        }else{
+            logf_u2("GEN2 FLIGHT DUMP command=%s path=%s type=number int64_error=%d",
+                    command?command:"<null>",path?path:"params",(int)e);
+        }
+    }else if(t==p_CFBooleanGetTypeID()){
+        logf_u2("GEN2 FLIGHT DUMP command=%s path=%s type=bool value=%d",
+                command?command:"<null>",path?path:"params",(int)p_CFBooleanGetValue(obj));
+    }else if(t==p_CFDataGetTypeID()){
+        CFIndex n=p_CFDataGetLength((CFDataRef)obj);
+        (void)p_CFDataGetBytePtr((CFDataRef)obj);
+        logf_u2("GEN2 FLIGHT DUMP command=%s path=%s type=data len=%ld payload=not-logged",
+                command?command:"<null>",path?path:"params",(long)n);
+    }else{
+        logf_u2("GEN2 FLIGHT DUMP command=%s path=%s type=unknown object=%p typeid=%lu",
+                command?command:"<null>",path?path:"params",(void *)obj,(unsigned long)t);
+    }
+}
+
+static void flight_log_stream_descriptors(const char *command, CFDictionaryRef params)
+{
+    CFArrayRef a=get_streams(params);
+    CFIndex i,n;
+    if(!a){
+        logf_u2("GEN2 FLIGHT command=%s streams=<none>",command?command:"<null>");
+        return;
+    }
+    n=p_CFArrayGetCount(a);
+    logf_u2("GEN2 FLIGHT command=%s streams=%ld",command?command:"<null>",(long)n);
+    for(i=0;i<n && i<16;++i){
+        CFDictionaryRef sd=(CFDictionaryRef)p_CFArrayGetValueAtIndex(a,i);
+        int64_t type=0,cid=0,sid=0,port=0,display=0,screen=0;
+        int ht=flight_dict_i64(sd,"type",&type);
+        int hc=flight_dict_i64(sd,"streamConnectionID",&cid);
+        int hs=flight_dict_i64(sd,"streamID",&sid);
+        int hp=flight_dict_i64(sd,"dataPort",&port);
+        int hd=flight_dict_i64(sd,"displayID",&display);
+        int hscr=flight_dict_i64(sd,"screenID",&screen);
+        logf_u2("GEN2 FLIGHT stream[%ld] type=%s%lld streamConnectionID=%s%llu streamID=%s%lld dataPort=%s%lld displayID=%s%lld screenID=%s%lld",
+                (long)i,
+                ht?"":"<absent>",(long long)(ht?type:0),
+                hc?"":"<absent>",(unsigned long long)(hc?(uint64_t)cid:0),
+                hs?"":"<absent>",(long long)(hs?sid:0),
+                hp?"":"<absent>",(long long)(hp?port:0),
+                hd?"":"<absent>",(long long)(hd?display:0),
+                hscr?"":"<absent>",(long long)(hscr?screen:0));
+    }
+}
+
+static void flight_log_selected_scalars(const char *command, CFDictionaryRef params)
+{
+    static const char *keys[]={
+        "type","streamType","streamID","streamConnectionID","dataPort",
+        "displayID","screenID","appStateID","state","mode","resourceMode",
+        "viewArea","viewAreaIndex","visibility","reason","priority"
+    };
+    size_t i;
+    if(!params)return;
+    for(i=0;i<sizeof(keys)/sizeof(keys[0]);++i){
+        int64_t v=0;
+        if(flight_dict_i64(params,keys[i],&v))
+            logf_u2("GEN2 FLIGHT command=%s scalar %s=%lld",
+                    command?command:"<null>",keys[i],(long long)v);
+    }
+}
+
+static void flight_record_platform_control(AirPlayReceiverSessionRef session, uint32_t flags,
+                                           CFStringRef command, CFTypeRef qualifier,
+                                           CFDictionaryRef params, CFDictionaryRef *outParams)
+{
+    char cbuf[96];
+    const char *c=flight_command_cstr(command,cbuf,sizeof(cbuf));
+    logf_u2("GEN2 FLIGHT PlatformControl enter session=%p flags=%u command=%s commandRef=%p qualifier=%p params=%p outParams=%p",
+            session,(unsigned)flags,c,(void *)command,qualifier,params,outParams);
+    if(qualifier)
+        flight_dump_value(c,"qualifier",qualifier,0);
+    if(params){
+        flight_log_selected_scalars(c,params);
+        if(get_streams(params))
+            flight_log_stream_descriptors(c,params);
+        flight_dump_value(c,"params",(CFTypeRef)params,0);
+    }
+}
+
+static void flight_record_session_control(AirPlayReceiverSessionRef session, uint32_t flags,
+                                          CFStringRef command, CFTypeRef qualifier,
+                                          CFDictionaryRef params, CFDictionaryRef *outParams)
+{
+    char cbuf[96];
+    const char *c=flight_command_cstr(command,cbuf,sizeof(cbuf));
+    logf_u2("GEN2 FLIGHT SessionControl enter session=%p flags=%u command=%s commandRef=%p qualifier=%p params=%p outParams=%p",
+            session,(unsigned)flags,c,(void *)command,qualifier,params,outParams);
+    if(qualifier)
+        flight_dump_value(c,"sessionControl.qualifier",qualifier,0);
+    if(params){
+        flight_log_selected_scalars(c,params);
+        if(get_streams(params))
+            flight_log_stream_descriptors(c,params);
+        flight_dump_value(c,"sessionControl.params",(CFTypeRef)params,0);
+    }
+}
+
+static void log_stock_url_capability(CFDictionaryRef stock_display, const char *name)
+{
+    CFStringRef key;
+    CFTypeRef value;
+    CFTypeID tid;
+    if(!stock_display||!name)return;
+    key=s_cf(name);
+    if(!key)return;
+    value=(CFTypeRef)p_CFDictionaryGetValue(stock_display,key);
+    p_CFRelease(key);
+    if(!value){
+        logf_u2("GEN2 stock display URL capability %s=<absent>",name);
+        return;
+    }
+    tid=p_CFGetTypeID(value);
+    if(tid==p_CFArrayGetTypeID()){
+        CFIndex i,n=p_CFArrayGetCount((CFArrayRef)value);
+        logf_u2("GEN2 stock display URL capability %s=array count=%ld",name,(long)n);
+        for(i=0;i<n && i<8;++i){
+            CFTypeRef item=(CFTypeRef)p_CFArrayGetValueAtIndex((CFArrayRef)value,i);
+            if(item && p_CFGetTypeID(item)==p_CFStringGetTypeID()){
+                char b[192];
+                const char *u=flight_command_cstr((CFStringRef)item,b,sizeof(b));
+                logf_u2("GEN2 stock display URL capability %s[%ld]=%s",name,(long)i,u);
+            }else{
+                logf_u2("GEN2 stock display URL capability %s[%ld]=<type:%lu>",
+                        name,(long)i,(unsigned long)(item?p_CFGetTypeID(item):0));
+            }
+        }
+    }else{
+        logf_u2("GEN2 stock display URL capability %s=<type:%lu>",
+                name,(unsigned long)tid);
+    }
+}
+
 CFDictionaryRef AirPlayCopyServerInfo(AirPlayReceiverSessionRef session, CFArrayRef properties, uint8_t *mac, OSStatus *outErr)
 {
     CFDictionaryRef base,stock_display;
@@ -1357,6 +1800,14 @@ CFDictionaryRef AirPlayCopyServerInfo(AirPlayReceiverSessionRef session, CFArray
     }
 
     stock_display=(CFDictionaryRef)p_CFArrayGetValueAtIndex(old,0);
+    /*
+     * iOS 27.2 intersects provider suggestions with receiver-advertised
+     * cluster URL capabilities.  Observe the exact stock MU1440 baseline
+     * before mutating the clone; do not synthesize capability arrays here.
+     */
+    log_stock_url_capability(stock_display,"altScreenSuggestUIURLs");
+    log_stock_url_capability(stock_display,"altScreenURLs");
+    log_stock_url_capability(stock_display,"uiContextURLs");
     {
         OSStatus fe=0, ie=0;
         CFStringRef fk=s_cf("features"), ik=s_cf("primaryInputDevice");
@@ -1394,6 +1845,7 @@ CFDictionaryRef AirPlayCopyServerInfo(AirPlayReceiverSessionRef session, CFArray
         set_i64(alt,"heightPhysical",(int64_t)g2_profile.height_mm);
         set_str(alt,"uuid",g_alt_uuid);
         set_str(alt,"initialURL",active_alt_url());
+        add_alt_suggest_ui_urls(alt);
         if(g_viewareas)add_reference_viewarea(alt);
 
         p_CFArrayAppendValue(displays,alt);
@@ -1467,16 +1919,24 @@ static CFMutableDictionaryRef gen2_command_dictionary(const struct alt111_comman
 
 static void gen2_publish_status(void)
 {
-    char b[768];
+    char b[1536];
     int fd, n;
     struct alt111_control cs;
     struct alt111_video vs;
+    struct alt111_resync rs;
+    mibr_mode_state_t ms;
+    unsigned mode_valid;
+    uint64_t mode_sequence;
     unsigned command_ready;
     uint64_t last_dispatched, last_completed;
     int last_completion_status;
     pthread_mutex_lock(&g2_core_lock);
     cs = g2_control;
     vs = g2_video;
+    rs = g2_resync;
+    ms = g2_last_mode_state;
+    mode_valid = g2_last_mode_valid;
+    mode_sequence = g2_mode_sequence;
     command_ready = g2_command_ready;
     last_dispatched = g2_last_dispatched_request;
     last_completed = g2_last_completed_request;
@@ -1487,14 +1947,32 @@ static void gen2_publish_status(void)
         "last_dispatched_request=%llu\nlast_completed_request=%llu\nlast_completion_status=%d\n"
         "stream_gen=%llu\ncodec_gen=%llu\nconsumer_gen=%llu\nconfig_valid=%u\n"
         "source_aus=%llu\nsource_idrs=%llu\nconsumer_primed=%u\ndelivered_aus=%llu\n"
-        "dropped_aus=%llu\nqueue_count=%u\nqueue_bytes=%zu\n",
+        "dropped_aus=%llu\nqueue_count=%u\nqueue_bytes=%zu\n"
+        "resync_enabled=%u\nresync_state=%u\nresync_reason=%u\nresync_cancel_reason=%u\n"
+        "resync_epoch=%llu\nresync_stream_at_arm=%llu\nresync_codec_at_arm=%llu\n"
+        "resync_consumer_at_arm=%llu\nresync_au_at_arm=%llu\nresync_idr_at_arm=%llu\n"
+        "resync_requests=%llu\nresync_retries=%llu\nresync_completions=%llu\nresync_cancels=%llu\n"
+        "resync_last_request_ms=%llu\nresync_next_request_ms=%llu\nresync_completed_ms=%llu\n"
+        "resync_retry_ms=%u\n"
+        "mode_valid=%u\nmode_sequence=%llu\nmode_screen=%d\nmode_main_audio=%d\n"
+        "mode_speech=%d\nmode_speech_detail=%d\nmode_phone=%d\nmode_turns=%d\n",
         (unsigned long long)cs.session,command_ready,cs.desired,cs.shown_ack,cs.reacquiring,
         (unsigned long long)last_dispatched,(unsigned long long)last_completed,last_completion_status,
         (unsigned long long)vs.stream,(unsigned long long)vs.codec,
         (unsigned long long)vs.consumer,vs.config_valid,
         (unsigned long long)vs.source_aus,(unsigned long long)vs.source_idrs,
         vs.consumer_primed,(unsigned long long)vs.delivered_aus,
-        (unsigned long long)vs.dropped_aus,vs.count,vs.queued_bytes);
+        (unsigned long long)vs.dropped_aus,vs.count,vs.queued_bytes,
+        rs.enabled,rs.state,rs.reason,rs.cancel_reason,
+        (unsigned long long)rs.epoch,(unsigned long long)rs.stream_at_arm,
+        (unsigned long long)rs.codec_at_arm,(unsigned long long)rs.consumer_at_arm,
+        (unsigned long long)rs.au_at_arm,(unsigned long long)rs.idr_at_arm,
+        (unsigned long long)rs.requests,(unsigned long long)rs.retries,
+        (unsigned long long)rs.completions,(unsigned long long)rs.cancels,
+        (unsigned long long)rs.last_request_ms,(unsigned long long)rs.next_request_ms,
+        (unsigned long long)rs.completed_ms,rs.retry_ms,
+        mode_valid,(unsigned long long)mode_sequence,
+        ms.screen,ms.main_audio,ms.speech,ms.speech_detail,ms.phone,ms.turns);
     if(n<=0)return;
     if((size_t)n>=sizeof(b))n=(int)sizeof(b)-1;
     pthread_mutex_lock(&g2_status_lock);
@@ -1537,6 +2015,7 @@ static void gen2_control_release(void)
     int stop_handed_off = 0;
     pthread_mutex_lock(&g2_core_lock);
     s=g2_control_session;
+    alt111_resync_cancel(&g2_resync, ALT111_RESYNC_CANCEL_PROJECTION);
     if(s)(void)alt111_control_intent(&g2_control,0,0);
     pthread_cond_broadcast(&g2_core_cv);
     pthread_mutex_unlock(&g2_core_lock);
@@ -1603,6 +2082,176 @@ static void gen2_command_completion(OSStatus status, CFDictionaryRef response, v
     gen2_publish_status();
 }
 
+struct gen2_diag_context {
+    const char *label;
+};
+
+static void gen2_diag_completion(OSStatus status, CFDictionaryRef response, void *opaque)
+{
+    struct gen2_diag_context *ctx=(struct gen2_diag_context *)opaque;
+    (void)response;
+    logf_u2("gen2 DIAG completion command=%s status=%d",
+            (ctx&&ctx->label)?ctx->label:"<unknown>",(int)status);
+    if(ctx)free(ctx);
+}
+
+static void gen2_dispatch_diag_command(const char *label, CFMutableDictionaryRef req)
+{
+    AirPlayReceiverSessionRef s=NULL;
+    struct gen2_diag_context *ctx=NULL;
+    OSStatus e=-1;
+
+    if(!req||!label){
+        if(req)p_CFRelease(req);
+        return;
+    }
+
+    s=retain_active_session();
+    ctx=(struct gen2_diag_context *)calloc(1,sizeof(*ctx));
+    if(ctx)ctx->label=label;
+
+    if(s&&ctx){
+        e=g_sendcmd(s,req,gen2_diag_completion,ctx);
+        if(e==K_NO_ERR){
+            logf_u2("gen2 DIAG dispatched command=%s",label);
+            ctx=NULL;
+        }else{
+            logf_u2("gen2 DIAG dispatch failed command=%s os=%d",label,(int)e);
+        }
+    }else{
+        logf_u2("gen2 DIAG dispatch unavailable command=%s session=%s ctx=%s",
+                label,s?"yes":"no",ctx?"yes":"no");
+    }
+
+    if(ctx)free(ctx);
+    if(s)p_CFRelease(s);
+    p_CFRelease(req);
+}
+
+static void gen2_resync_snapshot_locked(struct alt111_resync_snapshot *snap)
+{
+    memset(snap,0,sizeof(*snap));
+    snap->stream = g2_video.stream;
+    snap->codec = g2_video.codec;
+    snap->consumer = g2_video.consumer;
+    snap->source_aus = g2_video.source_aus;
+    snap->source_idrs = g2_video.source_idrs;
+    snap->projection_desired = g2_control.desired;
+    snap->config_valid = g2_video.config_valid;
+    snap->consumer_primed = g2_video.consumer_primed;
+}
+
+static void gen2_resync_poll(void)
+{
+    struct alt111_resync_snapshot snap;
+    enum alt111_resync_action action;
+    uint64_t now = monotonic_ms();
+    uint64_t epoch = 0, idr_at_arm = 0, source_idrs = 0;
+    uint64_t requests = 0, retries = 0, completions = 0, cancels = 0;
+    unsigned enabled = access(g2_resync_enable_marker,F_OK)==0 ? 1u : 0u;
+    unsigned arm = access(g2_resync_arm_marker,F_OK)==0 ? 1u : 0u;
+    unsigned before_enabled, before_state, before_cancel;
+    int arm_rc = ALT111_WAIT;
+    int keyframe_rc = ALT111_WAIT;
+    int changed = 0;
+
+    if(arm) (void)unlink(g2_resync_arm_marker);
+
+    pthread_mutex_lock(&g2_core_lock);
+    before_enabled = g2_resync.enabled;
+    before_state = g2_resync.state;
+    before_cancel = g2_resync.cancel_reason;
+    alt111_resync_set_enabled(&g2_resync,enabled);
+    gen2_resync_snapshot_locked(&snap);
+    if(arm)
+        arm_rc = alt111_resync_arm(&g2_resync,now,ALT111_RESYNC_REASON_MANUAL,&snap);
+    action = alt111_resync_tick(&g2_resync,now,&snap);
+    /*
+     * Candidate D recovery must share the normal GEN2 command transaction.
+     * Do not send forceKeyFrame through the out-of-band diagnostic dispatcher:
+     * that path has independent completion state and can overlap show/stop/view.
+     *
+     * alt111_control_keyframe() records demand only.  The same control worker
+     * calls alt111_control_next() immediately after this poll and therefore
+     * serializes the real AirPlay command behind any in-flight UI transaction.
+     */
+    if(action==ALT111_RESYNC_REQUEST_KEYFRAME && g2_control_session){
+        /*
+         * Coalesce retries while an earlier keyframe demand is still pending
+         * or awaiting controller completion.  Otherwise a 1 s resync tick can
+         * increment keyframe_wanted again before the first serialized request
+         * has completed and leave a redundant forceKeyFrame queued even after
+         * the fresh source IDR has already completed the resync epoch.
+         */
+        if(g2_control.keyframe_done != g2_control.keyframe_wanted)
+            keyframe_rc=ALT111_BUSY;
+        else
+            keyframe_rc=alt111_control_keyframe(&g2_control,g2_control_session);
+        pthread_cond_broadcast(&g2_core_cv);
+    }
+    epoch = g2_resync.epoch;
+    idr_at_arm = g2_resync.idr_at_arm;
+    source_idrs = snap.source_idrs;
+    requests = g2_resync.requests;
+    retries = g2_resync.retries;
+    completions = g2_resync.completions;
+    cancels = g2_resync.cancels;
+    if(before_enabled!=g2_resync.enabled || before_state!=g2_resync.state ||
+       before_cancel!=g2_resync.cancel_reason || arm || action!=ALT111_RESYNC_NONE)
+        changed=1;
+    pthread_mutex_unlock(&g2_core_lock);
+
+    if(arm){
+        if(arm_rc==ALT111_OK)
+            logf_u2("GEN2 RESYNC ARM epoch=%llu reason=manual idr_at_arm=%llu source_idrs=%llu",
+                    (unsigned long long)epoch,(unsigned long long)idr_at_arm,
+                    (unsigned long long)source_idrs);
+        else
+            logf_u2("GEN2 RESYNC ARM rejected rc=%d enabled=%u projection=%u config=%u primed=%u stream=%llu codec=%llu consumer=%llu",
+                    arm_rc,enabled,snap.projection_desired,snap.config_valid,snap.consumer_primed,
+                    (unsigned long long)snap.stream,(unsigned long long)snap.codec,
+                    (unsigned long long)snap.consumer);
+    }
+
+    if(action==ALT111_RESYNC_REQUEST_KEYFRAME){
+        logf_u2("GEN2 RESYNC REQUEST epoch=%llu request_count=%llu retry_count=%llu idr_at_arm=%llu source_idrs=%llu queue_rc=%d",
+                (unsigned long long)epoch,(unsigned long long)requests,
+                (unsigned long long)retries,(unsigned long long)idr_at_arm,
+                (unsigned long long)source_idrs,keyframe_rc);
+        if(keyframe_rc!=ALT111_OK)
+            logf_u2("GEN2 RESYNC REQUEST not queued through serialized controller rc=%d session=%llu projection=%u",
+                    keyframe_rc,(unsigned long long)g2_control_session,snap.projection_desired);
+    }else if(action==ALT111_RESYNC_COMPLETED){
+        logf_u2("GEN2 RESYNC COMPLETE epoch=%llu completions=%llu idr_at_arm=%llu source_idrs=%llu",
+                (unsigned long long)epoch,(unsigned long long)completions,
+                (unsigned long long)idr_at_arm,(unsigned long long)source_idrs);
+    }else if(action==ALT111_RESYNC_CANCELLED || (changed && cancels)){
+        logf_u2("GEN2 RESYNC CANCEL epoch=%llu cancels=%llu",
+                (unsigned long long)epoch,(unsigned long long)cancels);
+    }
+
+    if(changed) gen2_publish_status();
+}
+
+static void gen2_process_diag_markers(void)
+{
+    if(access(g2_diag_keyframe_marker,F_OK)==0){
+        unlink(g2_diag_keyframe_marker);
+        logf_u2("gen2 DIAG marker keyframe-only");
+        gen2_dispatch_diag_command("forceKeyFrame",command_force_keyframe());
+    }
+    if(access(g2_diag_show_marker,F_OK)==0){
+        unlink(g2_diag_show_marker);
+        logf_u2("gen2 DIAG marker show-only url=%s",active_alt_url());
+        gen2_dispatch_diag_command("showUI",command_showui());
+    }
+    if(access(g2_diag_stop_marker,F_OK)==0){
+        unlink(g2_diag_stop_marker);
+        logf_u2("gen2 DIAG marker stop-only");
+        gen2_dispatch_diag_command("stopUI",command_stopui());
+    }
+}
+
 static void *gen2_control_worker(void *arg)
 {
     (void)arg;
@@ -1621,6 +2270,9 @@ static void *gen2_control_worker(void *arg)
             continue;
         }
         pthread_mutex_unlock(&g2_core_lock);
+
+        gen2_resync_poll();
+        gen2_process_diag_markers();
 
         if(access(g2_reacquire_marker,F_OK)==0){
             unlink(g2_reacquire_marker);
@@ -1689,11 +2341,11 @@ static int gen2_start_workers(void)
 }
 
 /* ARM32 absolute jump trampoline: first 8 target bytes must be position-independent prologue. */
-static int install_arm_hook(void *target, void *replacement, void **trampoline, const char *name)
+static int install_arm_hook_expected(void *target, void *replacement, void **trampoline, const char *name,
+                                     uint32_t expected0, uint32_t expected1)
 {
 #if defined(__arm__)
     uint32_t *src=(uint32_t *)target;
-    uint32_t expected0=0xe92d4ff0u, expected1=0xed2d8b02u;
     uint32_t *tr;
     long ps=sysconf(_SC_PAGESIZE);
     uintptr_t page;
@@ -1802,8 +2454,14 @@ static int install_arm_hook(void *target, void *replacement, void **trampoline, 
     return 0;
 #else
     (void)target;(void)replacement;(void)trampoline;(void)name;
+    (void)expected0;(void)expected1;
     return 0; /* host syntax-test only */
 #endif
+}
+
+static int install_arm_hook(void *target, void *replacement, void **trampoline, const char *name)
+{
+    return install_arm_hook_expected(target,replacement,trampoline,name,0xe92d4ff0u,0xed2d8b02u);
 }
 
 static OSStatus call_stock_setup(AirPlayReceiverSessionRef s, CFDictionaryRef request, CFDictionaryRef *outResponse)
@@ -1835,6 +2493,171 @@ static void call_stock_teardown(AirPlayReceiverSessionRef s, CFDictionaryRef req
         return;
     }
     fn(s,request,reason,outDone);
+}
+
+
+static OSStatus call_stock_session_control(AirPlayReceiverSessionRef session, uint32_t flags,
+                                           CFStringRef command, CFTypeRef qualifier,
+                                           CFDictionaryRef params, CFDictionaryRef *outParams)
+{
+    fn_session_control_t fn=g_session_control_trampoline?
+        g_session_control_trampoline:g_real_session_control;
+    if(!fn){
+        logf_u2("FATAL no stock SessionControl delegate");
+        return -1;
+    }
+    return fn(session,flags,command,qualifier,params,outParams);
+}
+
+static OSStatus mibr_session_control(AirPlayReceiverSessionRef session, uint32_t flags,
+                                     CFStringRef command, CFTypeRef qualifier,
+                                     CFDictionaryRef params, CFDictionaryRef *outParams)
+{
+    OSStatus e;
+    char cbuf[96];
+    const char *c;
+    int private111_active=0;
+
+    flight_record_session_control(session,flags,command,qualifier,params,outParams);
+    e=call_stock_session_control(session,flags,command,qualifier,params,outParams);
+    c=flight_command_cstr(command,cbuf,sizeof(cbuf));
+
+    pthread_mutex_lock(&g2_core_lock);
+    private111_active = g2_control_session ? 1 : 0;
+    pthread_mutex_unlock(&g2_core_lock);
+
+    logf_u2("GEN2 FLIGHT SessionControl exit session=%p command=%s commandRef=%p rc=%d out=%p private111=%d",
+            session,c,(void *)command,(int)e,
+            (outParams&&*outParams)?(void *)*outParams:NULL,private111_active);
+    if(outParams&&*outParams)
+        flight_dump_value(c,"sessionControl.outParams",(CFTypeRef)*outParams,0);
+
+    /*
+     * Observation-only lifecycle hook.  Exact stock RE proves inbound
+     * modesChanged is handled here before PlatformControl fallback.  Do not
+     * alter return values or arm Candidate D from this event yet.
+     */
+    if(c && strcmp(c,"modesChanged")==0){
+        mibr_mode_state_t parsed;
+        mibr_mode_state_t previous;
+        OSStatus prc=-1;
+        unsigned previous_valid=0;
+        unsigned delta=0;
+        uint64_t seq=0, source_idrs=0, source_aus=0;
+        unsigned projection=0;
+
+        memset(&parsed,0,sizeof(parsed));
+        memset(&previous,0,sizeof(previous));
+        if(g_make_mode_state && params)
+            prc=g_make_mode_state(session,params,&parsed);
+
+        pthread_mutex_lock(&g2_core_lock);
+        previous_valid=g2_last_mode_valid;
+        previous=g2_last_mode_state;
+        if(prc==K_NO_ERR){
+            if(previous_valid){
+                if(previous.screen!=parsed.screen) delta|=1u<<0;
+                if(previous.main_audio!=parsed.main_audio) delta|=1u<<1;
+                if(previous.speech!=parsed.speech) delta|=1u<<2;
+                if(previous.speech_detail!=parsed.speech_detail) delta|=1u<<3;
+                if(previous.phone!=parsed.phone) delta|=1u<<4;
+                if(previous.turns!=parsed.turns) delta|=1u<<5;
+            }else{
+                delta=0x3fu;
+            }
+            g2_last_mode_state=parsed;
+            g2_last_mode_valid=1;
+            ++g2_mode_sequence;
+        }
+        seq=g2_mode_sequence;
+        projection=g2_control.desired;
+        source_idrs=g2_video.source_idrs;
+        source_aus=g2_video.source_aus;
+        pthread_mutex_unlock(&g2_core_lock);
+
+        logf_u2("GEN2 FLIGHT MODES_CHANGED parsed rc=%d seq=%llu delta=0x%02x screen=%d mainAudio=%d speech=%d speechDetail=%d phone=%d turns=%d projection=%u source_aus=%llu source_idrs=%llu private111=%d policy=OBSERVE_ONLY",
+                (int)prc,(unsigned long long)seq,delta,
+                parsed.screen,parsed.main_audio,parsed.speech,parsed.speech_detail,
+                parsed.phone,parsed.turns,projection,
+                (unsigned long long)source_aus,(unsigned long long)source_idrs,
+                private111_active);
+        gen2_publish_status();
+    }
+
+    return e;
+}
+
+OSStatus AirPlayReceiverSessionControl(AirPlayReceiverSessionRef session, uint32_t flags,
+                                       CFStringRef command, CFTypeRef qualifier,
+                                       CFDictionaryRef params, CFDictionaryRef *outParams)
+{
+    return mibr_session_control(session,flags,command,qualifier,params,outParams);
+}
+
+static OSStatus call_stock_platform_control(AirPlayReceiverSessionRef session, uint32_t flags,
+                                            CFStringRef command, CFTypeRef qualifier,
+                                            CFDictionaryRef params, CFDictionaryRef *outParams)
+{
+    fn_platform_control_t fn=g_platform_control_trampoline?
+        g_platform_control_trampoline:g_real_platform_control;
+    if(!fn){
+        logf_u2("FATAL no stock PlatformControl delegate");
+        return -1;
+    }
+    return fn(session,flags,command,qualifier,params,outParams);
+}
+
+static OSStatus mibr_platform_control(AirPlayReceiverSessionRef session, uint32_t flags,
+                                      CFStringRef command, CFTypeRef qualifier,
+                                      CFDictionaryRef params, CFDictionaryRef *outParams)
+{
+    OSStatus e;
+    char cbuf[96];
+    const char *c;
+    int private111_active=0;
+
+    flight_record_platform_control(session,flags,command,qualifier,params,outParams);
+    e=call_stock_platform_control(session,flags,command,qualifier,params,outParams);
+    c=flight_command_cstr(command,cbuf,sizeof(cbuf));
+
+    logf_u2("GEN2 FLIGHT PlatformControl exit session=%p command=%s commandRef=%p rc=%d out=%p",
+            session,c,(void *)command,(int)e,
+            (outParams&&*outParams)?(void *)*outParams:NULL);
+    if(outParams&&*outParams)
+        flight_dump_value(c,"outParams",(CFTypeRef)*outParams,0);
+
+    /*
+     * Public vehicle-proven MHI2Q AltScreen parity:
+     *
+     * The Yuedi/LIVI-derived receiver lets stock observe suggestUI, records
+     * stock_rc, but acknowledges the command to the phone with success and
+     * deliberately does NOT translate the suggested URL list into showUI.
+     *
+     * MU1440 stock returns kNotHandledErr (-6714) because stock has no
+     * auxiliary cluster presenter.  Once our private type-111 control session
+     * is active, propagating that stock-only error back to iOS is therefore
+     * the wrong ownership contract.  Keep every other PlatformControl command
+     * stock-authoritative.
+     */
+    if(g_enabled && c && strcmp(c,"suggestUI")==0){
+        pthread_mutex_lock(&g2_core_lock);
+        private111_active = g2_control_session ? 1 : 0;
+        pthread_mutex_unlock(&g2_core_lock);
+        if(private111_active){
+            logf_u2("GEN2 PARITY SUGGEST_UI_ACCEPTED session=%p stock_rc=%d return_rc=0 policy=LIVI_NOOP urls_not_shown=1",
+                    session,(int)e);
+            return K_NO_ERR;
+        }
+    }
+
+    return e;
+}
+
+OSStatus AirPlayReceiverSessionPlatformControl(AirPlayReceiverSessionRef session, uint32_t flags,
+                                               CFStringRef command, CFTypeRef qualifier,
+                                               CFDictionaryRef params, CFDictionaryRef *outParams)
+{
+    return mibr_platform_control(session,flags,command,qualifier,params,outParams);
 }
 
 static OSStatus mibr_session_setup(AirPlayReceiverSessionRef s, CFDictionaryRef request, CFDictionaryRef *outResponse)
@@ -1944,20 +2767,31 @@ static void mibr_session_teardown(AirPlayReceiverSessionRef s, CFDictionaryRef r
 
     has_alt = request && contains_stream111(request,NULL,&other);
     int has_main = request && contains_stream_type(request,110);
-    int full_session = (request == NULL) || has_main;
-
     /*
-     * Do not kill stream 111 merely because CarPlay tears down an audio or
-     * microphone stream. Stop it only when 111 itself or the main screen/full
-     * session is being torn down.
+     * Lifecycle-decoupling probe:
+     *
+     * Stream 111 is a private secondary display and must not be destroyed just
+     * because stock tears down screen 110.  Only an explicit 111 teardown or a
+     * true whole-session teardown (NULL request) owns private111 cleanup.
+     *
+     * Keep the retained AirPlay session reference for the probe so showUI /
+     * forceKeyFrame can still be exercised after a 110-only lifecycle event.
+     * If the underlying AirPlay session is actually dead, SendCommand will
+     * fail and the diagnostic log will tell us; do not hide that by rebuilding
+     * 111 or by adding timing workarounds here.
      */
+    int full_session = (request == NULL);
+
+    logf_u2("GEN2 TEARDOWN entry request=%s reason=%d alt=%d main110=%d otherStreams=%d private111_decoupled=1",
+            request?"dict":"NULL",(int)reason,has_alt,has_main,other);
+
     if(has_alt){
-        logf_u2("GEN2 TEARDOWN includes stream111 otherStreams=%d main=%d",other,has_main);
+        logf_u2("GEN2 TEARDOWN explicit stream111 otherStreams=%d main110=%d",other,has_main);
         gen2_control_release();
         if(full_session) gen2_set_command_ready(0);
         stop_alt_receiver();
         clear_video_observer();
-        publish_state(full_session ? "idle" : "idle");
+        publish_state("idle");
         if(other==0){if(outDone)*outDone=0;return;}
         {
             CFMutableDictionaryRef f=clone_without_111(request);
@@ -1972,13 +2806,18 @@ static void mibr_session_teardown(AirPlayReceiverSessionRef s, CFDictionaryRef r
     }
 
     if(full_session) {
+        logf_u2("GEN2 TEARDOWN whole-session -> private111 cleanup");
         gen2_control_release();
         gen2_set_command_ready(0);
         stop_alt_receiver();
         clear_video_observer();
         publish_state("idle");
+    } else if(has_main) {
+        logf_u2("GEN2 TEARDOWN stock110-only -> preserving private111 transport/control state");
     }
+
     call_stock_teardown(s,request,reason,outDone);
+
     if(full_session) {
         set_active_session(NULL);
         clear_master_key();
@@ -2019,7 +2858,7 @@ OSStatus AES_CBCFrame_Init(void *ctx, const uint8_t key[16], const uint8_t iv[16
 __attribute__((constructor))
 static void altscreen111_init(void)
 {
-    void *setup,*start,*td;
+    void *setup,*start,*td,*platform,*control;
     signal(SIGPIPE,SIG_IGN);
     g_enabled=env_i("ALTSCREEN111_ENABLED",1);
     g_alt_port=env_i("ALTSCREEN111_PORT",6031);
@@ -2087,6 +2926,7 @@ static void altscreen111_init(void)
         return;
     }
     alt111_video_init(&g2_video);
+    alt111_resync_init(&g2_resync);
     if(gen2_start_workers()!=0){
         g_enabled=0;
         logf_u2("gen2 worker start failed; disabled fail-closed");
@@ -2102,20 +2942,33 @@ static void altscreen111_init(void)
     setup=sym_next("AirPlayReceiverSessionSetup");
     start=sym_next("AirPlayReceiverSessionStart");
     td=sym_next("AirPlayReceiverSessionTearDown");
+    platform=sym_next("AirPlayReceiverSessionPlatformControl");
+    control=sym_next("AirPlayReceiverSessionControl");
+    g_make_mode_state=(fn_make_mode_state_t)sym_next("AirPlayReceiverSessionMakeModeStateFromDictionary");
     g_real_setup=(fn_setup_t)setup;
     g_real_start=(fn_start_t)start;
     g_real_teardown=(fn_teardown_t)td;
-    if(!setup||!start||!td){
-        logf_u2("missing direct-hook target(s)");
+    g_real_platform_control=(fn_platform_control_t)platform;
+    g_real_session_control=(fn_session_control_t)control;
+    if(!setup||!start||!td||!platform||!control){
+        logf_u2("missing direct-hook target(s) setup=%p start=%p teardown=%p platform=%p control=%p",
+                setup,start,td,platform,control);
         g_enabled=0;
         publish_state("error");
         return;
     }
-    logf_u2("hook destinations setup=%p start=%p teardown=%p",
-            (void *)mibr_session_setup,(void *)mibr_session_start,(void *)mibr_session_teardown);
+    logf_u2("hook destinations setup=%p start=%p teardown=%p platform=%p control=%p modeParser=%p",
+            (void *)mibr_session_setup,(void *)mibr_session_start,(void *)mibr_session_teardown,
+            (void *)mibr_platform_control,(void *)mibr_session_control,(void *)g_make_mode_state);
     if(install_arm_hook(setup,(void *)mibr_session_setup,(void **)&g_setup_trampoline,"SessionSetup")!=0 ||
        install_arm_hook(start,(void *)mibr_session_start,(void **)&g_start_trampoline,"SessionStart")!=0 ||
-       install_arm_hook(td,(void *)mibr_session_teardown,(void **)&g_teardown_trampoline,"SessionTearDown")!=0){
+       install_arm_hook(td,(void *)mibr_session_teardown,(void **)&g_teardown_trampoline,"SessionTearDown")!=0 ||
+       install_arm_hook_expected(platform,(void *)mibr_platform_control,
+                                 (void **)&g_platform_control_trampoline,"PlatformControl",
+                                 0xe92d4ff0u,0xed2d8b04u)!=0 ||
+       install_arm_hook_expected(control,(void *)mibr_session_control,
+                                 (void **)&g_session_control_trampoline,"SessionControl",
+                                 0xe92d4ff0u,0xe1a06002u)!=0){
         g_enabled=0;
         publish_state("error");
         logf_u2("direct hook install failed; disabled fail-closed");
@@ -2125,4 +2978,7 @@ static void altscreen111_init(void)
     logf_u2("GEN2 candidate active: 111=%dx%d@%d physical=%dx%d altPort=%d tee=%d URL=%s uuid=%s viewAreas=%d autoShow=%d bit26Mode=%d",
             g_width,g_height,g_fps,g_width_mm,g_height_mm,g_alt_port,g_tee_port,active_alt_url(),g_alt_uuid,
             g_viewareas,g_auto_show,airplay_bit26_mode());
+    logf_u2("GEN2 Candidate-D resync auto-arm=OFF manual_feature=%s marker=%s arm=%s",
+            access(g2_resync_enable_marker,F_OK)==0 ? "enabled" : "disabled",
+            g2_resync_enable_marker,g2_resync_arm_marker);
 }
