@@ -2,6 +2,7 @@ name: Build MU1440 support tools
 
 on:
   workflow_dispatch:
+  pull_request:
   push:
     branches: [ main ]
     paths:
@@ -28,7 +29,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Host-test gate semantics
         shell: bash
@@ -106,7 +109,7 @@ jobs:
           strings build/support-tools/libmibr_isotx2_gate.so | grep -Fq '/dev/mlb/isoTX2'
           strings build/support-tools/most-ts-writer | grep -Fq '12032'
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: mu1440-support-tools-unstripped
           path: build/support-tools/
