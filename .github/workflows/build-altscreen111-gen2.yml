@@ -64,7 +64,7 @@ jobs:
         run: |
           set -euxo pipefail
           mkdir -p build/gen2
-          docker run --rm --platform=linux/amd64             -v "$PWD:/src" -w /src "$IMAGE"             bash -c './tools/build_altscreen111_gen2.sh build/gen2/libaltscreen111.so'
+          docker run --rm --platform=linux/amd64             -v "$PWD:/src" -w /src "$IMAGE"             bash -c 'bash ./tools/build_altscreen111_gen2.sh build/gen2/libaltscreen111.so'
           sudo chown -R "$(id -u):$(id -g)" build/gen2
 
       - name: Validate developer ELF
