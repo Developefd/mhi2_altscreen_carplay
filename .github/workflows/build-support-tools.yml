@@ -1,0 +1,112 @@
+name: Build MU1440 support tools
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/build-support-tools.yml'
+      - 'src/native/isotx2-gate/**'
+      - 'src/native/most-ts-writer/**'
+      - 'tools/build_support_tools.sh'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-support-tools
+  cancel-in-progress: true
+
+env:
+  TOOLCHAIN_REPO: https://github.com/luka-dev/qnx65-armv7-toolchain.git
+  TOOLCHAIN_COMMIT: 56a66557245af14077678cd28a83ce3a337d9e2d
+  TOOLCHAIN_DOCKERFILE_SHA256: 9a867a7ae70f2c0222a241b80232856526ccec0db2cfe013f8991ca31c74bcb1
+  IMAGE: mhi2-qnx65-armv7-public:4.9
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Host-test gate semantics
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p build/host-gate
+          gcc -shared -fPIC -O2 -g -Wall -Wextra -pthread -ldl             src/native/isotx2-gate/isotx2_gate.c             -o build/host-gate/libmibr_isotx2_gate.so
+          gcc -O2 -g -Wall -Wextra             src/native/isotx2-gate/gate_selftest.c             -o build/host-gate/gate_selftest
+
+          TARGET="$RUNNER_TEMP/isotx2-test-target"
+          rm -f /tmp/mibr-isotx2-gate.direct /tmp/mibr-isotx2-gate.reset                 /tmp/mibr-isotx2-gate.stats /tmp/mibr-isotx2-gate.log "$TARGET"
+
+          MIBR_ISOTX2_GATE_TARGET="$TARGET"             LD_PRELOAD="$PWD/build/host-gate/libmibr_isotx2_gate.so"             build/host-gate/gate_selftest "$TARGET"
+          test "$(stat -c %s "$TARGET")" = "6"
+
+          : > /tmp/mibr-isotx2-gate.direct
+          : > "$TARGET"
+          MIBR_ISOTX2_GATE_TARGET="$TARGET"             LD_PRELOAD="$PWD/build/host-gate/libmibr_isotx2_gate.so"             build/host-gate/gate_selftest "$TARGET"
+          test "$(stat -c %s "$TARGET")" = "0"
+          grep -q '^dropped_writev_calls=1$' /tmp/mibr-isotx2-gate.stats
+          grep -q '^dropped_bytes=6$' /tmp/mibr-isotx2-gate.stats
+
+      - name: Build pinned public QNX 6.5 ARMv7 toolchain image
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git clone "$TOOLCHAIN_REPO" "$RUNNER_TEMP/qnx-toolchain"
+          git -C "$RUNNER_TEMP/qnx-toolchain" checkout "$TOOLCHAIN_COMMIT"
+          test "$(sha256sum "$RUNNER_TEMP/qnx-toolchain/Dockerfile" | awk '{print $1}')" = "$TOOLCHAIN_DOCKERFILE_SHA256"
+
+          python3 - "$RUNNER_TEMP/qnx-toolchain/Dockerfile" <<'PY'
+          from pathlib import Path
+          import sys
+          p=Path(sys.argv[1])
+          s=p.read_text()
+          needle="RUN dpkg --add-architecture i386 && apt-get update && \\\n"
+          replacement=(
+              "RUN sed -i 's#http://deb.debian.org/debian-security#"
+              "http://snapshot.debian.org/archive/debian-security/20260903T220410Z#g' "
+              "/etc/apt/sources.list && \\\n"
+              "    echo 'Acquire::Check-Valid-Until \"false\";' "
+              "> /etc/apt/apt.conf.d/99snapshot && \\\n"
+              "    dpkg --add-architecture i386 && apt-get update && \\\n"
+          )
+          if needle not in s:
+              raise SystemExit("qnx-sdp apt bootstrap anchor not found")
+          p.write_text(s.replace(needle,replacement,1))
+          PY
+
+          docker buildx build --platform=linux/amd64             --target base-env             --build-arg BASE=base-4.9             --cache-from type=gha             --cache-to type=gha,mode=max             --load             -t "$IMAGE"             "$RUNNER_TEMP/qnx-toolchain"
+
+      - name: Build QNX support tools unstripped
+        shell: bash
+        run: |
+          set -euxo pipefail
+          docker run --rm --platform=linux/amd64             -v "$PWD:/src" -w /src "$IMAGE"             bash -c './tools/build_support_tools.sh build/support-tools'
+          sudo chown -R "$(id -u):$(id -g)" build/support-tools
+
+      - name: Validate ELF and symbols
+        shell: bash
+        run: |
+          set -euxo pipefail
+          for f in libmibr_isotx2_gate.so gate_selftest_qnx most-ts-writer; do
+            file "build/support-tools/$f"
+            docker run --rm --platform=linux/amd64 -v "$PWD:/src" -w /src "$IMAGE"               arm-unknown-nto-qnx6.5.0eabi-readelf -h "build/support-tools/$f"               > "build/support-tools/$f.ELF.txt"
+            docker run --rm --platform=linux/amd64 -v "$PWD:/src" -w /src "$IMAGE"               arm-unknown-nto-qnx6.5.0eabi-readelf -S "build/support-tools/$f"               > "build/support-tools/$f.SECTIONS.txt"
+            grep -q 'Machine:.*ARM' "build/support-tools/$f.ELF.txt"
+            grep -q '\.symtab' "build/support-tools/$f.SECTIONS.txt"
+            grep -q '\.debug_info' "build/support-tools/$f.SECTIONS.txt"
+            sha256sum "build/support-tools/$f" > "build/support-tools/$f.sha256"
+          done
+          for s in open open64 writev close; do
+            readelf -Ws build/support-tools/libmibr_isotx2_gate.so | grep -E "[[:space:]]$s$"
+          done
+          strings build/support-tools/libmibr_isotx2_gate.so | grep -Fq '/dev/mlb/isoTX2'
+          strings build/support-tools/most-ts-writer | grep -Fq '12032'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mu1440-support-tools-unstripped
+          path: build/support-tools/
