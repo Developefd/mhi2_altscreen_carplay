@@ -3,6 +3,10 @@ name: Build unstripped MU1440 direct-ts-remux
 on:
   workflow_dispatch:
   pull_request:
+    paths:
+      - '.github/workflows/build-direct-ts-remux.yml'
+      - 'src/native/direct-ts-remux/**'
+      - 'tools/build_direct_ts_remux.sh'
   push:
     branches: [ main ]
     paths:
