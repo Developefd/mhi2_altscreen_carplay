@@ -2,6 +2,7 @@ name: Build experimental GEN2 AltScreen
 
 on:
   workflow_dispatch:
+  pull_request:
   push:
     branches: [ main ]
     paths:
@@ -28,7 +29,9 @@ jobs:
     timeout-minutes: 120
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Build pinned QNX 6.5 ARMv7 toolchain image
         shell: bash
@@ -85,7 +88,7 @@ jobs:
           strings "$BIN" | grep -Fq 'forceKeyFrame'
           sha256sum "$BIN" > build/gen2/libaltscreen111.so.sha256
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: experimental-gen2-public-rebuild
           path: |
