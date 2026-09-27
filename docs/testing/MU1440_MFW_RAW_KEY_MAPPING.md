@@ -147,3 +147,30 @@ cluster side and cannot be used from this head-unit input layer.
 Do **not** install the external VW voice-button patch just to discover key IDs. Its ASL input model is
 highly relevant and semantically matches the MU1440, but its bootstrap uses an OEM-class
 `-Xbootclasspath/p` shadow. Bootclasspath shadowing remains a separate vehicle-isolation topic.
+
+
+## Read-only trace-path discovery
+
+The stock handler already emits the raw line, but the exact MU1440 trace reader/sink should not be
+guessed from generic QNX or MHI2 knowledge.
+
+Use:
+
+```sh
+./keypanel_trace_discovery.sh
+```
+
+The script is intentionally read-only. It reports:
+
+- the active `/eso/bin/traceserver` process;
+- the traceserver file descriptors;
+- whether known QNX trace readers such as `sloginfo`, `traceprinter` or `tracelogger` actually
+  exist on this firmware;
+- the exact `logging.properties` / `traceConfig.properties` files that are readable on the unit;
+- obvious logger/trace device endpoints.
+
+It does **not** mount anything writable, modify logger settings, signal a process or start a trace
+utility.
+
+Only after that output is known should a stock-reader command be selected. This preserves the
+zero-patch objective and avoids another desktop/QNX capability assumption.
