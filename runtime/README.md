@@ -2,7 +2,8 @@
 
 This directory contains project-owned **reference runtime logic and diagnostic helpers**.
 
-It is not a packaged installer.
+It is not itself a packaged installer. The guarded exact-target developer orchestration lives under
+`deployment/mu1440/`; it stages and invokes these lower-level runtime components.
 
 ## `auto-direct/`
 
@@ -51,9 +52,10 @@ src/native/isotx2-gate/
 Experimental controls such as ViewArea feature toggles. Presence here does not imply a promoted
 feature or a stable cross-platform interface.
 
-## No SD-card requirement
+## Developer deployment
 
-Nothing in this directory makes SD deployment the project interface.
+The project does not require SD deployment as its architecture or runtime interface. For convenience,
+`tools/prepare_mu1440_sd.sh` can assemble the exact-target developer payload into an SD directory.
 
-The current contributor workflow assumes existing SSH access over WLAN, USB-LAN or another known
-method.
+The project still assumes existing SSH/recovery access. This is not a general end-user installation
+promise or cross-firmware compatibility claim.

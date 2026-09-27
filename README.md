@@ -43,7 +43,9 @@ Primary goals:
 6. Extend the implementation from the initial Škoda target to compatible **Volkswagen, SEAT and CUPRA** MHI2 variants
 7. Preserve enough architecture, build and test knowledge that another developer can continue the work without repeating the reverse engineering from zero
 
-An SD-card based installation/update path may come later. It is deliberately **not the first milestone**.
+A consumer-style SD-card installer is deliberately **not** the current milestone. A guarded
+developer deployment/restore path now exists for the exact MU1440 reference target, but it assumes
+existing SSH/recovery competence and does not relax the compatibility gates.
 
 ## Current target
 
@@ -171,6 +173,25 @@ What changed on the real vehicle:
 The newer SafeArea-capable source is also public, but its geometry-control extension is a **development
 candidate**, not part of the vehicle-tested binary checkpoint above.
 
+
+### Developer deployment path
+
+For the exact MU1440 reference target, the repository now includes a guarded developer
+install/restore path:
+
+- [installation notes](docs/INSTALLATION.md)
+- [deployment scripts](deployment/mu1440/)
+- [SD-directory preparation helper](tools/prepare_mu1440_sd.sh)
+
+This is **not** an end-user installer and does not explain how to obtain shell access. It is intended
+for developers who already have SSH/recovery capability. The scripts verify exact target/payload
+hashes, preserve rollback material, keep the DisplayManager gate STOCK-default, use `map-rich` as
+the initial navigation-composition profile and require a reboot instead of hot-restarting the
+CarPlay process stack.
+
+The current aggressive D2 keyframe policy remains an explicit developer switch until its 1 s
+watchdog has been tuned.
+
 For the current engineering state, read:
 
 - [Current development status](docs/status/CURRENT_DEVELOPMENT_STATUS.md)
@@ -191,7 +212,8 @@ If you want to understand the project without reading the entire repository, use
 9. [MU1440 stock reference](docs/research/MU1440_STOCK_REFERENCE.md) — exact stock component hashes for the first proven target.
 10. [iOS 27 sender research](docs/research/IOS27_SENDER_LIFECYCLE.md) — exact build/hash authority behind the current lifecycle model.
 11. [Public references](docs/research/PUBLIC_REFERENCES.md) — prior art and external projects worth reading.
-12. [Roadmap](ROADMAP.md) — current priorities and concrete help-wanted areas.
+12. [Developer installation](docs/INSTALLATION.md) — guarded install/restore path for the exact MU1440 reference target.
+13. [Roadmap](ROADMAP.md) — current priorities and concrete help-wanted areas.
 
 ### Want to help?
 
