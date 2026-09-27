@@ -81,3 +81,28 @@ Useful contributions include:
 - build portability improvements.
 
 See `CONTRIBUTING.md` and use Discussions for exploratory findings before opening a hard bug.
+
+
+## P1 — steering-wheel / hardkey input for runtime layout control
+
+A useful cross-brand lead is
+`y-batsianouski/mib2-voicecontrol-button-patch`, originally tested on VW
+`MHI2_ER_VWG13_K4525_MU1367`.
+
+The exact Škoda MU1440 `lsd.jxe` audit confirms the same core ASL input substrate:
+
+- `ASLSystemAPI.addKeyListener(...)`;
+- `ASLSystemAPI.createAndSubmitHardkeyEvent(...)`;
+- PTT listener key 15;
+- the OEM 500 ms `DoublePressKeyAdapter` classifier;
+- matching `speechgeneral.ptt.DialogSession` behavior/abort-key layout;
+- matching mute/smartphone hardkey model from the exact target key mapping.
+
+This makes button-driven ViewArea/layout switching a credible later path.
+
+Do not copy the external shadow-JAR bootstrap blindly. It uses `-Xbootclasspath/p`; exact-class
+shadowing on the reference MU1440 is currently being isolated separately after it disturbed the
+native VC map path in another Java experiment.
+
+Preferred first implementation: passive/additive listener observation, then controlled layout
+switching; remapping/injection can follow after exact vehicle traces.
