@@ -86,6 +86,9 @@ enum alt111_resync_action {
 enum alt111_resync_reason {
     ALT111_RESYNC_REASON_NONE = 0,
     ALT111_RESYNC_REASON_MANUAL = 1,
+    ALT111_RESYNC_REASON_TURNS = 2,
+    ALT111_RESYNC_REASON_SUGGEST_UI = 3,
+    ALT111_RESYNC_REASON_WATCHDOG = 4,
     ALT111_RESYNC_CANCEL_DISABLED = 100,
     ALT111_RESYNC_CANCEL_PROJECTION = 101,
     ALT111_RESYNC_CANCEL_CONFIG = 102,
@@ -124,12 +127,13 @@ void alt111_resync_cancel(struct alt111_resync *r, unsigned reason);
 struct alt111_output_ticket {
     uint64_t stream, codec, consumer, sequence;
     size_t offset;
+    unsigned idr;
 };
 struct alt111_chunk {
     uint8_t *bytes;
     size_t length, offset;
     uint64_t sequence;
-    unsigned priming;
+    unsigned priming, idr;
 };
 struct alt111_video {
     uint64_t session, stream, codec, consumer, sequence;

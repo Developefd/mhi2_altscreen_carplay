@@ -230,7 +230,7 @@ int alt111_video_submit(struct alt111_video *v, uint64_t stream,
     index = (v->head + v->count) % ALT111_QUEUE_CAP;
     chunk = &v->queue[index];
     chunk->bytes = out; chunk->length = used; chunk->offset = 0;
-    chunk->sequence = ++v->sequence; chunk->priming = prefix != 0;
+    chunk->sequence = ++v->sequence; chunk->priming = prefix != 0; chunk->idr = idr;
     if (chunk->priming) v->priming_queued = 1;
     ++v->count; v->queued_bytes += used;
     return ALT111_OK;
@@ -248,6 +248,7 @@ int alt111_video_peek(const struct alt111_video *v, const uint8_t **bytes,
     ticket->stream = v->stream; ticket->codec = v->codec;
     ticket->consumer = v->consumer; ticket->sequence = chunk->sequence;
     ticket->offset = chunk->offset;
+    ticket->idr = chunk->idr;
     return ALT111_OK;
 }
 

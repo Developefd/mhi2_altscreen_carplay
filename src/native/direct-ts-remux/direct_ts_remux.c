@@ -16,6 +16,7 @@
 #define TS_SIZE 188
 #define MOST_BLOCK_PACKETS 64
 #define MOST_BLOCK_BYTES (MOST_BLOCK_PACKETS * TS_SIZE)
+#define REMUX_STATUS_PATH "/tmp/mibr-direct-remux.status"
 
 typedef struct {
     int fd;
@@ -25,7 +26,137 @@ typedef struct {
     uint64_t packets;
     uint64_t blocks;
     uint64_t pad_packets;
+    uint64_t input_h264_bytes;
+    uint64_t write_attempts;
+    uint64_t write_eagain;
+    uint64_t write_timeouts;
+    uint64_t write_errors;
+    uint64_t short_writes;
+    uint64_t over20ms_blocks;
+    int64_t last_write_us;
+    int64_t last_write_call_us;
+    int64_t last_block_wait_us;
+    int64_t max_block_wait_us;
+    int64_t rate_prev_us;
+    uint64_t rate_prev_input_bytes;
+    uint64_t rate_prev_most_bytes;
+    uint64_t input_bps;
+    uint64_t most_bps;
 } OutCtx;
+
+static uint64_t g_status_seq;
+static int64_t g_last_status_us;
+static int g_status_error_logged;
+
+static void publish_remux_status(OutCtx *o, int64_t frame_no,
+                                 int64_t start_us, int64_t last_input_us,
+                                 const char *state, int rc, int force) {
+    char buf[1100], tmp[96];
+    int fd, n;
+    int64_t now=av_gettime_relative();
+    if(!force && g_last_status_us>0 && now-g_last_status_us<1000000LL) return;
+    g_last_status_us=now;
+    if(o) {
+        uint64_t most_bytes_now=o->blocks*(uint64_t)MOST_BLOCK_BYTES;
+        if(o->rate_prev_us>0 && now>o->rate_prev_us) {
+            uint64_t dus=(uint64_t)(now-o->rate_prev_us);
+            o->input_bps=((o->input_h264_bytes-o->rate_prev_input_bytes)*8000000ULL)/dus;
+            o->most_bps=((most_bytes_now-o->rate_prev_most_bytes)*8000000ULL)/dus;
+        }
+        o->rate_prev_us=now;
+        o->rate_prev_input_bytes=o->input_h264_bytes;
+        o->rate_prev_most_bytes=most_bytes_now;
+    }
+    ++g_status_seq;
+    n=snprintf(buf,sizeof(buf),
+        "state=%s\n"
+        "pid=%d\n"
+        "seq=%llu\n"
+        "frames=%lld\n"
+        "ts_packets_out=%llu\n"
+        "most_blocks=%llu\n"
+        "most_bytes=%llu\n"
+        "input_h264_bytes=%llu\n"
+        "input_bps=%llu\n"
+        "most_bps=%llu\n"
+        "write_attempts=%llu\n"
+        "write_eagain=%llu\n"
+        "write_timeouts=%llu\n"
+        "write_errors=%llu\n"
+        "short_writes=%llu\n"
+        "over20ms_blocks=%llu\n"
+        "last_write_call_us=%lld\n"
+        "last_block_wait_us=%lld\n"
+        "max_block_wait_us=%lld\n"
+        "last_input_ms=%lld\n"
+        "last_write_ms=%lld\n"
+        "pending_bytes=%d\n"
+        "elapsed_ms=%lld\n"
+        "rc=%d\n",
+        state?state:"unknown",(int)getpid(),
+        (unsigned long long)g_status_seq,(long long)frame_no,
+        (unsigned long long)(o?o->packets:0),
+        (unsigned long long)(o?o->blocks:0),
+        (unsigned long long)(o?o->blocks*(uint64_t)MOST_BLOCK_BYTES:0),
+        (unsigned long long)(o?o->input_h264_bytes:0),
+        (unsigned long long)(o?o->input_bps:0),
+        (unsigned long long)(o?o->most_bps:0),
+        (unsigned long long)(o?o->write_attempts:0),
+        (unsigned long long)(o?o->write_eagain:0),
+        (unsigned long long)(o?o->write_timeouts:0),
+        (unsigned long long)(o?o->write_errors:0),
+        (unsigned long long)(o?o->short_writes:0),
+        (unsigned long long)(o?o->over20ms_blocks:0),
+        (long long)(o?o->last_write_call_us:0),
+        (long long)(o?o->last_block_wait_us:0),
+        (long long)(o?o->max_block_wait_us:0),
+        (long long)(last_input_us>0?last_input_us/1000LL:0),
+        (long long)(o&&o->last_write_us>0?o->last_write_us/1000LL:0),
+        o?o->pending_len:0,
+        (long long)(start_us>0?(now-start_us)/1000LL:0),rc);
+    if(n<=0) return;
+    if((size_t)n>=sizeof(buf)) n=(int)sizeof(buf)-1;
+    snprintf(tmp,sizeof(tmp),"%s.tmp.%d",REMUX_STATUS_PATH,(int)getpid());
+    fd=open(tmp,O_WRONLY|O_CREAT|O_TRUNC,0644);
+    if(fd<0) return;
+    if(write(fd,buf,(size_t)n)!=(ssize_t)n) {
+        close(fd);
+        unlink(tmp);
+        return;
+    }
+    close(fd);
+    if(rename(tmp,REMUX_STATUS_PATH)!=0) {
+        int saved=errno;
+        /*
+         * Exact QNX target fallback: the first vehicle run showed that the
+         * temp+rename publication path could silently leave no status file.
+         * Status is diagnostics only, so prefer a brief non-atomic snapshot
+         * over losing the evidence entirely.
+         */
+        fd=open(REMUX_STATUS_PATH,O_WRONLY|O_CREAT|O_TRUNC,0644);
+        if(fd>=0) {
+            ssize_t wr=write(fd,buf,(size_t)n);
+            close(fd);
+            unlink(tmp);
+            if(wr==(ssize_t)n) {
+                if(!g_status_error_logged) {
+                    fprintf(stderr,
+                            "REMUX_STATUS_FALLBACK rename_errno=%d (%s) direct_write=ok\n",
+                            saved,strerror(saved));
+                    g_status_error_logged=1;
+                }
+                return;
+            }
+        }
+        unlink(tmp);
+        if(!g_status_error_logged) {
+            fprintf(stderr,
+                    "REMUX_STATUS_ERROR rename_errno=%d (%s) direct_write_failed errno=%d (%s)\n",
+                    saved,strerror(saved),errno,strerror(errno));
+            g_status_error_logged=1;
+        }
+    }
+}
 
 static int interrupt_cb(void *opaque) {
     int64_t *deadline=(int64_t *)opaque;
@@ -66,7 +197,8 @@ static void make_null_packet(uint8_t *p) {
  */
 static int emit_most_block(OutCtx *o) {
     int i;
-    int64_t deadline=av_gettime_relative()+2000000LL;
+    int64_t block_start_us=av_gettime_relative();
+    int64_t deadline=block_start_us+2000000LL;
 
     if(o->pending_len!=MOST_BLOCK_BYTES) return AVERROR_INVALIDDATA;
     for(i=0;i<MOST_BLOCK_PACKETS;i++) {
@@ -79,29 +211,59 @@ static int emit_most_block(OutCtx *o) {
 
     for(;;) {
         int w;
+        int64_t call_start_us,call_end_us,wait_us;
         errno=0;
+        call_start_us=av_gettime_relative();
         w=(int)write(o->fd,o->pending,MOST_BLOCK_BYTES);
+        call_end_us=av_gettime_relative();
+        ++o->write_attempts;
+        o->last_write_call_us=call_end_us-call_start_us;
+        wait_us=call_end_us-block_start_us;
+
         if(w==MOST_BLOCK_BYTES) {
             o->packets+=MOST_BLOCK_PACKETS;
             ++o->blocks;
+            o->last_write_us=call_end_us;
+            o->last_block_wait_us=wait_us;
+            if(wait_us>o->max_block_wait_us) o->max_block_wait_us=wait_us;
+            if(wait_us>=20000LL) ++o->over20ms_blocks;
             o->pending_len=0;
             return 0;
         }
         if(w<0 && errno==EINTR) continue;
         if(w<0 && (errno==EAGAIN || errno==EWOULDBLOCK)) {
-            if(av_gettime_relative()>=deadline) return AVERROR(EAGAIN);
+            ++o->write_eagain;
+            if(call_end_us>=deadline) {
+                ++o->write_timeouts;
+                o->last_block_wait_us=wait_us;
+                if(wait_us>o->max_block_wait_us) o->max_block_wait_us=wait_us;
+                fprintf(stderr,
+                        "ERROR MOST EAGAIN timeout block=%llu wait_us=%lld attempts=%llu eagain=%llu\n",
+                        (unsigned long long)o->blocks,(long long)wait_us,
+                        (unsigned long long)o->write_attempts,
+                        (unsigned long long)o->write_eagain);
+                return AVERROR(EAGAIN);
+            }
             usleep(5000);
             continue;
         }
         if(w>=0) {
+            ++o->short_writes;
+            o->last_block_wait_us=wait_us;
+            if(wait_us>o->max_block_wait_us) o->max_block_wait_us=wait_us;
             fprintf(stderr,
-                    "ERROR MOST strict short write block=%llu rc=%d expected=%d short_blocks=1\n",
-                    (unsigned long long)o->blocks,w,MOST_BLOCK_BYTES);
+                    "ERROR MOST strict short write block=%llu rc=%d expected=%d short_writes=%llu wait_us=%lld\n",
+                    (unsigned long long)o->blocks,w,MOST_BLOCK_BYTES,
+                    (unsigned long long)o->short_writes,(long long)wait_us);
             return AVERROR(EIO);
         }
+        ++o->write_errors;
+        o->last_block_wait_us=wait_us;
+        if(wait_us>o->max_block_wait_us) o->max_block_wait_us=wait_us;
         fprintf(stderr,
-                "ERROR MOST strict write block=%llu bytes=%d errno=%d (%s)\n",
-                (unsigned long long)o->blocks,MOST_BLOCK_BYTES,errno,strerror(errno));
+                "ERROR MOST strict write block=%llu bytes=%d errno=%d (%s) write_errors=%llu wait_us=%lld\n",
+                (unsigned long long)o->blocks,MOST_BLOCK_BYTES,errno,strerror(errno),
+                (unsigned long long)o->write_errors,(long long)wait_us);
         return AVERROR(errno?errno:EIO);
     }
 }
@@ -216,12 +378,13 @@ int main(int argc,char **argv) {
     AVIOContext *avio=NULL;
     unsigned char *avio_buf=NULL;
     OutCtx out;
-    int64_t deadline=0,start_us=0,frame_no=0;
+    int64_t deadline=0,start_us=0,frame_no=0,last_input_us=0;
     int video=-1,rc=0;
     char ebuf[128];
 
     memset(&out,0,sizeof(out));
     out.fd=-1;
+    (void)unlink(REMUX_STATUS_PATH);
 
     if(argc!=7) {
         fprintf(stderr,"usage: %s INPUT OUTPUT FPS MAX_SECONDS WAIT_SECONDS VIDEO_PID\n",argv[0]);
@@ -275,6 +438,7 @@ int main(int argc,char **argv) {
             out.device_mode?MOST_BLOCK_BYTES:0);
     start_us=av_gettime_relative();
     deadline=max_seconds>0?start_us+(int64_t)max_seconds*1000000LL:0;
+    publish_remux_status(&out,frame_no,start_us,last_input_us,"running",0,1);
     ic->interrupt_callback.opaque=&deadline;
 
     for(;;) {
@@ -283,6 +447,8 @@ int main(int argc,char **argv) {
         rc=av_read_frame(ic,&pkt);
         if(rc<0) break;
         if(pkt.stream_index!=video){av_packet_unref(&pkt);continue;}
+        last_input_us=av_gettime_relative();
+        out.input_h264_bytes+=(uint64_t)(pkt.size>0?pkt.size:0);
         pkt.pts=frame_no;
         pkt.dts=frame_no;
         pkt.duration=1;
@@ -293,6 +459,7 @@ int main(int argc,char **argv) {
         av_packet_unref(&pkt);
         if(rc<0){errstr(rc,ebuf,sizeof(ebuf));fprintf(stderr,"ERROR mux/write frame=%lld %s\n",(long long)frame_no,ebuf);break;}
         ++frame_no;
+        publish_remux_status(&out,frame_no,start_us,last_input_us,"running",0,0);
         if(max_seconds>0 && av_gettime_relative()>=deadline){rc=0;break;}
     }
     /* A finite raw-H264 file ends with AVERROR_EOF after all frames were read.
@@ -317,13 +484,23 @@ int main(int argc,char **argv) {
         if(fr<0) rc=fr;
     }
 
+    publish_remux_status(&out,frame_no,start_us,last_input_us,"done",rc,1);
+
     fprintf(stderr,
-            "REMUX_DONE frames=%lld ts_packets_out=%llu most_blocks=%llu pad_null_packets=%llu write_size=%d elapsed_ms=%lld rc=%d pending=%d\n",
+            "REMUX_DONE frames=%lld ts_packets_out=%llu most_blocks=%llu pad_null_packets=%llu write_size=%d input_h264_bytes=%llu write_attempts=%llu write_eagain=%llu write_timeouts=%llu write_errors=%llu short_writes=%llu over20ms_blocks=%llu max_block_wait_us=%lld elapsed_ms=%lld rc=%d pending=%d\n",
             (long long)frame_no,
             (unsigned long long)out.packets,
             (unsigned long long)out.blocks,
             (unsigned long long)out.pad_packets,
             out.device_mode?MOST_BLOCK_BYTES:0,
+            (unsigned long long)out.input_h264_bytes,
+            (unsigned long long)out.write_attempts,
+            (unsigned long long)out.write_eagain,
+            (unsigned long long)out.write_timeouts,
+            (unsigned long long)out.write_errors,
+            (unsigned long long)out.short_writes,
+            (unsigned long long)out.over20ms_blocks,
+            (long long)out.max_block_wait_us,
             (long long)((av_gettime_relative()-start_us)/1000LL),rc,out.pending_len);
 
 done:
