@@ -106,3 +106,18 @@ native VC map path in another Java experiment.
 
 Preferred first implementation: passive/additive listener observation, then controlled layout
 switching; remapping/injection can follow after exact vehicle traces.
+
+
+### Runtime selector UX
+
+Once SafeArea/ViewArea presets are calibrated, expose them through a developer-facing selector before
+attempting a polished end-user UI.
+
+Candidate paths:
+
+- Green Engineering Menu entry for explicit profile/preset selection;
+- later steering-wheel/hardkey cycling through the exact ASL listener path;
+- file/config control remains the diagnostic fallback.
+
+The initial useful selector set is expected to include navigation composition (`stock`,
+`map-rich`, etc.) plus calibrated SafeArea/ViewArea presets.
