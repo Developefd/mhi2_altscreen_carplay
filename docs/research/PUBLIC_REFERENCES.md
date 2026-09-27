@@ -53,6 +53,17 @@ Pinned reference revision:
 
 Important for understanding the MQB Virtual Cockpit rendering/MOST path.
 
+
+External community link published by that project:
+
+https://t.me/+MCIqkmX6bjY3NTE0
+
+The upstream README also documents the useful performance comparator for its VNC renderer path:
+approximately 10 fps for the C++ renderer and an optional 20 fps MOST patch. This is not an
+apples-to-apples benchmark against direct CarPlay Stream 111, but it is a useful architectural
+contrast because the VNC approach involves screen capture/rendering rather than carrying the native
+CarPlay auxiliary H.264 stream.
+
 ### Lanye — MHI2Q CarPlay / MMI Mirror
 
 https://github.com/Lanye-z/MHI2Q-CarPlay-MMI-Mirror

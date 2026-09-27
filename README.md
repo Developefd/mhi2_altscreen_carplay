@@ -174,6 +174,28 @@ The newer SafeArea-capable source is also public, but its geometry-control exten
 candidate**, not part of the vehicle-tested binary checkpoint above.
 
 
+### Direct-path frame-rate evidence
+
+The direct Stream-111 path is not a screen-capture/VNC/re-encode pipeline. It preserves the native
+CarPlay H.264 presentation and only normalizes/remuxes it for the MOST transport.
+
+A 2026-09-27 vehicle capture of the **pre-TS H.264** path measured:
+
+- **1010 × 376** source video;
+- **16,524 decodable frames** over **593 s** of active capture;
+- **27.87 frames/s wall-clock average**;
+- **32 frames/s median** across the short telemetry sampling intervals;
+- **0 capture drops**;
+- only one IDR in that particular pre-D2 recording, which independently explains why later
+  same-session keyframe recovery mattered.
+
+See [direct-stream frame-rate evidence](docs/findings/DIRECT_STREAM_FRAME_RATE_2026-09-27.md).
+
+This is not a claim that every VC frame is physically displayed at 27.87 fps under every state.
+It is evidence that the project can carry the native CarPlay secondary-screen cadence without an
+intermediate screen capture plus decode/re-encode bottleneck.
+
+
 ### Developer deployment path
 
 For the exact MU1440 reference target, the repository now includes a guarded developer
@@ -228,6 +250,12 @@ The project is actively looking for developers/testers with:
 
 Start with [ROADMAP.md](ROADMAP.md), [SUPPORT.md](SUPPORT.md),
 [CONTRIBUTING.md](CONTRIBUTING.md) and the [compatibility matrix](docs/testing/COMPATIBILITY_MATRIX.md).
+
+
+Adjacent MQB Virtual Cockpit/MOST discussion also happens in the external
+[OneB1t VC MOST Telegram community](https://t.me/+MCIqkmX6bjY3NTE0). It is not operated by this
+project; the link is included because that community and renderer lineage are directly relevant to
+cross-testing.
 
 Public prior art and credits are listed in [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md).
 
