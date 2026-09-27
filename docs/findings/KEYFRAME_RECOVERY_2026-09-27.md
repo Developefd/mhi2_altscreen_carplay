@@ -79,6 +79,15 @@ source_idrs=260
 
 The tested Apple Maps / Google Maps / Waze transitions then remained usable without manual recovery.
 
+### Retry-counter note
+
+The vehicle snapshot also reported a very high cumulative `resync_retries` value. That counter was
+misleading in the tested build: it treated almost every lifetime request after the first as a retry,
+even when it was the first request of a new resync epoch. The development source now scopes the
+retry test to the current epoch by checking whether that epoch already issued a request.
+
+This is a telemetry correction only; it does not change the vehicle-proven keyframe recovery behavior.
+
 ## Why the current watchdog still needs tuning
 
 The current implementation intentionally treats "no newer source IDR for 1000 ms" as a watchdog

@@ -107,7 +107,9 @@ alt111_resync_tick(struct alt111_resync *r, uint64_t now_ms,
     if (now_ms < r->next_request_ms)
         return ALT111_RESYNC_NONE;
 
-    if (r->requests > 0)
+    /* Retry is scoped to the current resync epoch. alt111_resync_arm()
+     * resets last_request_ms, while requests/retries remain lifetime counters. */
+    if (r->last_request_ms != 0)
         r->retries++;
     r->requests++;
     r->last_request_ms = now_ms;
