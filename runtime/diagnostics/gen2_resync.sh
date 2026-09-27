@@ -1,5 +1,4 @@
 #!/bin/ksh
-# SPDX-License-Identifier: GPL-3.0-or-later
 set -u
 
 ENABLE=/tmp/mibr-alt111-resync.enabled
@@ -36,7 +35,7 @@ case "$cmd" in
     ;;
   arm)
     if [ ! -e "$ENABLE" ]; then
-      echo "REFUSED: manual resync feature is disabled. Run '$0 on' first."
+      echo "REFUSED: Candidate D manual feature is disabled. Run '$0 on' first."
       exit 1
     fi
     touch "$ARM" || exit 1
