@@ -17,7 +17,7 @@ on:
       - 'tools/build_support_tools.sh'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: public-support-tools
@@ -39,7 +39,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Host-test gate semantics
         shell: bash
@@ -177,3 +177,38 @@ jobs:
           name: mu1440-support-tools-unstripped
           path: build/support-tools/
           if-no-files-found: error
+
+
+      - name: Publish build-confirmed gate artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euxo pipefail
+          DEST=artifacts/mu1440/isotx2-gate/build-confirmed-current
+          mkdir -p "$DEST"
+          cp build/support-tools/libmibr_isotx2_gate.so "$DEST/libmibr_isotx2_gate.so"
+          sed 's#build/support-tools/##' build/support-tools/libmibr_isotx2_gate.so.sha256 > "$DEST/libmibr_isotx2_gate.so.sha256"
+          cat > "$DEST/README.md" <<'EOF'
+          # Build-confirmed isoTX2 writev gate
+
+          This binary is produced by the pinned public QNX 6.5 ARMv7 workflow from
+          `src/native/isotx2-gate/isotx2_gate.c`.
+
+          The gate mechanism/source has been vehicle-proven on the MU1440 reference target.
+          This particular public binary is labelled **build-confirmed** unless its exact SHA-256
+          is separately recorded in a vehicle test.
+
+          The library defaults to STOCK/pass-through behavior. DIRECT suppression is only requested
+          through the explicit runtime marker/control path.
+
+          See `docs/architecture/DIRECT_VC_VIDEO_PATH.md` and `runtime/isotx2-gate/`.
+          EOF
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$DEST"
+          if git diff --cached --quiet; then
+            echo "Gate artifact unchanged."
+            exit 0
+          fi
+          git commit -m "artifacts: publish build-confirmed isoTX2 gate"
+          git push origin HEAD:main
