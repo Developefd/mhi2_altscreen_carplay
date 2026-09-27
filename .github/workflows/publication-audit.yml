@@ -35,6 +35,7 @@ jobs:
           bash -n deployment/mu1440/install.sh
           bash -n deployment/mu1440/uninstall.sh
           bash -n deployment/mu1440/status.sh
+          bash -n runtime/diagnostics/keypanel_trace_discovery.sh
           bash -n tools/prepare_mu1440_sd.sh
 
           for f in \
@@ -60,6 +61,7 @@ jobs:
             runtime/diagnostics/gen2_keyframes.sh \
             runtime/diagnostics/gen2_resync.sh \
             runtime/diagnostics/gen2_status.sh \
+            runtime/diagnostics/keypanel_trace_discovery.sh \
             runtime/navigation/gen2_nav_config.sh \
             runtime/navigation/gen2_safearea.sh
           do
@@ -151,3 +153,14 @@ jobs:
           EOF
           python3 tools/parse_keypanel_trace.py "$RUNNER_TEMP/keypanel-sample.log" |
             grep -Fq 'KEY_MFW_PTT_ON'
+
+
+      - name: Keypanel discovery stays read-only
+        shell: bash
+        run: |
+          set -euxo pipefail
+          F=runtime/diagnostics/keypanel_trace_discovery.sh
+          ! grep -n -E 'mount[[:space:]]+-u|(^|[;&|[:space:]])(cp|mv|rm|slay|kill|touch)[[:space:]]' "$F"
+          grep -Fq 'mode=READ_ONLY' "$F"
+          grep -Fq '/eso/bin/traceserver' "$F"
+          grep -Fq 'logging.properties' "$F"
