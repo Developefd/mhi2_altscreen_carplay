@@ -63,6 +63,16 @@ preflight(){
      grep -Fq '# MIBR DIRECT-VC POLICY' "$LSD" 2>/dev/null; then
     fail "directvc_java_override_present_restore_stock_java_first"
   fi
+  if grep -Fq 'Most20FPS.jar' "$LSD" 2>/dev/null; then
+    fail "most20_java_override_present_remove_before_install"
+  fi
+  if grep -Fq 'NavActiveIgnore.jar' "$LSD" 2>/dev/null; then
+    fail "legacy_combined_navactiveignore_present_use_split_navignore_only"
+  fi
+
+  echo "=== DisplayManager gate preflight ==="
+  MIBR_GATE_LIB="$PAYLOAD/libmibr_isotx2_gate.so" MIBR_SHA256="$SHA" \
+    "$RUNTIME/isotx2-gate/install_preload.sh" --check || fail "gate_preflight_rc_$?"
 
   if [ -r "$PAYLOAD/MIBR-NavIgnore.jar" ]; then
     N=$(hashf "$PAYLOAD/MIBR-NavIgnore.jar") || fail "navignore_hash_failed"
@@ -109,12 +119,11 @@ stage_runtime(){
     mv "$DST/scripts/$F.new" "$DST/scripts/$F" || fail "install_$F"
   done
 
-  for F in gen2_nav_config.sh gen2_safearea.sh; do
-    [ -r "$RUNTIME/navigation/$F" ] || fail "missing_runtime_$F"
-    cp "$RUNTIME/navigation/$F" "$DST/scripts/$F.new" || fail "copy_$F"
-    chmod 755 "$DST/scripts/$F.new" 2>/dev/null || true
-    mv "$DST/scripts/$F.new" "$DST/scripts/$F" || fail "install_$F"
-  done
+  F=gen2_nav_config.sh
+  [ -r "$RUNTIME/navigation/$F" ] || fail "missing_runtime_$F"
+  cp "$RUNTIME/navigation/$F" "$DST/scripts/$F.new" || fail "copy_$F"
+  chmod 755 "$DST/scripts/$F.new" 2>/dev/null || true
+  mv "$DST/scripts/$F.new" "$DST/scripts/$F" || fail "install_$F"
 
   cp "$RUNTIME/auto-direct/altscreen111.conf" "$DST/config/altscreen111.conf.new" || fail "copy_config"
   chmod 644 "$DST/config/altscreen111.conf.new" 2>/dev/null || true
@@ -183,10 +192,8 @@ apply(){
   echo "=== set deployment navigation default ==="
   "$DST/scripts/gen2_nav_config.sh" profile map-rich || fail "map_rich_profile"
 
-  echo "=== enable Auto-Direct persistence ==="
-  "$DST/scripts/direct_ts_auto_enable.sh"
-  ARC=$?
-  [ "$ARC" -eq 0 ] || echo "WARN Auto-Direct prepared but current pre-reboot start returned rc=$ARC"
+  echo "=== enable Auto-Direct persistence without pre-reboot runtime takeover ==="
+  MIBR_PREPARE_ONLY=1 "$DST/scripts/direct_ts_auto_enable.sh" || fail "auto_direct_prepare_rc_$?"
 
   echo
   echo "MIBR_INSTALL=PASS"

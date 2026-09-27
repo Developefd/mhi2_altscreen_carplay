@@ -13,3 +13,6 @@ mkdir -p "$OUTDIR"
 "$QCC"   -mfloat-abi=softfp   -O2 -g -std=gnu99 -Wall -Wextra   src/native/most-ts-writer/most_ts_writer.c   -o "$OUTDIR/most-ts-writer"
 
 # Developer artifacts are intentionally not stripped.
+
+
+"$QCC"   -mfloat-abi=softfp   -O2 -g -std=gnu99 -Wall -Wextra   src/native/sha256sum-compat/sha256sum_compat.c   -o "$OUTDIR/sha256sum"

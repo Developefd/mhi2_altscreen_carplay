@@ -87,6 +87,14 @@ sync
 mount -ur /mnt/app 2>/dev/null || true
 APP_RW=0
 
+if [ "${MIBR_PREPARE_ONLY:-0}" = "1" ]; then
+  echo "AUTO_DIRECT_ENABLE=PREPARED"
+  echo "runtime_start=SKIPPED_UNTIL_REBOOT"
+  echo "boot_hook=present"
+  echo "enabled_marker=$ENABLED"
+  exit 0
+fi
+
 "$DSTBASE/scripts/direct_ts_auto_start.sh"
 RC=$?
 if [ "$RC" -eq 0 ]; then

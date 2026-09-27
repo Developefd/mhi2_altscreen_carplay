@@ -52,11 +52,11 @@ The installer:
 1. verifies exact target and payload hashes;
 2. refuses to proceed while the experimental DirectVC Java override is installed;
 3. stages the tested GEN2 and direct remux runtime internally;
-4. prepares the persistent CarPlay Stream-111 preload with a verified stock backup;
-5. installs the DisplayManager isoTX2 writev gate with STOCK as the fail-safe/default mode;
+4. preflights and installs the DisplayManager isoTX2 writev gate with STOCK as the fail-safe/default mode;
+5. prepares the persistent CarPlay Stream-111 preload with a verified stock backup;
 6. optionally keeps/installs an exact compatible NavIgnore if supplied separately;
 7. sets the initial navigation composition profile to `map-rich`;
-8. enables Auto-Direct persistence;
+8. prepares Auto-Direct persistence **without starting a pre-reboot takeover**;
 9. requires a reboot rather than hot-restarting the CarPlay process stack.
 
 ## Keyframe policy
@@ -79,3 +79,14 @@ has completed its vehicle validation.
 Restore paths are hash-gated and preserve evidence/runtime files for diagnosis.
 
 See `deployment/mu1440/README.md` for the compact operator view.
+
+
+## Hash helper and hidden dependencies
+
+The prepared developer directory contains its own public, reproducibly built QNX ARMv7
+`sha256sum` compatibility helper. Installation no longer depends on a pre-existing M.I.B.
+`/apps/sbin` SD-card tree.
+
+The top-level preflight also rejects the experimental DirectVC Java override, legacy Most20FPS
+bootclasspath patches, and the older combined `NavActiveIgnore.jar` before persistent changes are
+made.
