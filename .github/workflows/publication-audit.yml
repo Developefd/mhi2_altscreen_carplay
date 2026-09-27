@@ -114,3 +114,40 @@ jobs:
           cp=s.index("=== prepare persistent CarPlay Stream111 preload ===")
           assert gate < cp
           PY
+
+
+      - name: Prepared developer directory smoke
+        shell: bash
+        run: |
+          set -euxo pipefail
+          DEST="$RUNNER_TEMP/fake-sd/esd"
+          mkdir -p "$DEST"
+          tools/prepare_mu1440_sd.sh "$DEST"
+
+          PKG="$DEST/MHI2AltScreen"
+          test -x "$PKG/install.sh"
+          test -x "$PKG/uninstall.sh"
+          test -x "$PKG/status.sh"
+          test -x "$PKG/payload/sha256sum"
+          test -x "$PKG/payload/libaltscreen111.so"
+          test -x "$PKG/payload/direct-ts-remux"
+          test -x "$PKG/payload/libmibr_isotx2_gate.so"
+
+          # Stable public deployment intentionally does not ship the unvalidated
+          # SafeArea candidate as its active runtime helper yet.
+          test ! -e "$PKG/runtime/navigation/gen2_safearea.sh"
+
+          (
+            cd "$PKG"
+            sha256sum -c PAYLOAD.sha256
+            bash -n install.sh
+            bash -n uninstall.sh
+            bash -n status.sh
+          )
+
+          cat > "$RUNNER_TEMP/keypanel-sample.log" <<'EOF'
+          j9/hmi: HK Received: KBD[4] KEY[50] KST[1]
+          j9/hmi: HK Received: KBD[4] KEY[50] KST[0]
+          EOF
+          python3 tools/parse_keypanel_trace.py "$RUNNER_TEMP/keypanel-sample.log" |
+            grep -Fq 'KEY_MFW_PTT_ON'
