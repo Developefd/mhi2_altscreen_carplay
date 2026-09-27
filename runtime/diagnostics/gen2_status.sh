@@ -13,7 +13,6 @@ find_sha(){
   for p in /mnt/app/root/altscreen-u2/bin/sha256sum /usr/bin/sha256sum /bin/sha256sum; do
     [ -x "$p" ] && { echo "$p"; return 0; }
   done
-  command -v sha256sum 2>/dev/null && return 0
   return 1
 }
 SHA=$(find_sha 2>/dev/null)
@@ -52,8 +51,8 @@ fi
 echo
 
 echo "--- Stream111 ---"
-[ -r /tmp/mibr-carplay111.state ] && { printf "state="; cat /tmp/mibr-carplay111.state; } || echo "state=NONE"
-[ -r /tmp/mibr-carplay111.heartbeat ] && { printf "heartbeat="; cat /tmp/mibr-carplay111.heartbeat; } || echo "heartbeat=NONE"
+[ -r /tmp/mibr-carplay111.state ] && echo "state=$(cat /tmp/mibr-carplay111.state 2>/dev/null)" || echo "state=NONE"
+[ -r /tmp/mibr-carplay111.heartbeat ] && echo "heartbeat=$(cat /tmp/mibr-carplay111.heartbeat 2>/dev/null)" || echo "heartbeat=NONE"
 echo
 
 echo "--- ports ---"

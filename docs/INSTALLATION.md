@@ -87,6 +87,10 @@ The prepared developer directory contains its own public, reproducibly built QNX
 `sha256sum` compatibility helper. Installation no longer depends on a pre-existing M.I.B.
 `/apps/sbin` SD-card tree.
 
+The preflight also verifies the exact command set required by the currently published scripts
+before any persistent mutation. This is intentional: common Linux command names/options are not
+assumed to exist on QNX.
+
 The top-level preflight also rejects the experimental DirectVC Java override, legacy Most20FPS
 bootclasspath patches, and the older combined `NavActiveIgnore.jar` before persistent changes are
 made.

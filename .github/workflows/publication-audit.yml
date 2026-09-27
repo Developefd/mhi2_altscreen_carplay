@@ -41,6 +41,7 @@ jobs:
             artifacts/mu1440/altscreen111/vehicle-tested-2026-09-27/libaltscreen111.so \
             artifacts/mu1440/direct-ts-remux/vehicle-tested-2026-09-27/direct-ts-remux \
             artifacts/mu1440/isotx2-gate/build-confirmed-current/libmibr_isotx2_gate.so \
+            artifacts/mu1440/sha256sum-compat/build-confirmed-current/sha256sum \
             runtime/auto-direct/common.sh \
             runtime/auto-direct/patch_carplay.sh \
             runtime/auto-direct/restore_stock.sh \
@@ -79,3 +80,37 @@ jobs:
 
           ! grep -Fq 'printf ' deployment/mu1440/install.sh
           ! grep -Fq 'printf ' deployment/mu1440/uninstall.sh
+
+
+      - name: MU1440 shell-regression audit
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          # Exact vehicle evidence: external printf is absent in the direct MMX runtime.
+          # Shell scripts deployed to the unit must not regress to it.
+          ! grep -R -n -E '(^|[;&|[:space:]])printf[[:space:]]' deployment/mu1440 runtime
+
+          # The prepared developer package must carry its own hash helper instead of
+          # depending on the classic M.I.B. /apps/sbin tree.
+          grep -Fq 'SHA=${MIBR_SHA256:-$PAYLOAD/sha256sum}' deployment/mu1440/install.sh
+          grep -Fq 'SHA=${MIBR_SHA256:-$PAYLOAD/sha256sum}' deployment/mu1440/uninstall.sh
+          grep -Fq 'payload/sha256sum' tools/prepare_mu1440_sd.sh
+
+          # Fail before persistent mutation if the exact runtime command set is absent.
+          grep -Fq 'require_cmds mount cp mv chmod sync mkdir rm touch sleep grep awk sed wc cat pidin on slay' deployment/mu1440/install.sh
+
+          # Auto-Direct must be prepared, not started, before the reboot that loads
+          # the DisplayManager gate.
+          grep -Fq 'MIBR_PREPARE_ONLY=1' deployment/mu1440/install.sh
+          grep -Fq 'runtime_start=SKIPPED_UNTIL_REBOOT' runtime/auto-direct/direct_ts_auto_enable.sh
+
+          # Install order: the fail-safe DisplayManager gate is installed before
+          # the persistent CarPlay preload is prepared.
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("deployment/mu1440/install.sh").read_text()
+          gate=s.index("=== install DisplayManager isoTX2 gate preload ===")
+          cp=s.index("=== prepare persistent CarPlay Stream111 preload ===")
+          assert gate < cp
+          PY

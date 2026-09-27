@@ -235,7 +235,8 @@ If you want to understand the project without reading the entire repository, use
 10. [iOS 27 sender research](docs/research/IOS27_SENDER_LIFECYCLE.md) — exact build/hash authority behind the current lifecycle model.
 11. [Public references](docs/research/PUBLIC_REFERENCES.md) — prior art and external projects worth reading.
 12. [Developer installation](docs/INSTALLATION.md) — guarded install/restore path for the exact MU1440 reference target.
-13. [Roadmap](ROADMAP.md) — current priorities and concrete help-wanted areas.
+13. [MU1440 QNX shell compatibility](docs/testing/MU1440_QNX_SHELL_COMPATIBILITY.md) — exact-target command/paste constraints behind the scripts.
+14. [Roadmap](ROADMAP.md) — current priorities and concrete help-wanted areas.
 
 ### Want to help?
 

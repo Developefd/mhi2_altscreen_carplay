@@ -10,8 +10,7 @@ ROOT=$(cd "$ROOT" 2>/dev/null && pwd) || exit 2
 
 PAYLOAD=$ROOT/payload
 RUNTIME=$ROOT/runtime
-SHA=${MIBR_SHA256:-/net/mmx/fs/sda0/apps/sbin/sha256sum}
-[ -x "$SHA" ] || [ ! -x "$PAYLOAD/sha256sum" ] || SHA="$PAYLOAD/sha256sum"
+SHA=${MIBR_SHA256:-$PAYLOAD/sha256sum}
 DST=/mnt/app/root/altscreen-u2
 LSD=/mnt/app/eso/hmi/lsd/lsd.sh
 
@@ -32,6 +31,33 @@ fail(){
   exit 20
 }
 
+find_cmd(){
+  C=$1
+  case "$C" in
+    */*) [ -x "$C" ] && { echo "$C"; return 0; } ;;
+    *)
+      OLDIFS=$IFS
+      IFS=:
+      for D in /proc/boot:/bin:/usr/bin:/usr/sbin:/sbin:/mnt/app/armle/bin:/mnt/app/armle/usr/bin; do
+        [ -n "$D" ] || D=.
+        if [ -x "$D/$C" ]; then
+          IFS=$OLDIFS
+          echo "$D/$C"
+          return 0
+        fi
+      done
+      IFS=$OLDIFS
+      ;;
+  esac
+  return 1
+}
+
+require_cmds(){
+  for C in "$@"; do
+    find_cmd "$C" >/dev/null 2>&1 || fail "missing_required_command=$C"
+  done
+}
+
 check_hash(){
   F=$1
   E=$2
@@ -44,6 +70,7 @@ check_hash(){
 preflight(){
   echo "=== MHI2 AltScreen MU1440 developer install preflight ==="
   [ -x "$SHA" ] || fail "missing_sha256_helper=$SHA"
+  require_cmds mount cp mv chmod sync mkdir rm touch sleep grep awk sed wc cat pidin on slay
   [ -r /mnt/app/eso/lib/libairplay.so ] || fail "not_mmx_target"
   AIR=$(hashf /mnt/app/eso/lib/libairplay.so) || fail "libairplay_hash_failed"
   [ "$AIR" = "$EXPECTED_AIRPLAY" ] || fail "unsupported_libairplay=$AIR"
@@ -181,11 +208,12 @@ apply(){
   preflight
   stage_runtime
 
+  echo "=== install DisplayManager isoTX2 gate preload ==="
+  MIBR_GATE_LIB="$PAYLOAD/libmibr_isotx2_gate.so" MIBR_SHA256="$SHA" \
+    "$RUNTIME/isotx2-gate/install_preload.sh" --apply || fail "gate_preload_rc_$?"
+
   echo "=== prepare persistent CarPlay Stream111 preload ==="
   "$DST/scripts/patch_carplay.sh" || fail "patch_carplay_rc_$?"
-
-  echo "=== install DisplayManager isoTX2 gate preload ==="
-  MIBR_GATE_LIB="$PAYLOAD/libmibr_isotx2_gate.so" MIBR_SHA256="$SHA"     "$RUNTIME/isotx2-gate/install_preload.sh" --apply || fail "gate_preload_rc_$?"
 
   install_optional_navignore
 

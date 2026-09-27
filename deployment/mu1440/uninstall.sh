@@ -8,14 +8,14 @@ ROOT=$(cd "$ROOT" 2>/dev/null && pwd) || exit 2
 DST=/mnt/app/root/altscreen-u2
 LSD=/mnt/app/eso/hmi/lsd/lsd.sh
 PAYLOAD=$ROOT/payload
-SHA=${MIBR_SHA256:-/net/mmx/fs/sda0/apps/sbin/sha256sum}
-[ -x "$SHA" ] || [ ! -x "$PAYLOAD/sha256sum" ] || SHA="$PAYLOAD/sha256sum"
+SHA=${MIBR_SHA256:-$PAYLOAD/sha256sum}
 OWNED=/mnt/app/root/mibr-deploy-navignore-owned
 TMP=/tmp/lsd.sh.mibr-deploy-navignore-remove.$$
 
 FAIL=0
 
 echo "=== MHI2 AltScreen MU1440 developer uninstall ==="
+[ -x "$SHA" ] || { echo "MIBR_UNINSTALL=FAIL missing_sha256_helper=$SHA"; exit 20; }
 
 if [ -x "$DST/scripts/direct_ts_auto_disable.sh" ]; then
   "$DST/scripts/direct_ts_auto_disable.sh" || FAIL=1
