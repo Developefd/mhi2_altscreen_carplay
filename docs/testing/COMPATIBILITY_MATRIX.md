@@ -35,12 +35,15 @@ A different hash is a **stop condition**, not permission to assume ABI compatibi
 | live Apple Maps in VC | PASS | vehicle-tested |
 | automatic Direct start/stop | PASS in current development line | newer than public GEN2 binary |
 | cable-reconnect recovery | PASS | useful fallback on older GEN2 snapshot |
-| same-session reacquire | PARTIAL/PASS in selected cases | still being characterized |
-| provider switch without reconnect | PARTIAL | observed, not deterministic |
-| Google Maps end-to-end stable | NOT CLAIMED | provider transition testing ongoing |
-| Waze end-to-end stable | NOT CLAIMED | provider transition testing ongoing |
+| manual same-session keyframe recovery | PASS | reproduced twice; fresh source IDR restored moving VC video |
+| automatic D2 keyframe recovery | PASS / NEEDS TUNING | kept tested lifecycle/provider transitions usable; current watchdog is intentionally aggressive |
+| provider switch without reconnect | PASS in tested 2026-09-27 sequence | Apple Maps / Google Maps / Waze transitions exercised; broader soak testing still needed |
+| Google Maps end-to-end | PASS in tested sequence | not yet a broad compatibility claim |
+| Waze end-to-end | PASS in tested sequence | rich lower trip-summary UI exposed a SafeArea issue |
 | `suggestUI` lifecycle interpretation | STRONG RESEARCH EVIDENCE | exact iOS 27.2 + vehicle tracing |
-| dynamic ViewArea | RESEARCH / NOT RELEASED | sender API identified; vehicle mapping ongoing |
+| navigation composition query controls | PASS / VEHICLE-OBSERVED | ETA/compass/maneuver layout alter real provider composition |
+| SafeArea configuration | BUILD-CONFIRMED / NOT YET VEHICLE-VALIDATED | development source exposes configurable geometry |
+| dynamic ViewArea | RESEARCH / NOT RELEASED | in-session update mechanism identified; runtime preset switching planned |
 | navigation arrows / RGI | FUTURE/SEPARATE | not required for map-video proof |
 | SD-card installer | INTENTIONALLY NOT PROVIDED | SSH/developer phase |
 | cross-brand portability | OPEN | requires exact target evidence |

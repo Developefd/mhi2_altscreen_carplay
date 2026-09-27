@@ -1,6 +1,6 @@
 # Current development status
 
-Last updated: **2026-09-26**
+Last updated: **2026-09-27**
 
 > The downloadable experimental GEN2 binary is intentionally **not the newest development build**.
 >
@@ -230,3 +230,34 @@ The project is especially interested in developers/testers who can contribute on
 
 A useful contribution does not require solving the whole stack. A precise trace that closes one
 state transition is valuable.
+
+
+## 2026-09-27 vehicle milestone
+
+A controlled vehicle run materially narrowed the lifecycle problem.
+
+The failure was reproduced in this form:
+
+```text
+Stream 111        still streaming
+source AUs        still increasing
+direct remux      still running
+MOST blocks       still increasing
+write errors      0
+VC                frozen on an old frame
+```
+
+Two independent manual same-session recoveries then produced a fresh source IDR and immediately
+restored moving VC video without changing the stream, codec or consumer generation.
+
+After enabling the D2 automatic keyframe policy, the tested Apple Maps / Google Maps / Waze
+navigation start/stop/provider transitions remained usable without another manual recovery.
+
+This changes the leading diagnosis from "provider switch may require stream rebuild" to:
+
+> **the sender can keep the existing Stream-111 transport alive while the downstream VC presentation
+> still needs a fresh decodable random-access point after lifecycle/composition transitions.**
+
+The current D2 watchdog deliberately forces an IDR after one second without a newer source IDR.
+That behavior is functionally useful but too aggressive for a final policy: the next tuning step is
+to make watchdog activity event-scoped rather than permanently periodic.

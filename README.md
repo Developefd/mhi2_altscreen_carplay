@@ -143,10 +143,33 @@ Canonical experimental binary SHA-256:
 
 `f3efa9f09972422307f1b9e37e323539036d935f9cc630a1ed7d8f223a2bbae2`
 
-This is **not the newest development binary**. It is an intentionally older vehicle-tested checkpoint
-with live VC video and a known lifecycle/recovery limitation. Current development is already further
-ahead in automatic start/stop, provider switching, `suggestUI` observation, same-session reacquire
-and codec-generation handling.
+This older snapshot remains useful as a historical checkpoint, but a newer **vehicle-tested
+2026-09-27 developer checkpoint** is now published below. It includes the generation-safe GEN2 path,
+navigation-composition controls and the keyframe-recovery line that restored stable moving VC video
+across the tested navigation lifecycle transitions.
+
+### Vehicle-tested GEN2 checkpoint — 2026-09-27
+
+The latest public vehicle-tested checkpoint is now available here:
+
+- [vehicle-tested GEN2 artifact](artifacts/mu1440/altscreen111/vehicle-tested-2026-09-27/)
+- [vehicle-tested direct-ts-remux](artifacts/mu1440/direct-ts-remux/vehicle-tested-2026-09-27/)
+- [keyframe recovery finding](docs/findings/KEYFRAME_RECOVERY_2026-09-27.md)
+- [navigation composition matrix](docs/testing/NAV_COMPOSITION_MATRIX_2026-09-27.md)
+- [navigation composition / SafeArea background](docs/architecture/NAVIGATION_COMPOSITION_AND_SAFEAREA.md)
+
+What changed on the real vehicle:
+
+- moving CarPlay navigation video is stable through the direct Stream-111 -> MPEG-TS -> MOST path;
+- a stale/frozen VC image was reproduced while Stream 111, H.264 input and MOST output all continued;
+- two manual same-session `forceKeyFrame` recoveries produced fresh source IDRs and immediately restored moving video;
+- the automatic D2 policy then kept the tested Apple Maps / Google Maps / Waze start/stop/provider transitions usable;
+- the current 1 s watchdog is deliberately conservative and is **not considered final tuning**;
+- `showETA`, `showCompass`, `showSpeedLimit` and `maneuverLayout` are now exposed as testable composition controls;
+- the three cluster surfaces `/instrumentcluster`, `/map` and `/instructioncard` have been exercised on the vehicle.
+
+The newer SafeArea-capable source is also public, but its geometry-control extension is a **development
+candidate**, not part of the vehicle-tested binary checkpoint above.
 
 For the current engineering state, read:
 
@@ -188,7 +211,7 @@ Public prior art and credits are listed in [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENT
 
 ### Current research focus
 
-The main open problem is **not basic Type-111 video transport anymore**.
+The main open problem is **not basic Type-111 video transport anymore**. The 2026-09-27 vehicle run also demonstrated that same-stream keyframe refresh is the critical recovery primitive for the observed stale-frame lifecycle failure.
 
 The current focus is the receiver-side same-session lifecycle:
 

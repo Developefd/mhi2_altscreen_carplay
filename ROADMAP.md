@@ -9,8 +9,9 @@ Highest-value work:
 - capture clean provider-transition traces;
 - close `suggestUI` -> receiver selection behavior;
 - determine when `showUI` / `stopUI` is necessary;
-- classify same-session `forceKeyFrame` recovery;
-- prove the correct VideoConfig/IDR generation rules;
+- tune the now vehicle-proven same-session `forceKeyFrame` recovery;
+- replace the current periodic 1 s D2 watchdog with an event-scoped/bounded watchdog policy;
+- preserve the proven VideoConfig/IDR generation rules;
 - eliminate stale-last-frame cases without synthetic Type-111 teardown.
 
 ## P0 — more vehicles / exact compatibility gates
@@ -32,7 +33,9 @@ Goals:
 - map cluster layout -> project layout abstraction;
 - advertise useful ViewAreas;
 - request/switch ViewArea in-session;
-- validate safe areas against gauge overlays.
+- validate safe areas against gauge overlays;
+- calibrate the first 1010x376 top/bottom SafeArea from vehicle photos;
+- later pre-advertise multiple ViewAreas and switch them live through `updateViewArea`.
 
 ## P1 — make developer deployment cleaner
 
