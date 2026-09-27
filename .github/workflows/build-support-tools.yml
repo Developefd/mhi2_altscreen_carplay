@@ -211,4 +211,6 @@ jobs:
             exit 0
           fi
           git commit -m "artifacts: publish build-confirmed isoTX2 gate"
+          git fetch origin main
+          git rebase origin/main
           git push origin HEAD:main
