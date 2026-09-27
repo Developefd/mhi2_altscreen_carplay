@@ -28,6 +28,18 @@ Then use the resulting `MHI2AltScreen/` directory on the target.
 The deployment contains individually auditable payload files; it deliberately does not publish an
 opaque install archive.
 
+### Target-side hash helper
+
+The target needs an executable QNX ARM `sha256sum`. The deployment checks the known project/M.I.B.
+SD path first:
+
+```text
+/net/mmx/fs/sda0/apps/sbin/sha256sum
+```
+
+Alternatively place a compatible helper in `payload/sha256sum` or set `MIBR_SHA256`.
+Missing hash support is a hard stop; target/payload verification is not skipped.
+
 ## Apply
 
 ```sh

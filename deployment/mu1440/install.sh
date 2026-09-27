@@ -10,7 +10,8 @@ ROOT=$(cd "$ROOT" 2>/dev/null && pwd) || exit 2
 
 PAYLOAD=$ROOT/payload
 RUNTIME=$ROOT/runtime
-SHA=/net/mmx/fs/sda0/apps/sbin/sha256sum
+SHA=${MIBR_SHA256:-/net/mmx/fs/sda0/apps/sbin/sha256sum}
+[ -x "$SHA" ] || [ ! -x "$PAYLOAD/sha256sum" ] || SHA="$PAYLOAD/sha256sum"
 DST=/mnt/app/root/altscreen-u2
 LSD=/mnt/app/eso/hmi/lsd/lsd.sh
 

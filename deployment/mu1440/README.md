@@ -49,6 +49,23 @@ b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34
 If it is absent, installation continues but reports that the complete vehicle-proven smartphone
 navigation presentation used NavIgnore.
 
+## Hash helper prerequisite
+
+The installer requires a QNX ARM `sha256sum` helper. It first uses the known M.I.B./test-card path:
+
+```text
+/net/mmx/fs/sda0/apps/sbin/sha256sum
+```
+
+If that is not present, an experienced developer may supply a compatible executable as:
+
+```text
+payload/sha256sum
+```
+
+or set `MIBR_SHA256` explicitly. The project does not redistribute an unverified third-party hash
+binary merely to make the deployment look more one-click.
+
 ## On the unit
 
 Run from the prepared directory:
