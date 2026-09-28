@@ -11,7 +11,8 @@ The project deliberately separates the **CarPlay AltScreen / Stream-111 video pl
 | ✅ | Proven | Stream 111 -> H.264 -> MPEG-TS -> MOST -> Virtual Cockpit | Vehicle-proven on the MU1440 / AID10-class reference target |
 | ✅ | Proven | Same-session keyframe recovery | Manual recovery and the current D2 safety policy are vehicle-proven |
 | ✅ | Proven | Reversible developer deployment / STOCK fallback | Guarded install, status and restore path exists for the exact reference target |
-| 🟨 | **Current** | SafeArea calibration | Calibrate the first 1010x376 composition envelope against real VC gauge overlays |
+| 🟨 | **Current** | Outer geometry A/B | Compare the OEM 1010x376 map plane with a direct 1280x480 native-panel-class Stream-111 probe; no SafeArea during this comparison |
+| ⏭️ | Next | SafeArea calibration | Freeze SafeArea only after the outer coded-frame geometry is chosen |
 | ⏭️ | Next | Exact-stock Java isolation | J1/J2 single-class tests only after SafeArea is complete |
 | ⏭️ | Next | D2 keyframe-policy tuning | Replace the conservative 1 s watchdog with event-scoped / bounded recovery |
 | ⬜ | Planned | Steering-wheel VIEW / hardkey mapping | Prove the physical key from stock raw traces before assigning runtime behavior |
@@ -24,16 +25,24 @@ The project deliberately separates the **CarPlay AltScreen / Stream-111 video pl
 The strict current vehicle order is:
 
 ```text
-SafeArea -> exact-stock Java J1/J2 -> D2 tuning
+1010x376 vs 1280x480 geometry A/B -> SafeArea -> exact-stock Java J1/J2 -> D2 tuning
 ```
 
 Do not mix these three experiments in one run.
 
-## P0 — SafeArea / ViewArea calibration
+## P0 — outer coded-frame geometry, then SafeArea / ViewArea calibration
 
-Goals:
+First resolve the outer Direct-TS geometry:
 
-- keep the outer CarPlay secondary-display canvas at 1010x376;
+- baseline **1010x376**, matching the stock MU1440 `DISPLAYABLE_KOMBI_MAP_VIEW`;
+- experimental **1280x480**, matching the later Continental FPK native-panel class;
+- disable SafeArea during this A/B so it cannot confound coverage or scaling;
+- compare pixel sharpness, edge coverage, transparent gauge overlays and decoder acceptance;
+- keep the remux/MOST path otherwise unchanged.
+
+After that decision:
+
+- keep the selected outer CarPlay secondary-display canvas fixed;
 - calibrate the nested SafeArea against the real AID10-class gauge overlays;
 - start from the current first estimate and adjust only geometry;
 - keep the already-proven transport and current D2 behavior unchanged during calibration;
