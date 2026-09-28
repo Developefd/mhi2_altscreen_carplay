@@ -152,3 +152,26 @@ source-code archives correspond to the same current source/documentation state.
 This remains a developer prerelease: the media-path payload bytes are vehicle-tested, while the
 integrated standalone installer, logging and foreign-Java recovery flow is undergoing broader
 vehicle validation.
+
+
+## 2026-09-29 reference-default update
+
+The MU1440/AID10-class developer package now includes the vehicle-validated standalone Most20 patch
+and enables the conservative D2 keyframe policy persistently by default.
+
+Most20 payload:
+
+```text
+MIBR-Most20FPS.jar
+SHA-256 dbd45609fe4ba69948d39e9e649b224484f680f6aa7934b68c261a4d360ea5bb
+```
+
+Vehicle capture at the stock DisplayManager -> `/dev/mlb/isoTX2` boundary measured:
+
+- stock: 1010x376 H.264 Baseline, 10 fps, 105 x 12,032-byte writes in about 4 s;
+- Most20: 1010x376 H.264 Baseline, 20 fps, 210 x 12,032-byte writes in about 4 s;
+- five-frame GOP retained, so native I/IDR cadence changes from about 0.5 s to about 0.25 s.
+
+GEN2 D2 remains a separate source-side recovery mechanism. Its public default is now persistent
+with a 1 s source-IDR watchdog and 1 s minimum request gap; it can be disabled at runtime and
+persistently with `gen2_keyframes.sh off`.
