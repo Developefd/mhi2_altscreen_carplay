@@ -11,18 +11,40 @@ export LD_LIBRARY_PATH=/lib:/mnt/app/root/lib-target:/eso/lib:/mnt/app/usr/lib:/
 unset LD_PRELOAD
 export GEM=1
 
-# Installed runtime is deliberately self-contained under /mnt/app/root/altscreen-u2.
-# Do not import M.I.B. BASICS/GLOBALS or depend on an SD-card apps/ tree.
+# Installed runtime is self-contained under /mnt/app/root/altscreen-u2.
+# Persistent logs prefer the deployment SD/USB medium when available. This
+# preserves the proven M.I.B. writable-media behavior without importing its
+# BASICS/GLOBALS or depending on an apps/ tree.
 VOLUME="$BASE"
 SHA256="$BASE/bin/sha256sum"
 TEE="$BASE/bin/tee"
 TIMESTAMP="/net/rcc/usr/bin/date +%Y_%m_%d_%H_%M_%S"
 TMP="/net/rcc/dev/shmem"
-BACKUPFOLDER="$BASE/logs"
-LOG="$BACKUPFOLDER/U2-LOG.txt"
+DEPLOY_MEDIA_FILE="$BASE/config/deployment_media_root"
+DEPLOY_MEDIA_ROOT=""
 U2_STORAGE_READY=0
-mkdir -p "$BACKUPFOLDER" 2>/dev/null || true
-[ -f "$LOG" ] || echo "MU1440 AltScreen runtime" > "$LOG" 2>/dev/null || true
+U2_LOG_ON_MEDIA=0
+
+set_log_root(){
+  BACKUPFOLDER=$1
+  LOG="$BACKUPFOLDER/U2-LOG.txt"
+  DIRECT_LOG_ROOT="$BACKUPFOLDER/direct-ts"
+  DIRECT_MASTER_LOG="$DIRECT_LOG_ROOT/DIRECT-TS.log"
+}
+
+set_log_root /tmp/mibr-altscreen-logs
+if [ -r "$DEPLOY_MEDIA_FILE" ]; then
+  DEPLOY_MEDIA_ROOT=$(cat "$DEPLOY_MEDIA_FILE" 2>/dev/null)
+  case "$DEPLOY_MEDIA_ROOT" in
+    /net/mmx/fs/*)
+      U2_LOG_ON_MEDIA=1
+      set_log_root "$DEPLOY_MEDIA_ROOT/mhi2-altscreen-logs"
+      ;;
+    *)
+      DEPLOY_MEDIA_ROOT=""
+      ;;
+  esac
+fi
 
 CARPLAY_HOOK=/mnt/app/eso/lib/libmibr_carplay111.so
 CARPLAY_BACKDIR=/mnt/app/root/mibr-carplay111-backup
@@ -99,17 +121,49 @@ carplay_stack_health(){
 
 prepare_log_storage(){
   if [ "$U2_STORAGE_READY" = "1" ]; then
-    [ -d "$BASE/logs" ] || mkdir -p "$BASE/logs" 2>/dev/null || return 1
+    [ -d "$BACKUPFOLDER" ] || return 1
     return 0
   fi
 
-  mkdir -p "$BASE/logs" 2>/dev/null || return 1
-  TEST="$BASE/logs/.write-test-$"
-  touch "$TEST" 2>/dev/null || return 1
-  [ -f "$TEST" ] || return 1
+  if [ "$U2_LOG_ON_MEDIA" = "1" ]; then
+    if ! mount -uw "$DEPLOY_MEDIA_ROOT" 2>/dev/null; then
+      runtime_emit "WARN deployment media unavailable for logging; using /tmp"
+      U2_LOG_ON_MEDIA=0
+      set_log_root /tmp/mibr-altscreen-logs
+    fi
+  fi
+
+  if ! mkdir -p "$BACKUPFOLDER" 2>/dev/null; then
+    if [ "$U2_LOG_ON_MEDIA" = "1" ]; then
+      runtime_emit "WARN deployment media log directory unavailable; using /tmp"
+      U2_LOG_ON_MEDIA=0
+      set_log_root /tmp/mibr-altscreen-logs
+      mkdir -p "$BACKUPFOLDER" 2>/dev/null || return 1
+    else
+      return 1
+    fi
+  fi
+
+  TEST="$BACKUPFOLDER/.write-test-$$"
+  if ! touch "$TEST" 2>/dev/null || [ ! -f "$TEST" ]; then
+    rm -f "$TEST" 2>/dev/null || true
+    if [ "$U2_LOG_ON_MEDIA" = "1" ]; then
+      runtime_emit "WARN deployment media is not writable; using /tmp"
+      U2_LOG_ON_MEDIA=0
+      set_log_root /tmp/mibr-altscreen-logs
+      mkdir -p "$BACKUPFOLDER" 2>/dev/null || return 1
+      TEST="$BACKUPFOLDER/.write-test-$$"
+      touch "$TEST" 2>/dev/null || return 1
+      [ -f "$TEST" ] || return 1
+    else
+      return 1
+    fi
+  fi
   rm -f "$TEST" 2>/dev/null || true
+  [ -f "$LOG" ] || echo "MU1440 AltScreen runtime" > "$LOG" 2>/dev/null || true
+  mkdir -p "$DIRECT_LOG_ROOT" 2>/dev/null || true
   U2_STORAGE_READY=1
-  export U2_STORAGE_READY
+  export U2_STORAGE_READY U2_LOG_ON_MEDIA
   return 0
 }
 
@@ -145,7 +199,7 @@ timestamp_now(){
   if [ -x /net/rcc/usr/bin/date ]; then
     /net/rcc/usr/bin/date +%Y%m%d-%H%M%S 2>/dev/null && return 0
   fi
-  echo "run-$"
+  echo "run-$$"
 }
 
 stamp(){ timestamp_now; }
@@ -189,9 +243,9 @@ run_dmdt(){ (cd /eso 2>/dev/null && IPL_CONFIG_DIR=/etc/eso/production LD_LIBRAR
 route(){
   C=$1; D=$2; V=${3:-4}
   log "DMDT route: context=$C displayable=$D display=$V"
-  run_dmdt dc "$C" "$D" >> "$BASE/logs/dmdt.log" 2>&1
+  run_dmdt dc "$C" "$D" >> "$BACKUPFOLDER/dmdt.log" 2>&1
   R1=$?
-  run_dmdt sc "$V" "$C" >> "$BASE/logs/dmdt.log" 2>&1
+  run_dmdt sc "$V" "$C" >> "$BACKUPFOLDER/dmdt.log" 2>&1
   R2=$?
   [ $R1 -eq 0 ] && [ $R2 -eq 0 ]
 }
@@ -264,10 +318,6 @@ load_altscreen_config(){
   esac
   return 0
 }
-
-DIRECT_LOG_ROOT=$BASE/logs/direct-ts
-DIRECT_MASTER_LOG=$DIRECT_LOG_ROOT/DIRECT-TS.log
-mkdir -p "$DIRECT_LOG_ROOT" 2>/dev/null || true
 
 direct_log(){
   mkdir -p "$DIRECT_LOG_ROOT" 2>/dev/null || true
