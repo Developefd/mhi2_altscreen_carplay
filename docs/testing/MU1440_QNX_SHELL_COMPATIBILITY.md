@@ -111,7 +111,7 @@ The prepared SD package is now independent of an existing M.I.B. card layout:
 - no `config/BASICS` / GLOBALS bootstrap;
 - no `apps/mounts` helper;
 - no `/apps/sbin/sha256sum` fallback;
-- no external `tee` dependency in the installed Auto-Direct runtime.
+- no firmware/M.I.B. `tee` dependency; the package carries its own QNX ARMv7 `payload/tee`.
 
 The only project-supplied command-line compatibility binary currently required by the deployment is
 `payload/sha256sum`. The native project payload also contains the feature binaries
@@ -119,7 +119,7 @@ The only project-supplied command-line compatibility binary currently required b
 components rather than replacements for missing shell utilities.
 
 Mandatory firmware/QNX commands used by the install/runtime path are fail-closed in the top-level
-preflight: `mount cp mv chmod sync mkdir rm touch sleep grep awk sed wc cat pidin on slay`, plus
+preflight: `mount cp mv chmod sync mkdir rm touch sleep grep awk wc cat pidin on slay`, plus
 `/bin/sh`, `/bin/ksh` and `/eso/bin/apps/dmdt`.
 
 Some diagnostic-only paths also try tools such as `tail`, `netstat`, `ls`, `uname`, `use` or
@@ -136,7 +136,7 @@ Before changing persistent files, `deployment/mu1440/install.sh --check` validat
 - the exact command set used by the current install/runtime;
 - absence of known conflicting DirectVC / Most20 / legacy combined Java overrides;
 - DisplayManager gate patchability;
-- optional NavIgnore hash when supplied.
+- exact NavIgnore presence/hash, either from `payload/` or an already-installed target copy.
 
 Unknown state is fail-closed.
 
