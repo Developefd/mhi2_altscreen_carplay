@@ -1,7 +1,9 @@
 #!/bin/ksh
 set -u
 
-SELF=$0\ncase "$SELF" in */*) BASE=${SELF%/*} ;; *) BASE=. ;; esac\nBASE=$(cd "$BASE" 2>/dev/null && pwd) || exit 2
+SELF=$0
+case "$SELF" in */*) BASE=${SELF%/*} ;; *) BASE=. ;; esac
+BASE=$(cd "$BASE" 2>/dev/null && pwd) || exit 2
 GATE="${MIBR_GATE_CONTROL:-$BASE/gate.sh}"
 CONTROL="${MIBR_PRELOAD_CONTROL:-$BASE/preload_control.sh}"
 HASH="${MIBR_SHA256:-$BASE/../../payload/sha256sum}"
