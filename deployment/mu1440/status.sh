@@ -30,12 +30,14 @@ mibr_vehicle_summary || echo "WARN vehicle_summary_failed"
 
 LSD=/mnt/app/eso/hmi/lsd/lsd.sh
 NAVJAR=/mnt/app/eso/hmi/lsd/jars/MIBR-NavIgnore.jar
+MOSTJAR=/mnt/app/eso/hmi/lsd/jars/MIBR-Most20FPS.jar
 EXPECTED_NAVIGNORE=b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34
+EXPECTED_MOST20=dbd45609fe4ba69948d39e9e649b224484f680f6aa7934b68c261a4d360ea5bb
 SHA="$DST/bin/sha256sum"
 echo "=== MHI2 AltScreen developer status ==="
 
 echo
-echo "=== Java / NavIgnore ==="
+echo "=== Java / NavIgnore + Most20 ==="
 NAVREFS=0
 [ -r "$LSD" ] && NAVREFS=$(awk 'index($0,"MIBR-NavIgnore.jar"){n++} END{print n+0}' "$LSD" 2>/dev/null)
 echo "navignore_bootclasspath_refs=$NAVREFS"
@@ -50,10 +52,30 @@ else
   echo "navignore_state=ABSENT"
 fi
 
+MOSTREFS=0
+[ -r "$LSD" ] && MOSTREFS=$(awk 'index($0,"MIBR-Most20FPS.jar"){n++} END{print n+0}' "$LSD" 2>/dev/null)
+echo "most20_bootclasspath_refs=$MOSTREFS"
+if [ -r "$MOSTJAR" ] && [ -x "$SHA" ]; then
+  set -- $("$SHA" "$MOSTJAR" 2>/dev/null)
+  MH=${1:-}
+  echo "most20_sha256=${MH:-UNKNOWN}"
+  [ "$MH" = "$EXPECTED_MOST20" ] && echo "most20_state=PASS_EXACT" || echo "most20_state=FAIL_HASH"
+elif [ "$MOSTREFS" -gt 0 ]; then
+  echo "most20_state=FAIL_BOOTCLASSPATH_WITHOUT_JAR"
+else
+  echo "most20_state=ABSENT"
+fi
+
 if [ -r "$LSD" ]; then
   grep -Fq 'MIBR-DirectVCPolicy.jar' "$LSD" 2>/dev/null && echo "java_conflict=DirectVCPolicy"
-  grep -Fq 'Most20FPS.jar' "$LSD" 2>/dev/null && echo "java_conflict=Most20FPS"
   grep -Fq 'NavActiveIgnore.jar' "$LSD" 2>/dev/null && echo "java_conflict=NavActiveIgnore_legacy"
+fi
+
+J9PID=$(pidin ar 2>/dev/null | awk '/[j]9/ {print $1; exit}')
+if [ -n "${J9PID:-}" ]; then
+  J9ARGS=$(pidin -p "$J9PID" arguments 2>/dev/null)
+  echo "$J9ARGS" | awk 'index($0,"MIBR-NavIgnore.jar"){f=1} END{print "navignore_live=" (f?1:0)}'
+  echo "$J9ARGS" | awk 'index($0,"MIBR-Most20FPS.jar"){f=1} END{print "most20_live=" (f?1:0)}'
 fi
 
 if [ -x "$DST/scripts/direct_ts_auto_status.sh" ]; then
