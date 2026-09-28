@@ -41,6 +41,7 @@ cp "$ROOT/runtime/isotx2-gate/"*.sh "$OUT/runtime/isotx2-gate/"
 cp "$ROOT/runtime/diagnostics/gen2_keyframes.sh" "$OUT/runtime/diagnostics/"
 cp "$ROOT/runtime/diagnostics/gen2_resync.sh" "$OUT/runtime/diagnostics/"
 cp "$ROOT/runtime/diagnostics/gen2_status.sh" "$OUT/runtime/diagnostics/"
+cp "$ROOT/runtime/diagnostics/keypanel_trace_discovery.sh" "$OUT/runtime/diagnostics/"
 cp "$ROOT/runtime/navigation/gen2_nav_config.sh" "$OUT/runtime/navigation/"
 
 chmod +x "$OUT/"*.sh "$OUT/runtime/"*/*.sh "$OUT/payload/libaltscreen111.so" "$OUT/payload/direct-ts-remux" "$OUT/payload/libmibr_isotx2_gate.so" "$OUT/payload/sha256sum"

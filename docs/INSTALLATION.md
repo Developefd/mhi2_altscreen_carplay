@@ -30,15 +30,11 @@ opaque install archive.
 
 ### Target-side hash helper
 
-The target needs an executable QNX ARM `sha256sum`. The deployment checks the known project/M.I.B.
-SD path first:
+The prepared developer directory carries its own reproducibly built QNX ARMv7 `payload/sha256sum`
+and uses that exact helper by default.
 
-```text
-/net/mmx/fs/sda0/apps/sbin/sha256sum
-```
-
-Alternatively place a compatible helper in `payload/sha256sum` or set `MIBR_SHA256`.
-Missing hash support is a hard stop; target/payload verification is not skipped.
+`MIBR_SHA256` remains an expert override for a separately verified compatible helper. Missing or
+non-executable hash support is a hard stop; target/payload verification is never skipped.
 
 ## Apply
 

@@ -49,22 +49,16 @@ b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34
 If it is absent, installation continues but reports that the complete vehicle-proven smartphone
 navigation presentation used NavIgnore.
 
-## Hash helper prerequisite
+## Hash helper
 
-The installer requires a QNX ARM `sha256sum` helper. It first uses the known M.I.B./test-card path:
-
-```text
-/net/mmx/fs/sda0/apps/sbin/sha256sum
-```
-
-If that is not present, an experienced developer may supply a compatible executable as:
+The prepared directory includes the project-owned, reproducibly built QNX ARMv7 helper:
 
 ```text
 payload/sha256sum
 ```
 
-or set `MIBR_SHA256` explicitly. The project does not redistribute an unverified third-party hash
-binary merely to make the deployment look more one-click.
+The installer uses it by default. An experienced developer may override it with `MIBR_SHA256`, but
+only after independently verifying the replacement binary.
 
 ## On the unit
 
@@ -110,3 +104,27 @@ A reboot is required after restore.
 
 This is a developer convenience layer over vehicle-tested lower-level scripts. It does not change
 the project's compatibility claims: a different firmware/hash is a stop condition.
+
+
+## Raw steering-wheel/keypanel mapping
+
+The prepared developer directory also includes the read-only discovery helper:
+
+```text
+runtime/diagnostics/keypanel_trace_discovery.sh
+```
+
+It does not patch Java or modify logger state. Its purpose is only to identify the exact stock trace
+reader/sink available on the target before collecting the built-in raw key lines:
+
+```text
+HK Received: KBD[n] KEY[n] KST[n]
+```
+
+Once a trace file has been captured, parse it off-unit with:
+
+```text
+python3 tools/parse_keypanel_trace.py --summary keypanel.log
+```
+
+Do not guess the physical VIEW button from constant names; map it from vehicle evidence.
