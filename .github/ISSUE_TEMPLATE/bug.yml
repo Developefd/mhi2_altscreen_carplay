@@ -51,6 +51,7 @@ body:
     id: logs
     attributes:
       label: Relevant output / logs
+      description: For deployment/runtime issues, attach session.log and vehicle-summary.txt from the matching mhi2-altscreen-logs session. Review archive/ before sharing because it can contain copied JAR bytes.
 
   - type: checkboxes
     id: privacy
