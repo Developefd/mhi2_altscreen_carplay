@@ -134,6 +134,7 @@ java_scan_state(){
   JAVA_CONFLICT=0
   JAVA_NEEDS_PAYLOAD=0
   JAVA_OLD_DYNAMIC=0
+  JAVA_EXACT_NAV_ACTIVE=0
   JAVA_REASON=""
 
   NAVREFS=$(awk 'index($0,"MIBR-NavIgnore.jar"){n++} END{print n+0}' "$LSD" 2>/dev/null)
@@ -161,6 +162,10 @@ java_scan_state(){
     JAVA_REASON="$JAVA_REASON old_dynamic_jar_loader"
   fi
 
+  if [ "$NAVREFS" -eq 1 ] && [ "$NAVHASH" = "$EXPECTED_NAVIGNORE" ]; then
+    JAVA_EXACT_NAV_ACTIVE=1
+  fi
+
   if [ "$NAVREFS" -gt 0 ]; then
     if [ "$NAVHASH" != "$EXPECTED_NAVIGNORE" ]; then
       JAVA_CONFLICT=1
@@ -184,6 +189,7 @@ java_scan_state(){
   echo "java_foreign_bootclasspath_refs=$FOREIGNREFS"
   echo "java_old_dynamic_loader=$JAVA_OLD_DYNAMIC"
   echo "java_navignore_hash=${NAVHASH:-ABSENT}"
+  echo "java_exact_nav_active=$JAVA_EXACT_NAV_ACTIVE"
   if [ "$JAVA_CONFLICT" -eq 1 ]; then
     echo "JAVA_STATE=FOREIGN reason=$JAVA_REASON"
     return 30
@@ -270,14 +276,15 @@ handle_java_conflict(){
   echo "Existing Java patch state differs from the validated NavIgnore-only setup."
   echo "The original state has already been archived in this SD session."
 
-  if [ "$JAVA_NEEDS_PAYLOAD" -eq 1 ]; then
+  if [ "$JAVA_EXACT_NAV_ACTIVE" -ne 1 ]; then
     [ -r "$PAYLOAD/MIBR-NavIgnore.jar" ] || {
-      echo "Cannot replace the existing NavIgnore state because the exact replacement JAR is not present in payload/."
-      echo "Place the exact JAR on the SD and rerun."
+      echo "Cannot reach the validated NavIgnore-only state: exact replacement JAR is not present in payload/."
+      echo "No target Java files have been changed. Place the exact JAR on the SD and rerun."
       return 30
     }
     H=$(hashf "$PAYLOAD/MIBR-NavIgnore.jar" 2>/dev/null)
     [ "$H" = "$EXPECTED_NAVIGNORE" ] || fail "replacement_navignore_hash_mismatch=$H"
+    echo "Exact replacement NavIgnore payload verified before Java normalization."
   fi
 
   case "${MIBR_FOREIGN_JAVA_ACTION:-ask}" in
