@@ -92,7 +92,7 @@ check_hash(){
 preflight(){
   echo "=== MHI2 AltScreen MU1440 developer install preflight ==="
   [ -x "$SHA" ] || fail "missing_sha256_helper=$SHA"
-  require_cmds mount cp mv chmod sync mkdir rm touch sleep grep awk sed wc cat pidin on slay
+  require_cmds mount cp mv chmod sync mkdir rm touch sleep grep awk sed wc cat pidin on slay /bin/sh /bin/ksh /eso/bin/apps/dmdt
   [ -r /mnt/app/eso/lib/libairplay.so ] || fail "not_mmx_target"
   AIR=$(hashf /mnt/app/eso/lib/libairplay.so) || fail "libairplay_hash_failed"
   [ "$AIR" = "$EXPECTED_AIRPLAY" ] || fail "unsupported_libairplay=$AIR"
