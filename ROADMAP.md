@@ -2,133 +2,167 @@
 
 This is a research roadmap, not a promise of release dates.
 
-## P0 — make the current lifecycle deterministic
+The project deliberately separates the **CarPlay AltScreen / Stream-111 video plane** from complementary native cluster interfaces such as **RGI / NavSD / BAP maneuver guidance**.
 
-Highest-value work:
+## At a glance
 
-- capture clean provider-transition traces;
-- close `suggestUI` -> receiver selection behavior;
-- determine when `showUI` / `stopUI` is necessary;
-- tune the now vehicle-proven same-session `forceKeyFrame` recovery;
-- replace the current periodic 1 s D2 watchdog with an event-scoped/bounded watchdog policy;
-- preserve the proven VideoConfig/IDR generation rules;
-- eliminate stale-last-frame cases without synthetic Type-111 teardown.
+| | Status | Work item | Current / next gate |
+|---|---|---|---|
+| ✅ | Proven | Stream 111 -> H.264 -> MPEG-TS -> MOST -> Virtual Cockpit | Vehicle-proven on the MU1440 / AID10-class reference target |
+| ✅ | Proven | Same-session keyframe recovery | Manual recovery and the current D2 safety policy are vehicle-proven |
+| ✅ | Proven | Reversible developer deployment / STOCK fallback | Guarded install, status and restore path exists for the exact reference target |
+| 🟨 | **Current** | SafeArea calibration | Calibrate the first 1010x376 composition envelope against real VC gauge overlays |
+| ⏭️ | Next | Exact-stock Java isolation | J1/J2 single-class tests only after SafeArea is complete |
+| ⏭️ | Next | D2 keyframe-policy tuning | Replace the conservative 1 s watchdog with event-scoped / bounded recovery |
+| ⬜ | Planned | Steering-wheel VIEW / hardkey mapping | Prove the physical key from stock raw traces before assigning runtime behavior |
+| ⬜ | Planned | Multi-ViewArea / automatic VC-layout coupling | Pre-advertise calibrated layouts, switch in-session, later bind to proven cluster state |
+| ⬜ | Planned | Native navigation arrows / RGI | Feed CarPlay maneuver metadata into the stock cluster navigation UI (arrow, distance, text) |
+| ⬜ | Research | Now Playing / native media metadata | Investigate native cluster media surfaces separately from Stream 111 |
+| ⬜ | Research | AID / firmware compatibility matrix | Detect cluster family and validate other Škoda / VW / SEAT / CUPRA targets |
 
-## P0 — more vehicles / exact compatibility gates
+The strict current vehicle order is:
 
-Wanted:
+```text
+SafeArea -> exact-stock Java J1/J2 -> D2 tuning
+```
 
-- Škoda MHI2 testers on other firmware trains;
-- SEAT/CUPRA MHI2 testers;
-- Volkswagen MHI2 testers;
-- same-family AID10-class testers across Škoda / Volkswagen / SEAT / CUPRA;
-- larger/older 12.3-inch AID testers as a deliberately separate hardware target;
-- different Virtual Cockpit/AID revisions.
+Do not mix these three experiments in one run.
 
-SSH access is currently expected via WLAN or USB-LAN.
-
-Later compatibility work must identify the cluster independently of the MHI2 firmware. TODO:
-
-- collect cluster part number / HW / SW identity;
-- determine which read-only target-side or diagnostic signal reliably distinguishes AID10-class from 12.3-inch AID families;
-- correlate that identity with native resolution, MOST/DCIVIDEO routing and ViewArea/SafeArea behavior;
-- turn the result into a non-destructive preflight report before broadening installer support.
-
-This is **not** a blocker for the current MU1440/AID10-class vehicle work.
-
-## P1 — ViewArea / SafeArea / VC layout mapping
+## P0 — SafeArea / ViewArea calibration
 
 Goals:
 
-- read actual stock cluster view state;
-- map cluster layout -> project layout abstraction;
-- advertise useful ViewAreas;
-- request/switch ViewArea in-session;
-- validate safe areas against gauge overlays;
-- calibrate the first 1010x376 top/bottom SafeArea from vehicle photos;
-- later pre-advertise multiple ViewAreas and switch them live through `updateViewArea`.
+- keep the outer CarPlay secondary-display canvas at 1010x376;
+- calibrate the nested SafeArea against the real AID10-class gauge overlays;
+- start from the current first estimate and adjust only geometry;
+- keep the already-proven transport and current D2 behavior unchanged during calibration;
+- after calibration, pre-advertise multiple useful ViewAreas / SafeAreas;
+- switch between those regions in-session through `updateViewArea` rather than recreating Stream 111.
 
-## P1 — make developer deployment cleaner
+This is the highest-priority vehicle work.
 
-Before a polished installer:
+## P1 — exact-stock Java isolation
 
-- compatibility manifest;
-- preflight script;
-- exact backup manifest;
+The earlier passive VC-state listener experiment disturbed the native VC / `isoTX2` path when introduced through Java bootclasspath shadowing.
+
+The next Java work is therefore intentionally narrower:
+
+1. exact-stock baseline;
+2. one exact stock class at a time;
+3. return to baseline between tests;
+4. no new policy or layout behavior during isolation.
+
+The purpose is to identify the minimum Java/HMI seam that can be observed safely before any automatic VC-layout binding is attempted.
+
+## P1 — keyframe recovery policy
+
+Same-stream `forceKeyFrame` recovery is already vehicle-proven. The current periodic D2 watchdog is deliberately conservative.
+
+Later tuning should:
+
+- react to relevant lifecycle / composition events;
+- debounce and coalesce bursts;
+- request recovery only until a fresh IDR is confirmed;
+- retain a bounded emergency fallback;
+- preserve Apple Maps / Google Maps / Waze provider transitions without synthetic Stream-111 teardown.
+
+## P1 — steering-wheel / hardkey runtime control
+
+The exact MU1440 Java stack exposes the required ASL hardkey substrate, and stock logging already provides raw tuples for physical-key identification.
+
+The rule is evidence-first:
+
+- capture the physical button through stock raw logging;
+- do not infer the VIEW button from symbolic names such as JOKER1/JOKER2;
+- only after the tuple is proven, consider a developer UX such as short press = OEM behavior and long press = calibrated ViewArea/SafeArea preset cycling.
+
+A Green Engineering Menu selector and file/config control remain useful diagnostic fallbacks.
+
+## P1 — navigation composition / provider validation
+
+The project already exposes navigation-composition controls including ETA, compass, speed limit and maneuver-layout options.
+
+Remaining work:
+
+- road-test the combinations with Apple Maps, Google Maps and Waze;
+- separate provider behavior from receiver behavior;
+- verify which composition options are actually honored by each sender state;
+- validate them again after SafeArea calibration.
+
+## P2 — native navigation arrows / RGI / NavSD-BAP integration
+
+This is intentionally a **separate output plane from the AltScreen video**.
+
+Target concept:
+
+```text
+CarPlay navigation
+ -> iAP2 / RGI maneuver metadata
+ -> MHI2
+ -> stock NavSD / BAP navigation surfaces
+ -> native cluster maneuver UI
+```
+
+Desired first result:
+
+- native maneuver arrow/type;
+- distance countdown;
+- road / street / destination text where supported;
+- later lane guidance where the exact target supports it;
+- clean takeover and automatic hand-back to OEM navigation.
+
+Public Luka-derived RGI work (for example `luka-dev/mib2q-carplay-rgi`) and the AU37x/HARMAN implementations are important prior art, but the MU1440 path must use the exact Škoda HMI/NavSD/BAP contracts rather than copying a foreign JAR or renderer blindly.
+
+The first implementation should prefer the **stock cluster's own navigation renderer**. Custom MOST/video rendering is not required for the native-arrow milestone.
+
+## P2 — Now Playing / native media metadata
+
+Investigate whether the existing native media/Now Playing cluster path can expose CarPlay metadata and artwork independently of the navigation video plane.
+
+Keep this work separate from Stream 111 unless runtime evidence proves a shared dependency.
+
+## P2 — compatibility / AID-family detection
+
+The first vehicle-proven target remains:
+
+- Škoda MHI2 / MU1440;
+- AID10-class 10.x-inch MQB Virtual Cockpit.
+
+Before broader support, collect and correlate:
+
+- cluster part number / HW / SW identity;
+- reliable read-only identification of AID family;
+- native resolution and MOST/DCIVIDEO routing;
+- SafeArea / ViewArea behavior;
+- firmware/component hashes.
+
+The larger/older 12.3-inch AID family is a separate compatibility target and must not be assumed equivalent.
+
+## P2 — developer deployment / tester expansion
+
+Continue improving:
+
+- compatibility manifest and preflight;
+- exact backup/restore manifest;
 - reversible enable/disable;
 - crash-safe STOCK fallback;
-- log collection;
-- target-specific profiles.
+- bounded log collection;
+- target-specific profiles;
+- cross-brand vehicle traces.
 
-## P2 — installer / SD workflow
-
-Only after lifecycle and compatibility are stable.
-
-The current project deliberately prefers visible SSH/developer steps over hiding changing assumptions
-behind a one-click SD package.
-
-## P2 — navigation metadata / arrows
-
-Potential later direction:
-
-- RGI / maneuver metadata;
-- navigation arrows;
-- cluster instruction-card integration.
-
-Public Luka/derived RGI work is the obvious prior-art starting point.
+The current repository remains a developer/research project, not a one-click SD-card consumer package.
 
 ## Good first contributions
 
-You do not need to solve the whole project.
-
 Useful contributions include:
 
-- one clean state trace;
+- one clean provider-transition trace;
 - one new firmware hash + ABI check;
-- one provider-switch reproduction;
 - one VC layout mapping;
-- one QNX/IBM-J9 finding;
+- one physical hardkey tuple from stock logs;
+- one QNX / IBM-J9 finding;
+- one RGI / NavSD / BAP compatibility finding;
 - one documentation correction backed by evidence;
 - build portability improvements.
 
 See `CONTRIBUTING.md` and use Discussions for exploratory findings before opening a hard bug.
-
-
-## P1 — steering-wheel / hardkey input for runtime layout control
-
-A useful cross-brand lead is
-`y-batsianouski/mib2-voicecontrol-button-patch`, originally tested on VW
-`MHI2_ER_VWG13_K4525_MU1367`.
-
-The exact Škoda MU1440 `lsd.jxe` audit confirms the same core ASL input substrate:
-
-- `ASLSystemAPI.addKeyListener(...)`;
-- `ASLSystemAPI.createAndSubmitHardkeyEvent(...)`;
-- PTT listener key 15;
-- the OEM 500 ms `DoublePressKeyAdapter` classifier;
-- matching `speechgeneral.ptt.DialogSession` behavior/abort-key layout;
-- matching mute/smartphone hardkey model from the exact target key mapping.
-
-This makes button-driven ViewArea/layout switching a credible later path.
-
-Do not copy the external shadow-JAR bootstrap blindly. It uses `-Xbootclasspath/p`; exact-class
-shadowing on the reference MU1440 is currently being isolated separately after it disturbed the
-native VC map path in another Java experiment.
-
-Preferred first implementation: passive/additive listener observation, then controlled layout
-switching; remapping/injection can follow after exact vehicle traces.
-
-
-### Runtime selector UX
-
-Once SafeArea/ViewArea presets are calibrated, expose them through a developer-facing selector before
-attempting a polished end-user UI.
-
-Candidate paths:
-
-- Green Engineering Menu entry for explicit profile/preset selection;
-- later steering-wheel/hardkey cycling through the exact ASL listener path;
-- file/config control remains the diagnostic fallback.
-
-The initial useful selector set is expected to include navigation composition (`stock`,
-`map-rich`, etc.) plus calibrated SafeArea/ViewArea presets.
