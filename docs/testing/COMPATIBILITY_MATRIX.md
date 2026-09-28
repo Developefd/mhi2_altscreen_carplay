@@ -43,6 +43,10 @@ Completed baselines:
 The main static findings are documented in
 [MHI2 cross-firmware implementation profile map](../research/MHI2_FIRMWARE_PROFILE_MAP_2026-09-28.md).
 
+Patch-by-patch engineering estimates are tracked separately in the
+[Patch-portability estimate](../research/MHI2_PATCH_PORTABILITY_ESTIMATE_2026-09-28.md), including
+GEN2/Stream-111, Direct-TS, the `isoTX2` gate, NavIgnore, Most20FPS and the Java Direct-VC policy.
+
 The next corpus comparison is AU37X P5089/P5153 MU1326. Static corpus similarity never bypasses the
 separate cluster hardware/routing/vehicle-validation gates below.
 
