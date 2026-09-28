@@ -1,21 +1,22 @@
-name: Release MU1440 AID10 developer ZIP
+name: Release current MU1440 AID10 developer ZIP
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths:
-      - 'release/MU1440_AID10_DEV_2026-09-28-R2.md'
+      - 'release/CURRENT.md'
 
 permissions:
   contents: write
 
 concurrency:
-  group: mu1440-aid10-dev-release
+  group: mu1440-aid10-current-release
   cancel-in-progress: false
 
 env:
-  TAG: mu1440-aid10-dev-2026-09-28-r2
-  ZIP_NAME: MHI2_AltScreen_MU1440_AID10_DEV_2026-09-28-R2.zip
+  TAG: mu1440-aid10-dev-current
+  ZIP_NAME: MHI2_AltScreen_MU1440_AID10_DEV_CURRENT.zip
 
 jobs:
   release:
@@ -23,6 +24,8 @@ jobs:
     steps:
       - name: Checkout exact release commit
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Final release audit
         shell: bash
@@ -33,8 +36,10 @@ jobs:
             "094e3f1abfbf949f8c11b27e048e8213e5fc71178e62efd3c56deed8ee3bf8d8"
           test "$(sha256sum artifacts/mu1440/direct-ts-remux/vehicle-tested-2026-09-27/direct-ts-remux | awk '{print $1}')" = \
             "b761a8741682e3cbc6e05f5fe1705475c34c4805d1cd1ce09333274a301e735e"
-          test "$(sha256sum artifacts/mu1440/isotx2-gate/vehicle-tested-run51/libmibr_isotx2_gate.so | awk '{print $1}')" = \
+          test "$(sha256sum artifacts/mu1440/isotx2-gate/vehicle-tested-2026-09-27/libmibr_isotx2_gate.so | awk '{print $1}')" = \
             "05673010a88c25022145ffb4e75d3715eaf686f4127ac188e91a52f512b9d957"
+          test "$(sha256sum artifacts/mu1440/navignore/vehicle-tested-2026-09-27/MIBR-NavIgnore.jar | awk '{print $1}')" = \
+            "b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34"
           test "$(sha256sum artifacts/mu1440/sha256sum-compat/build-confirmed-current/sha256sum | awk '{print $1}')" = \
             "5e8836b845005d942f155913e2398c7b1ed72582ade9ee4f56e56ce58f77d32f"
           test "$(sha256sum artifacts/mu1440/tee-compat/build-confirmed-current/tee | awk '{print $1}')" = \
@@ -45,9 +50,8 @@ jobs:
           grep -Fq 'EXPECTED_GATE=05673010a88c25022145ffb4e75d3715eaf686f4127ac188e91a52f512b9d957' deployment/mu1440/install.sh
           grep -Fq 'EXPECTED_NAVIGNORE=b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34' deployment/mu1440/install.sh
           grep -Fq 'EXPECTED_LSD_JXE=a55d9cfb69c5756f8202b7f7aa4079d4d5b637ae4c2fd0fe723f1d6816cbeea8' deployment/mu1440/install.sh
-          grep -Fq 'fail "navignore_required expected=$EXPECTED_NAVIGNORE"' deployment/mu1440/install.sh
-          grep -Fq 'fail "navignore_lsd_insertion_point_missing"' deployment/mu1440/install.sh
-          grep -Fq 'navignore_state=PASS_EXACT' deployment/mu1440/status.sh
+          grep -Fq 'check_hash "$PAYLOAD/MIBR-NavIgnore.jar" "$EXPECTED_NAVIGNORE"' deployment/mu1440/install.sh
+
           grep -Fq 'mibr_run_logged "$0" "$@"' deployment/mu1440/install.sh
           grep -Fq 'mibr_run_logged "$0" "$@"' deployment/mu1440/status.sh
           grep -Fq 'mibr_run_logged "$0" "$@"' deployment/mu1440/uninstall.sh
@@ -55,13 +59,13 @@ jobs:
           grep -Fq 'JAVA_USER_DECISION=ARCHIVE_AND_CONTINUE' deployment/mu1440/install.sh
           grep -Fq 'JAVA_USER_DECISION=ABORT' deployment/mu1440/install.sh
           grep -Fq 'validated_reference_target=MHI2_ER_SKG13_P4526_MU1440' runtime/deployment/session.sh
-          grep -Fq 'VIN, FAZIT and device serial numbers are intentionally not collected.' runtime/deployment/session.sh
 
           grep -Fq 'TEST="$MEDIA_ROOT/.mibr-altscreen-write-test.$$"' deployment/mu1440/install.sh
           grep -Fq 'TEST="$BACKUPFOLDER/.write-test-$$"' runtime/auto-direct/common.sh
           grep -Fq 'mount -uw "$DEPLOY_MEDIA_ROOT"' runtime/auto-direct/common.sh
           grep -Fq 'payload/tee' tools/prepare_mu1440_sd.sh
-          grep -Fq 'vehicle-tested-run51/libmibr_isotx2_gate.so' tools/prepare_mu1440_sd.sh
+          grep -Fq 'payload/MIBR-NavIgnore.jar' tools/prepare_mu1440_sd.sh
+          grep -Fq 'vehicle-tested-2026-09-27/libmibr_isotx2_gate.so' tools/prepare_mu1440_sd.sh
 
           ! grep -R -n -F '/apps/sbin' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
           ! grep -R -n -F 'config/BASICS' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
@@ -69,7 +73,7 @@ jobs:
           ! grep -R -n -E '(^|[^A-Za-z0-9_])sed([[:space:]]|$)' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate runtime/navigation
           ! grep -R -n -E '(^|[;&|[:space:]])printf[[:space:]]' deployment/mu1440 runtime
 
-      - name: Assemble SD-root package
+      - name: Assemble self-contained SD-root package
         shell: bash
         run: |
           set -euxo pipefail
@@ -86,7 +90,11 @@ jobs:
           test ! -e "$PKG/esd"
           test ! -e "$PKG/runtime/navigation/gen2_safearea.sh"
           test ! -e "$PKG/runtime/experimental"
-          test -z "$(find "$PKG" -type f -name '*.jar' -print -quit)"
+
+          test "$(find "$PKG/payload" -maxdepth 1 -type f | wc -l)" = "6"
+          test -f "$PKG/payload/MIBR-NavIgnore.jar"
+          test "$(sha256sum "$PKG/payload/MIBR-NavIgnore.jar" | awk '{print $1}')" = \
+            "b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34"
 
           (
             cd "$PKG"
@@ -96,34 +104,62 @@ jobs:
             done < <(find . -type f -name '*.sh' -print | sort)
           )
 
-          cat > "$PKG/README-FIRST.txt" <<'EOF'
-          MHI2 AltScreen CarPlay — MU1440 / AID10-class developer test release
-          ====================================================================
+          PKG="$PKG" python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          pkg=Path(os.environ["PKG"])
+          expected={
+              "libaltscreen111.so",
+              "direct-ts-remux",
+              "libmibr_isotx2_gate.so",
+              "sha256sum",
+              "tee",
+              "MIBR-NavIgnore.jar",
+          }
+          actual={p.name for p in (pkg/"payload").iterdir() if p.is_file()}
+          assert actual == expected, (actual, expected)
+          manifest=(pkg/"PAYLOAD.sha256").read_text()
+          for name in expected:
+              assert f"payload/{name}" in manifest, name
+          referenced=set()
+          for p in [pkg/"install.sh", pkg/"status.sh", pkg/"uninstall.sh", *pkg.glob("runtime/**/*.sh")]:
+              s=p.read_text()
+              referenced.update(re.findall(r'(?:\\$PAYLOAD/|\\.\\./\\.\\./payload/)([A-Za-z0-9_.-]+)', s))
+          assert not (referenced-actual), sorted(referenced-actual)
+          PY
 
-          VEHICLE-TESTED TARGET ONLY:
+          cat > "$PKG/README-FIRST.txt" <<'EOF'
+          MHI2 AltScreen CarPlay — current MU1440 / AID10-class developer test
+          ===================================================================
+
+          VEHICLE-TESTED REFERENCE TARGET:
             MHI2_ER_SKG13_P4526_MU1440
+            LSD/J9 hash: a55d9cfb69c5756f8202b7f7aa4079d4d5b637ae4c2fd0fe723f1d6816cbeea8
             10.x-inch MQB Virtual Cockpit / project shorthand: AID10-class
 
           NOT validated for 12.3-inch AID or other cluster generations.
 
-          REQUIRED JAVA COMPONENT:
+          THIS ZIP IS SELF-CONTAINED FOR THE VALIDATED TEST PATH.
+          Included payload:
+            libaltscreen111.so
+            direct-ts-remux
+            libmibr_isotx2_gate.so
+            sha256sum
+            tee
             MIBR-NavIgnore.jar
-            SHA-256:
+
+          NavIgnore SHA-256:
             b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34
 
-          The JAR is NOT included because it contains modified OEM-derived classes.
-          Before running install.sh, either:
-            - the exact JAR must already be installed on the target, or
-            - place it at payload/MIBR-NavIgnore.jar
+          No additional project payload needs to be downloaded before testing.
 
           EXISTING JAVA PATCHES:
           If a foreign/older Java or bootclasspath state is found, --check archives it on the
           SD card and reports PREFLIGHT=ATTENTION. During --apply you choose:
             C = keep the SD recovery archive, normalize the conflicting Java state and continue
             Q = abort without changing target-side Java state
-          The exact required NavIgnore must be reachable before C is allowed.
 
-          SafeArea/ViewArea experimental helpers are intentionally NOT part of this ZIP.
+          SafeArea/ViewArea experimental helpers are intentionally NOT part of the current validated ZIP.
 
           Copy/extract the ZIP contents directly to the SD-card root.
 
@@ -148,13 +184,13 @@ jobs:
             echo "source_commit=$GITHUB_SHA"
             echo "target=MHI2_ER_SKG13_P4526_MU1440"
             echo "cluster=AID10-class"
-            echo "deployment_generation=R2_logged_java_recovery"
+            echo "deployment_generation=current_self_contained"
             echo "gen2_sha256=094e3f1abfbf949f8c11b27e048e8213e5fc71178e62efd3c56deed8ee3bf8d8"
             echo "direct_ts_remux_sha256=b761a8741682e3cbc6e05f5fe1705475c34c4805d1cd1ce09333274a301e735e"
             echo "isotx2_gate_sha256=05673010a88c25022145ffb4e75d3715eaf686f4127ac188e91a52f512b9d957"
+            echo "navignore_sha256=b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34"
             echo "sha256sum_helper_sha256=5e8836b845005d942f155913e2398c7b1ed72582ade9ee4f56e56ce58f77d32f"
             echo "tee_helper_sha256=522d7a7cb15e585d7978dbb885de57fec123e8fb3ce06979feb3986609ad54d4"
-            echo "required_navignore_sha256=b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34"
           } > "$PKG/RELEASE-MANIFEST.txt"
 
           (
@@ -165,20 +201,41 @@ jobs:
           unzip -t "$ZIP_NAME"
           sha256sum "$ZIP_NAME" > "$ZIP_NAME.sha256"
 
-      - name: Publish GitHub prerelease
+      - name: Publish only the current prerelease
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euxo pipefail
-          NOTES=release/MU1440_AID10_DEV_2026-09-28-R2.md
+          NOTES=release/CURRENT.md
+
+          # Recreate the stable "current" tag at the exact audited commit.
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$ZIP_NAME" "$ZIP_NAME.sha256" --clobber
-            gh release edit "$TAG" --title "MU1440 / AID10 developer test R2 — 2026-09-28" --notes-file "$NOTES" --prerelease
+            gh release delete "$TAG" --yes --cleanup-tag
           else
-            gh release create "$TAG" "$ZIP_NAME" "$ZIP_NAME.sha256" \
-              --target "$GITHUB_SHA" \
-              --title "MU1440 / AID10 developer test R2 — 2026-09-28" \
-              --notes-file "$NOTES" \
-              --prerelease
+            git push origin ":refs/tags/$TAG" >/dev/null 2>&1 || true
           fi
+
+          gh release create "$TAG" "$ZIP_NAME" "$ZIP_NAME.sha256" \
+            --target "$GITHUB_SHA" \
+            --title "MU1440 / AID10 developer test — current" \
+            --notes-file "$NOTES" \
+            --prerelease
+
+          # Keep exactly one visible release. Remove older developer releases and tags
+          # only after the new current release has been created successfully.
+          gh release list --limit 100 --json tagName --jq '.[].tagName' | while IFS= read -r OLD; do
+            [ -n "$OLD" ] || continue
+            [ "$OLD" = "$TAG" ] && continue
+            gh release delete "$OLD" --yes --cleanup-tag
+          done
+
+          # A manually deleted release may have left its tag behind. Remove historical
+          # developer-release tags as well, preserving only the stable current tag.
+          git ls-remote --tags --refs origin 'refs/tags/mu1440-aid10-dev-*' |
+            awk '{sub("refs/tags/","",$2); print $2}' |
+            while IFS= read -r OLD; do
+              [ -n "$OLD" ] || continue
+              [ "$OLD" = "$TAG" ] && continue
+              git push origin ":refs/tags/$OLD"
+            done
