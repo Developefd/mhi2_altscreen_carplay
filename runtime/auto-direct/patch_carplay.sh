@@ -57,11 +57,12 @@ B=$(hash256 "$BACKUP")
   log "ERROR stock backup hash mismatch: $B"
   exit 5
 }
-grep -q 'libaltscreen111.so\|libmibr_carplay111.so' "$BACKUP" 2>/dev/null && {
+if grep -Fq 'libaltscreen111.so' "$BACKUP" 2>/dev/null ||
+   grep -Fq 'libmibr_carplay111.so' "$BACKUP" 2>/dev/null; then
   mount -ur /mnt/app 2>/dev/null || true
   log "ERROR stock backup is already patched"
   exit 6
-}
+fi
 mount -ur /mnt/app 2>/dev/null || true
 
 # smartphone_integrator has a tight environment-array budget. Keep this at
