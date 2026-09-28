@@ -15,6 +15,7 @@ export GEM=1
 # Do not import M.I.B. BASICS/GLOBALS or depend on an SD-card apps/ tree.
 VOLUME="$BASE"
 SHA256="$BASE/bin/sha256sum"
+TEE="$BASE/bin/tee"
 TIMESTAMP="/net/rcc/usr/bin/date +%Y_%m_%d_%H_%M_%S"
 TMP="/net/rcc/dev/shmem"
 BACKUPFOLDER="$BASE/logs"
@@ -49,9 +50,14 @@ runtime_find_cmd(){
 
 runtime_emit(){
   MSG="$*"
-  echo "$MSG"
-  if [ -n "${LOG:-}" ] && [ -n "${BACKUPFOLDER:-}" ] && [ -d "$BACKUPFOLDER" ]; then
-    echo "$MSG" >> "$LOG" 2>/dev/null || true
+  if [ -x "${TEE:-}" ] && [ -n "${LOG:-}" ] && [ -n "${BACKUPFOLDER:-}" ] && [ -d "$BACKUPFOLDER" ]; then
+    echo "$MSG" | "$TEE" -a "$LOG" 2>/dev/null || {
+      echo "$MSG"
+      echo "$MSG" >> "$LOG" 2>/dev/null || true
+    }
+  else
+    echo "$MSG"
+    [ -n "${LOG:-}" ] && echo "$MSG" >> "$LOG" 2>/dev/null || true
   fi
 }
 
@@ -113,6 +119,10 @@ runtime_init(){
     runtime_emit "ERROR bundled SHA-256 helper missing/not executable: $SHA256"
     return 2
   }
+  [ -x "$TEE" ] || {
+    runtime_emit "ERROR bundled tee helper missing/not executable: $TEE"
+    return 3
+  }
   return 0
 }
 
@@ -149,9 +159,17 @@ emit_to_file(){
   OUT=$1
   shift
   MSG="$*"
-  echo "$MSG"
-  echo "$MSG" >> "$OUT" 2>/dev/null || true
-  [ -n "${LOG:-}" ] && echo "$MSG" >> "$LOG" 2>/dev/null || true
+  if [ -x "$TEE" ]; then
+    if [ -n "${LOG:-}" ]; then
+      echo "$MSG" | "$TEE" -a "$OUT" "$LOG" 2>/dev/null || true
+    else
+      echo "$MSG" | "$TEE" -a "$OUT" 2>/dev/null || true
+    fi
+  else
+    echo "$MSG"
+    echo "$MSG" >> "$OUT" 2>/dev/null || true
+    [ -n "${LOG:-}" ] && echo "$MSG" >> "$LOG" 2>/dev/null || true
+  fi
 }
 
 hash256(){
@@ -254,9 +272,13 @@ mkdir -p "$DIRECT_LOG_ROOT" 2>/dev/null || true
 direct_log(){
   mkdir -p "$DIRECT_LOG_ROOT" 2>/dev/null || true
   MSG="$(timestamp_now) $*"
-  echo "$MSG"
-  [ -n "${LOG:-}" ] && echo "$MSG" >> "$LOG" 2>/dev/null || true
-  echo "$MSG" >> "$DIRECT_MASTER_LOG" 2>/dev/null || true
+  if [ -x "$TEE" ]; then
+    echo "$MSG" | "$TEE" -a "$LOG" "$DIRECT_MASTER_LOG" 2>/dev/null || true
+  else
+    echo "$MSG"
+    [ -n "${LOG:-}" ] && echo "$MSG" >> "$LOG" 2>/dev/null || true
+    echo "$MSG" >> "$DIRECT_MASTER_LOG" 2>/dev/null || true
+  fi
 }
 
 direct_new_run(){
