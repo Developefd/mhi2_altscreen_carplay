@@ -1,9 +1,9 @@
 #!/bin/ksh
 set -u
 
-BASE=$(cd "$(dirname "$0")" 2>/dev/null && pwd)
-SRC_LIB="${MIBR_GATE_LIB:-$BASE/libmibr_isotx2_gate.so}"
-HASH="${MIBR_SHA256:-/net/mmx/fs/sda0/apps/sbin/sha256sum}"
+SELF=$0\ncase "$SELF" in */*) BASE=${SELF%/*} ;; *) BASE=. ;; esac\nBASE=$(cd "$BASE" 2>/dev/null && pwd) || exit 2
+SRC_LIB="${MIBR_GATE_LIB:-$BASE/../../payload/libmibr_isotx2_gate.so}"
+HASH="${MIBR_SHA256:-$BASE/../../payload/sha256sum}"
 
 TARGET=/mnt/system/etc/boot/startup.sh
 RUNTIME=/etc/boot/startup.sh
