@@ -41,6 +41,8 @@ Pinned revision used in related MHI2 Java work:
 3bae6e82177c7084a008c42373042e6eebf5653e
 ```
 
+For this project's internal Java/JXE comparisons, **this is the preferred reconstruction reference**. It remains external rather than bundled/redistributed; the public-tooling boundary does not change its role as the internal comparison baseline.
+
 ### OneB1t — VC MOST renderer
 
 https://github.com/OneB1t/VcMOSTRenderMqb
@@ -96,7 +98,7 @@ be rewritten for classic MHI2 rather than MHI2Q.
 
 ### JeniCzech92/lsdtool
 
-Useful MIB2 LSD/JXE extraction/rebuild tooling.
+Useful MIB2 LSD/JXE extraction/rebuild tooling and a clearly licensed known-working cross-check. Historical baselines may reference it, but new internal comparisons should use `luka-dev/jxe2jar` as the primary reconstruction baseline.
 
 ### grajen3/mib2-lsd-patching
 
