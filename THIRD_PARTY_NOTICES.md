@@ -196,3 +196,15 @@ The repository now includes:
 
 See `artifacts/mu1440/direct-ts-remux/vehicle-proven-run143/FFMPEG_SOURCE.md` for the source/rebuild
 authority.
+
+
+### MIB Toolbox — Most20FPS split
+
+Upstream authority: `jilleb/mib2-toolbox@7ec3b7540d48acfebb5d331820b4ee55eff66772`.
+
+The published `MIBR-Most20FPS.jar` is a deterministic one-class split of the upstream
+`NavActiveIgnore.jar`, retaining only
+`de/vw/mib/asl/internal/mostkombi/streamsink/usecases/ChangeDataRateSequence.class`.
+
+Upstream repository license: MIT. The exact provenance, deterministic split rule, artifact hash and
+vehicle validation are documented under `THIRD_PARTY/Most20FPS/`.
