@@ -140,6 +140,242 @@ java_scan_state(){
   JAVA_EXACT_MOST20_ACTIVE=0
   JAVA_REASON=""
 
+  NAVREFS=$(awk 'index($0,"MIBR-NavIgnore.jar"){n++} END{print n+0}' "$LSD" 2>/dev/null)
+  MOSTREFS=$(awk 'index($0,"MIBR-Most20FPS.jar"){n++} END{print n+0}' "$LSD" 2>/dev/null)
+  FOREIGNREFS=$(awk '
+    index($0,"-Xbootclasspath/p:") && index($0,"/lsd/jars/") &&
+      !index($0,"MIBR-NavIgnore.jar") && !index($0,"MIBR-Most20FPS.jar") {n++}
+    END{print n+0}' "$LSD" 2>/dev/null)
+
+  grep -Fq 'Find and append jar files' "$LSD" 2>/dev/null && JAVA_OLD_DYNAMIC=1
+
+  NAVHASH=""
+  MOSTHASH=""
+  [ -r "$NAVJAR" ] && NAVHASH=$(hashf "$NAVJAR" 2>/dev/null)
+  [ -r "$MOSTJAR" ] && MOSTHASH=$(hashf "$MOSTJAR" 2>/dev/null)
+
+  [ "$NAVREFS" -gt 1 ] && { JAVA_CONFLICT=1; JAVA_REASON="$JAVA_REASON duplicate_navignore_ref"; }
+  [ "$MOSTREFS" -gt 1 ] && { JAVA_CONFLICT=1; JAVA_REASON="$JAVA_REASON duplicate_most20_ref"; }
+  [ "$FOREIGNREFS" -gt 0 ] && { JAVA_CONFLICT=1; JAVA_REASON="$JAVA_REASON foreign_bootclasspath_ref"; }
+  [ "$JAVA_OLD_DYNAMIC" -eq 1 ] && { JAVA_CONFLICT=1; JAVA_REASON="$JAVA_REASON old_dynamic_jar_loader"; }
+
+  [ "$NAVREFS" -eq 1 ] && [ "$NAVHASH" = "$EXPECTED_NAVIGNORE" ] && JAVA_EXACT_NAV_ACTIVE=1
+  [ "$MOSTREFS" -eq 1 ] && [ "$MOSTHASH" = "$EXPECTED_MOST20" ] && JAVA_EXACT_MOST20_ACTIVE=1
+
+  if [ "$NAVREFS" -gt 0 ]; then
+    if [ "$NAVHASH" != "$EXPECTED_NAVIGNORE" ]; then
+      JAVA_CONFLICT=1; JAVA_NEEDS_PAYLOAD=1; JAVA_REASON="$JAVA_REASON navignore_hash_or_file_mismatch"
+    fi
+  elif [ -r "$NAVJAR" ] && [ "$NAVHASH" != "$EXPECTED_NAVIGNORE" ]; then
+    JAVA_CONFLICT=1; JAVA_NEEDS_PAYLOAD=1; JAVA_REASON="$JAVA_REASON unreferenced_wrong_navignore"
+  fi
+
+  if [ "$MOSTREFS" -gt 0 ]; then
+    if [ "$MOSTHASH" != "$EXPECTED_MOST20" ]; then
+      JAVA_CONFLICT=1; JAVA_NEEDS_PAYLOAD=1; JAVA_REASON="$JAVA_REASON most20_hash_or_file_mismatch"
+    fi
+  elif [ -r "$MOSTJAR" ] && [ "$MOSTHASH" != "$EXPECTED_MOST20" ]; then
+    JAVA_CONFLICT=1; JAVA_NEEDS_PAYLOAD=1; JAVA_REASON="$JAVA_REASON unreferenced_wrong_most20"
+  fi
+
+  for P in "$JARDIR/MIBR-DirectVCPolicy.jar" "$JARDIR/NavActiveIgnore.jar"; do
+    if [ -e "$P" ]; then
+      JAVA_CONFLICT=1
+      JAVA_REASON="$JAVA_REASON known_patch_artifact"
+    fi
+  done
+
+  echo "java_navignore_refs=$NAVREFS"
+  echo "java_most20_refs=$MOSTREFS"
+  echo "java_foreign_bootclasspath_refs=$FOREIGNREFS"
+  echo "java_old_dynamic_loader=$JAVA_OLD_DYNAMIC"
+  echo "java_navignore_hash=${NAVHASH:-ABSENT}"
+  echo "java_most20_hash=${MOSTHASH:-ABSENT}"
+  echo "java_exact_nav_active=$JAVA_EXACT_NAV_ACTIVE"
+  echo "java_exact_most20_active=$JAVA_EXACT_MOST20_ACTIVE"
+  if [ "$JAVA_CONFLICT" -eq 1 ]; then
+    echo "JAVA_STATE=FOREIGN reason=$JAVA_REASON"
+    return 30
+  fi
+  echo "JAVA_STATE=CLEAN"
+  return 0
+}
+
+find_clean_java_backup(){
+  for B in "$LSD.bu" "$LSD.mibr-directvc-stock" "$LSD.mibr-most20fps-stock" "$LSD.mibr-navignore-stock"; do
+    [ -r "$B" ] || continue
+    grep -Fq 'Find and append jar files' "$B" 2>/dev/null && continue
+    grep -Fq '/lsd/jars/' "$B" 2>/dev/null && continue
+    grep -Fq 'NavActiveIgnore' "$B" 2>/dev/null && continue
+    grep -Fq 'MIBR-' "$B" 2>/dev/null && continue
+    echo "$B"
+    return 0
+  done
+  return 1
+}
+
+normalize_java_state(){
+  JARDIR=/mnt/app/eso/hmi/lsd/jars
+  NAVJAR=$JARDIR/MIBR-NavIgnore.jar
+  MOSTJAR=$JARDIR/MIBR-Most20FPS.jar
+  TMP=/tmp/lsd.sh.mibr-deploy-normalize.$$
+  KEEP_NAV=0
+  KEEP_MOST=0
+
+  if [ -r "$NAVJAR" ]; then
+    H=$(hashf "$NAVJAR" 2>/dev/null)
+    [ "$H" = "$EXPECTED_NAVIGNORE" ] && KEEP_NAV=1
+  fi
+  if [ -r "$MOSTJAR" ]; then
+    H=$(hashf "$MOSTJAR" 2>/dev/null)
+    [ "$H" = "$EXPECTED_MOST20" ] && KEEP_MOST=1
+  fi
+
+  app_rw || fail "java_normalize_mount_app_rw"
+
+  if grep -Fq 'Find and append jar files' "$LSD" 2>/dev/null; then
+    B=$(find_clean_java_backup 2>/dev/null) || {
+      app_ro
+      fail "java_old_dynamic_loader_without_clean_backup"
+    }
+    echo "Restoring clean pre-Java lsd.sh backup: $B"
+    cp "$B" "$TMP" || fail "java_copy_clean_backup"
+  else
+    awk -v keep_nav="$KEEP_NAV" -v keep_most="$KEEP_MOST" '
+      BEGIN { nav_seen=0; most_seen=0 }
+      $0 == "# MIBR NAVIGNORE" { next }
+      $0 == "# MIBR MOST20FPS" { next }
+      $0 == "# MIBR DIRECT-VC POLICY" { next }
+      $0 == "#Append jar files" { next }
+      index($0,"-Xbootclasspath/p:") && index($0,"/lsd/jars/") {
+        if (keep_nav && index($0,"MIBR-NavIgnore.jar") && !nav_seen) {
+          print; nav_seen=1
+        } else if (keep_most && index($0,"MIBR-Most20FPS.jar") && !most_seen) {
+          print; most_seen=1
+        }
+        next
+      }
+      { print }
+    ' "$LSD" > "$TMP" || fail "java_normalize_lsd"
+  fi
+
+  chmod 755 "$TMP" 2>/dev/null || true
+  mv "$TMP" "$LSD" || fail "java_install_normalized_lsd"
+
+  for P in "$JARDIR/MIBR-DirectVCPolicy.jar" "$JARDIR/NavActiveIgnore.jar"; do
+    if [ -e "$P" ]; then
+      echo "Removing archived known conflicting Java artifact: $P"
+      rm -f "$P" "$P.new" 2>/dev/null || fail "java_remove_conflicting_artifact=$P"
+    fi
+  done
+
+  if [ -r "$NAVJAR" ]; then
+    H=$(hashf "$NAVJAR" 2>/dev/null)
+    if [ "$H" != "$EXPECTED_NAVIGNORE" ]; then
+      echo "Removing archived incompatible NavIgnore before exact replacement: hash=$H"
+      rm -f "$NAVJAR" "$NAVJAR.new" 2>/dev/null || fail "java_remove_wrong_navignore"
+    fi
+  fi
+  if [ -r "$MOSTJAR" ]; then
+    H=$(hashf "$MOSTJAR" 2>/dev/null)
+    if [ "$H" != "$EXPECTED_MOST20" ]; then
+      echo "Removing archived incompatible Most20 before exact replacement: hash=$H"
+      rm -f "$MOSTJAR" "$MOSTJAR.new" 2>/dev/null || fail "java_remove_wrong_most20"
+    fi
+  fi
+
+  app_ro
+  echo "JAVA_NORMALIZE=PASS"
+}
+
+handle_java_conflict(){
+  echo
+  echo "Existing Java patch state differs from the validated NavIgnore + Most20 setup."
+  echo "The original state has already been archived in this SD session."
+
+  if [ "$JAVA_EXACT_NAV_ACTIVE" -ne 1 ]; then
+    H=$(hashf "$PAYLOAD/MIBR-NavIgnore.jar" 2>/dev/null)
+    [ "$H" = "$EXPECTED_NAVIGNORE" ] || fail "replacement_navignore_hash_mismatch=$H"
+    echo "Bundled exact NavIgnore payload verified before Java normalization."
+  fi
+  if [ "$JAVA_EXACT_MOST20_ACTIVE" -ne 1 ]; then
+    H=$(hashf "$PAYLOAD/MIBR-Most20FPS.jar" 2>/dev/null)
+    [ "$H" = "$EXPECTED_MOST20" ] || fail "replacement_most20_hash_mismatch=$H"
+    echo "Bundled exact Most20 payload verified before Java normalization."
+  fi
+
+  case "${MIBR_FOREIGN_JAVA_ACTION:-ask}" in
+    archive-replace)
+      ANSWER=C
+      echo "Foreign Java action pre-authorized by MIBR_FOREIGN_JAVA_ACTION=archive-replace"
+      ;;
+    abort)
+      ANSWER=Q
+      ;;
+    *)
+      echo
+      echo "Choose:"
+      echo "  C = continue: archive is already on SD, deactivate foreign Java boot patches, then use exact NavIgnore + Most20"
+      echo "  Q = abort now without changing Java state"
+      echo "Enter C or Q:"
+      read ANSWER
+      ;;
+  esac
+
+  case "$ANSWER" in
+    C|c)
+      echo "JAVA_USER_DECISION=ARCHIVE_AND_CONTINUE"
+      normalize_java_state
+      ;;
+    *)
+      echo "JAVA_USER_DECISION=ABORT"
+      return 30
+      ;;
+  esac
+  return 0
+}
+
+preflight(){
+  echo "=== MHI2 AltScreen MU1440 developer install preflight ==="
+  [ -x "$SHA" ] || fail "missing_sha256_helper=$SHA"
+  [ -x "$TEE" ] || fail "missing_tee_helper=$TEE"
+  require_cmds mount cp mv chmod sync mkdir rm touch sleep grep awk wc cat pidin on slay /bin/sh /bin/ksh /eso/bin/apps/dmdt
+  media_rw || fail "deployment_media_not_writable=$MEDIA_ROOT"
+  echo "PASS deployment_media_rw=$MEDIA_ROOT"
+  [ -r /mnt/app/eso/lib/libairplay.so ] || fail "not_mmx_target"
+  [ -r "$LSD" ] || fail "missing_lsd_startup=$LSD"
+  AIR=$(hashf /mnt/app/eso/lib/libairplay.so) || fail "libairplay_hash_failed"
+  [ "$AIR" = "$EXPECTED_AIRPLAY" ] || fail "unsupported_libairplay=$AIR"
+  echo "PASS libairplay=$AIR"
+  check_hash /mnt/app/eso/hmi/lsd/lsd.jxe "$EXPECTED_LSD_JXE"
+
+  check_hash "$PAYLOAD/libaltscreen111.so" "$EXPECTED_GEN2"
+  check_hash "$PAYLOAD/direct-ts-remux" "$EXPECTED_REMUX"
+  check_hash "$PAYLOAD/libmibr_isotx2_gate.so" "$EXPECTED_GATE"
+  check_hash "$PAYLOAD/MIBR-NavIgnore.jar" "$EXPECTED_NAVIGNORE"
+  check_hash "$PAYLOAD/MIBR-Most20FPS.jar" "$EXPECTED_MOST20"
+
+  [ -r "$RUNTIME/auto-direct/common.sh" ] || fail "runtime_common_missing"
+  [ -r "$RUNTIME/auto-direct/patch_carplay.sh" ] || fail "patch_carplay_missing"
+  [ -r "$RUNTIME/auto-direct/restore_stock.sh" ] || fail "restore_stock_missing"
+  [ -r "$RUNTIME/isotx2-gate/install_preload.sh" ] || fail "gate_installer_missing"
+  [ -r "$RUNTIME/isotx2-gate/restore_preload.sh" ] || fail "gate_restore_missing"
+
+  echo "=== Java state scan ==="
+  java_scan_state
+  JAVA_SCAN_RC=$?
+  if [ "$JAVA_SCAN_RC" -eq 30 ]; then
+    mibr_archive_java_state preflight-foreign || fail "java_archive_failed"
+    echo "PREFLIGHT=ATTENTION java_state_requires_user_decision"
+    return 30
+  elif [ "$JAVA_SCAN_RC" -ne 0 ]; then
+    fail "java_scan_failed_rc_$JAVA_SCAN_RC"
+  fi
+
+  echo "=== DisplayManager gate preflight ==="
+  MIBR_GATE_LIB="$PAYLOAD/libmibr_isotx2_gate.so" MIBR_SHA256="$SHA" \
+    "$RUNTIME/isotx2-gate/install_preload.sh" --check || fail "gate_preflight_rc_$?"
+
   for SPEC in "NavIgnore:MIBR-NavIgnore.jar:$EXPECTED_NAVIGNORE" "Most20:MIBR-Most20FPS.jar:$EXPECTED_MOST20"; do
     NAME=${SPEC%%:*}
     REST=${SPEC#*:}
@@ -268,7 +504,7 @@ install_required_navignore(){
 install_required_most20(){
   JARDIR=/mnt/app/eso/hmi/lsd/jars
   JAR=$JARDIR/MIBR-Most20FPS.jar
-  TMP=/tmp/lsd.sh.mibr-deploy-most20.$
+  TMP=/tmp/lsd.sh.mibr-deploy-most20.$$
   MARKER='# MIBR MOST20FPS'
   OWNED=/mnt/app/root/mibr-deploy-most20-owned
 
