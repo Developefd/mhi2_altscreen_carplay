@@ -104,6 +104,27 @@ read-only state after the write.
 
 Do not make a previous menu action or manual remount an implicit prerequisite.
 
+## Standalone developer-package dependency model
+
+The prepared SD package is now independent of an existing M.I.B. card layout:
+
+- no `config/BASICS` / GLOBALS bootstrap;
+- no `apps/mounts` helper;
+- no `/apps/sbin/sha256sum` fallback;
+- no external `tee` dependency in the installed Auto-Direct runtime.
+
+The only project-supplied command-line compatibility binary currently required by the deployment is
+`payload/sha256sum`. The native project payload also contains the feature binaries
+`libaltscreen111.so`, `direct-ts-remux` and `libmibr_isotx2_gate.so`, but these are functional
+components rather than replacements for missing shell utilities.
+
+Mandatory firmware/QNX commands used by the install/runtime path are fail-closed in the top-level
+preflight: `mount cp mv chmod sync mkdir rm touch sleep grep awk sed wc cat pidin on slay`, plus
+`/bin/sh`, `/bin/ksh` and `/eso/bin/apps/dmdt`.
+
+Some diagnostic-only paths also try tools such as `tail`, `netstat`, `ls`, `uname`, `use` or
+`strings`. Those calls are optional/fallback diagnostics and are not installation prerequisites.
+
 ## Developer-package preflight
 
 Before changing persistent files, `deployment/mu1440/install.sh --check` validates:
@@ -124,7 +145,7 @@ Unknown state is fail-closed.
 A runtime/deployment shell change should not introduce:
 
 - external `printf`;
-- bare dependency on firmware `sha256sum`;
+- bare dependency on firmware `sha256sum`;\n- a dependency on M.I.B. `config/BASICS`, `apps/mounts` or `/apps/sbin`;
 - an interactive multi-line patch procedure as the normal install path;
 - a persistent mutation before tool/hash/target preflight;
 - an assumption that a readable SD or persistent filesystem is writable.
