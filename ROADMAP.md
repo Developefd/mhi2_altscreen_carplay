@@ -20,6 +20,7 @@ The project deliberately separates the **CarPlay AltScreen / Stream-111 video pl
 | ⬜ | Planned | Native navigation arrows / RGI | Feed CarPlay maneuver metadata into the stock cluster navigation UI (arrow, distance, text) |
 | ⬜ | Research | Now Playing / native media metadata | Investigate native cluster media surfaces separately from Stream 111 |
 | ⬜ | Research | AID / firmware compatibility matrix | Detect cluster family and validate other Škoda / VW / SEAT / CUPRA targets |
+| 🔬 | Research | Continental FPK firmware RE | Analyze legitimate FRF/ODX updates for the `...790(A)` / `EV_DashBoardVDDMQBA0` family; keep this separate from the preferred HU-side VIEW/layout-control path |
 | 🧭 | Lead | Audi B9 / AUG22 MU1438 compatibility | OEM topology says B9 Virtual Cockpit map video is LVDS J794 -> J285; identify the exact MU1438 LVDS display/context/geometry and prove ABI before any runtime port |
 
 The strict current vehicle order is:
@@ -133,7 +134,7 @@ Keep this work separate from Stream 111 unless runtime evidence proves a shared 
 
 ## P2 — compatibility / AID-family detection
 
-Cross-brand findings are maintained in the [MIB2-era cluster/display transport knowledge base](docs/research/MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md). Keep that document as the long-lived source for panel geometry, map viewport, transport and part-number evidence.
+Cross-brand findings are maintained in the [MIB2-era cluster/display transport knowledge base](docs/research/MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md). Firmware/update/control findings are tracked separately in [FPK / Virtual Cockpit firmware and control access](docs/research/FPK_FIRMWARE_AND_CONTROL_ACCESS.md). Keep that document as the long-lived source for panel geometry, map viewport, transport and part-number evidence.
 
 The first vehicle-proven target remains:
 
