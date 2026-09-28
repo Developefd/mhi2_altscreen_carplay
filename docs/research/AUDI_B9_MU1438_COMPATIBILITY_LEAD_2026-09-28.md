@@ -61,7 +61,7 @@ The same DisplayManager config also exposes an extended `2_lvds` mode:
 - secondary display: ID 4;
 - HBAS test/production profiles force `kombi_type = lvds`.
 
-Therefore the evidence does **not** justify reducing the architecture to "Audi uses LVDS, Škoda uses MOST". The Audi stock configuration contains support for both mechanisms; they may be selected according to the connected display/vehicle variant rather than used simultaneously. Which path is active for the concrete B9 Virtual Cockpit remains to be measured.
+Therefore the configuration should not be read as "both paths are equally plausible for the B9 Virtual Cockpit map". Audi OEM service-training material explicitly states that the B9 Virtual Cockpit receives the **large navigation map and detailed intersection maps over LVDS from J794 to J285**. MOST remains present for list menus/covers and J285 software updates. The supplied MU1438 configuration is consistent with that split.
 
 ## Main unknown: exact cluster and productive route
 
@@ -71,10 +71,10 @@ For the concrete Audi B9 vehicle, we still need to identify:
 - HW/SW identification and generation;
 - native resolution;
 - stock navigation DisplayManager context/display IDs;
-- which configured output path is actually active for the live cluster map/video presentation on this vehicle (MOST, second LVDS/HDMI, or a staged combination);
+- the exact DisplayManager display/context and geometry that correspond to the B9 Virtual Cockpit LVDS map surface;
 - how ownership/arbitration differs from the MU1440/AID10 reference target.
 
-This is likely one of the principal portability gates.
+This LVDS display/context/geometry mapping is now one of the principal portability gates.
 
 ## Binary / ABI gate
 
@@ -103,3 +103,7 @@ Audi B9 / AUG22 MU1438 can move from **compatibility lead** to a vehicle-test ca
 - [ ] first vehicle experiment is bounded and logged.
 
 Until then, the correct status is **interesting and structurally promising, but unvalidated**.
+
+## Audi OEM source
+
+Audi service-training networking material documents the B9/J794 -> J285 image-transfer split: Virtual Cockpit large navigation map and detailed intersection maps over LVDS; list menus/covers and cluster software update over MOST. See the cross-brand [MIB2 cluster/display transport knowledge base](MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md) for the source set and comparison with MQB MOST clusters.
