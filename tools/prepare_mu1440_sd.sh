@@ -58,4 +58,5 @@ chmod +x "$OUT/"*.sh "$OUT/runtime/"*/*.sh "$OUT/payload/libaltscreen111.so" "$O
 )
 
 echo "prepared SD root: $OUT"
-echo "REQUIRED for install unless already installed on target: exact MIBR-NavIgnore.jar SHA-256 b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34"\necho "place it in $OUT/payload/MIBR-NavIgnore.jar"
+echo "REQUIRED for install unless already installed on target: exact MIBR-NavIgnore.jar SHA-256 b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34"
+echo "place it in $OUT/payload/MIBR-NavIgnore.jar"
