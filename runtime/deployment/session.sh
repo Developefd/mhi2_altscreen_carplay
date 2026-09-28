@@ -135,8 +135,15 @@ mibr_vehicle_summary(){
     echo "session_action=$MIBR_SESSION_ACTION"
     echo "session_stamp=$MIBR_SESSION_STAMP"
     echo "deployment_media=$MIBR_SESSION_ROOT"
+    echo "validated_reference_target=MHI2_ER_SKG13_P4526_MU1440"
+    echo "validated_reference_cluster=AID10-class"
     echo "train=${TRAIN:-UNKNOWN}"
     echo "mu=${MU:-UNKNOWN}"
+
+    if [ -r "$MIBR_SESSION_ROOT/RELEASE-MANIFEST.txt" ]; then
+      echo "--- deployment release manifest ---"
+      awk '{print "release: " $0}' "$MIBR_SESSION_ROOT/RELEASE-MANIFEST.txt" 2>/dev/null
+    fi
 
     for P in /net/mmx/mnt/system/etc/project.txt /mnt/system/etc/project.txt; do
       if [ -r "$P" ]; then
