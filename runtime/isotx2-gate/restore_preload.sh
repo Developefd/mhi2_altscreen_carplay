@@ -1,7 +1,9 @@
 #!/bin/ksh
 set -u
 
-SELF=$0\ncase "$SELF" in */*) BASE=${SELF%/*} ;; *) BASE=. ;; esac\nBASE=$(cd "$BASE" 2>/dev/null && pwd) || exit 2
+SELF=$0
+case "$SELF" in */*) BASE=${SELF%/*} ;; *) BASE=. ;; esac
+BASE=$(cd "$BASE" 2>/dev/null && pwd) || exit 2
 HASH="${MIBR_SHA256:-$BASE/../../payload/sha256sum}"
 TARGET=/mnt/system/etc/boot/startup.sh
 DST_LIB=/mnt/app/eso/lib/libmibr_isotx2_gate.so
