@@ -19,7 +19,7 @@ The project deliberately separates the **CarPlay AltScreen / Stream-111 video pl
 | ⬜ | Planned | Multi-ViewArea / automatic VC-layout coupling | Pre-advertise calibrated layouts, switch in-session, later bind to proven cluster state |
 | ⬜ | Planned | Native navigation arrows / RGI | Feed CarPlay maneuver metadata into the stock cluster navigation UI (arrow, distance, text) |
 | ⬜ | Research | Now Playing / native media metadata | Investigate native cluster media surfaces separately from Stream 111 |
-| ⬜ | Research | AID / firmware compatibility matrix | Detect cluster family and validate other Škoda / VW / SEAT / CUPRA targets |
+| 🧪 | Research | AID / firmware compatibility matrix | Six-baseline firmware profile corpus closed; AU37X P5089/P5153 same-MU comparison is the next corpus gate |
 | 🔬 | Research | Continental FPK firmware RE | Analyze legitimate FRF/ODX updates for the `...790(A)` / `EV_DashBoardVDDMQBA0` family; keep this separate from the preferred HU-side VIEW/layout-control path |
 | 🧭 | Lead | Audi B9 / AUG22 MU1438 compatibility | OEM topology says B9 Virtual Cockpit map video is LVDS J794 -> J285; identify the exact MU1438 LVDS display/context/geometry and prove ABI before any runtime port |
 
@@ -135,6 +135,14 @@ Keep this work separate from Stream 111 unless runtime evidence proves a shared 
 ## P2 — compatibility / AID-family detection
 
 Cross-brand findings are maintained in the [MIB2-era cluster/display transport knowledge base](docs/research/MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md). Firmware/update/control findings are tracked separately in [FPK / Virtual Cockpit firmware and control access](docs/research/FPK_FIRMWARE_AND_CONTROL_ACCESS.md). Keep that document as the long-lived source for panel geometry, map viewport, transport and part-number evidence.
+
+Cross-firmware corpus status:
+
+- completed and verified: AUG22 K3346 MU1438, SKG13 P4526 MU1440, SKG11 K3343 MU1433,
+  VWG11 K3342 MU1427, SEG11 P4709 MU1447 and VWG13 K4525 MU1367;
+- current next comparison: AU37X P5089/P5153 MU1326;
+- profile mapping is maintained in
+  [MHI2 cross-firmware implementation profile map](docs/research/MHI2_FIRMWARE_PROFILE_MAP_2026-09-28.md).
 
 The first vehicle-proven target remains:
 
