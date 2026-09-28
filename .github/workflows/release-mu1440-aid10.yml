@@ -59,6 +59,8 @@ jobs:
           grep -Fq 'JAVA_USER_DECISION=ARCHIVE_AND_CONTINUE' deployment/mu1440/install.sh
           grep -Fq 'JAVA_USER_DECISION=ABORT' deployment/mu1440/install.sh
           grep -Fq 'validated_reference_target=MHI2_ER_SKG13_P4526_MU1440' runtime/deployment/session.sh
+          grep -Fq 'mode=READ_ONLY_TARGET' deployment/mu1440/compatibility-report.sh
+          grep -Fq 'writes=deployment_media_only' deployment/mu1440/compatibility-report.sh
 
           grep -Fq 'TEST="$MEDIA_ROOT/.mibr-altscreen-write-test.$$"' deployment/mu1440/install.sh
           grep -Fq 'TEST="$BACKUPFOLDER/.write-test-$$"' runtime/auto-direct/common.sh
@@ -84,6 +86,7 @@ jobs:
           test -x "$PKG/install.sh"
           test -x "$PKG/status.sh"
           test -x "$PKG/uninstall.sh"
+          test -x "$PKG/compatibility-report.sh"
           test -x "$PKG/runtime/deployment/session.sh"
           test -f "$PKG/PAYLOAD.sha256"
           test ! -e "$PKG/MHI2AltScreen"
@@ -122,7 +125,7 @@ jobs:
           for name in expected:
               assert f"payload/{name}" in manifest, name
           referenced=set()
-          for p in [pkg/"install.sh", pkg/"status.sh", pkg/"uninstall.sh", *pkg.glob("runtime/**/*.sh")]:
+          for p in [pkg/"install.sh", pkg/"status.sh", pkg/"uninstall.sh", pkg/"compatibility-report.sh", *pkg.glob("runtime/**/*.sh")]:
               s=p.read_text()
               referenced.update(re.findall(r'(?:\\$PAYLOAD/|\\.\\./\\.\\./payload/)([A-Za-z0-9_.-]+)', s))
           assert not (referenced-actual), sorted(referenced-actual)
@@ -163,14 +166,21 @@ jobs:
 
           Copy/extract the ZIP contents directly to the SD-card root.
 
-          On the unit:
+          UNKNOWN / UNVALIDATED TARGET:
+            ./compatibility-report.sh
+
+          This collector is read-only on the vehicle filesystems. It writes only to the SD/USB
+          medium and collects train/MU, component hashes, relevant runtime observations and stock
+          displaymanager/dio_manager/smartphone_integrator configs.
+
+          VALIDATED TARGET INSTALL:
             ./install.sh --check
             ./install.sh --apply
             reboot
             ./status.sh
 
           LOGGING:
-          install.sh, status.sh and uninstall.sh write complete session output plus a sanitized
+          compatibility-report.sh, install.sh, status.sh and uninstall.sh write complete session output plus a sanitized
           vehicle/firmware summary to mhi2-altscreen-logs/ on the SD card.
           For public Issues, attach session.log + vehicle-summary.txt.
           archive/ may contain copied third-party/OEM JAR bytes; review it before sharing.
