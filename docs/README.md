@@ -24,6 +24,7 @@
 - [MU1440 GEN2 AirPlay hook / ABI map](research/MU1440_GEN2_HOOK_MAP.md)
 - [Exact Audi MU1438 vs Skoda MU1440 offline comparison](research/MU1438_MU1440_OFFLINE_COMPARISON_2026-09-28.md)
 - [MHI2 cross-firmware implementation profile map](research/MHI2_FIRMWARE_PROFILE_MAP_2026-09-28.md)
+- [MHI2 patch portability estimate](research/MHI2_PATCH_PORTABILITY_ESTIMATE_2026-09-28.md) — per-firmware estimates for GEN2, Direct-TS, gate, NavIgnore and Java policy reuse
 - [Audi B9 MU1438 compatibility lead and remaining gates](research/AUDI_B9_MU1438_COMPATIBILITY_LEAD_2026-09-28.md)
 - [ScreenStream / Type-111 protocol](research/STREAM111_PROTOCOL.md)
 - [VC view-state / ViewArea research](research/VC_VIEWAREA_STATE.md)
