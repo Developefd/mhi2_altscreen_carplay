@@ -11,12 +11,12 @@ MHI2_ER_SKG13_P4526_MU1440
 Prerequisite: working SSH/developer access and the ability to recover the unit. The documentation does
 not explain how to obtain shell access.
 
-## Prepare an SD directory on a workstation
+## Prepare the SD-card root on a workstation
 
 From a repository checkout:
 
 ```sh
-tools/prepare_mu1440_sd.sh /path/to/sd/esd
+tools/prepare_mu1440_sd.sh /path/to/mounted-sd-root
 ```
 
 This creates:
