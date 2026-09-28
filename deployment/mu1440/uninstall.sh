@@ -30,7 +30,8 @@ fi
 mibr_vehicle_summary || echo "WARN vehicle_summary_failed"
 
 OWNED=/mnt/app/root/mibr-deploy-navignore-owned
-TMP=/tmp/lsd.sh.mibr-deploy-navignore-remove.$$
+MOSTOWNED=/mnt/app/root/mibr-deploy-most20-owned
+TMP=/tmp/lsd.sh.mibr-deploy-java-remove.$
 
 FAIL=0
 
@@ -72,6 +73,32 @@ else
   echo "NavIgnore not owned by deployment; leaving it untouched."
 fi
 
+if [ -e "$MOSTOWNED" ]; then
+  echo "Removing deployment-owned Most20FPS"
+  if mount -uw /mnt/app 2>/dev/null; then
+    awk '
+      $0 == "# MIBR MOST20FPS" { next }
+      index($0, "-Xbootclasspath/p:$BASE_DIR/lsd/jars/MIBR-Most20FPS.jar") { next }
+      { print }
+    ' "$LSD" > "$TMP" &&
+    chmod 755 "$TMP" 2>/dev/null &&
+    mv "$TMP" "$LSD"
+    RC=$?
+    if [ "$RC" -eq 0 ]; then
+      rm -f /mnt/app/eso/hmi/lsd/jars/MIBR-Most20FPS.jar "$MOSTOWNED" 2>/dev/null || true
+    else
+      rm -f "$TMP" 2>/dev/null || true
+      FAIL=1
+    fi
+    sync
+    mount -ur /mnt/app 2>/dev/null || true
+  else
+    FAIL=1
+  fi
+else
+  echo "Most20FPS not owned by deployment; leaving it untouched."
+fi
+
 echo "Restoring DisplayManager startup"
 MIBR_SHA256="$SHA" "$ROOT/runtime/isotx2-gate/restore_preload.sh" || FAIL=1
 
@@ -85,7 +112,7 @@ else
   FAIL=1
 fi
 
-rm -f /tmp/mibr-alt111-keyframe-policy.enabled /tmp/mibr-alt111-resync.enabled /tmp/mibr-alt111-resync-arm 2>/dev/null || true
+rm -f /tmp/mibr-alt111-keyframe-policy.enabled /mnt/app/root/mibr-alt111-keyframe-policy.enabled /tmp/mibr-alt111-resync.enabled /tmp/mibr-alt111-resync-arm 2>/dev/null || true
 
 if [ "$FAIL" -ne 0 ]; then
   echo "MIBR_UNINSTALL=COMPLETED_WITH_ERRORS"
