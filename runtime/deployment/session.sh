@@ -122,8 +122,17 @@ mibr_vehicle_summary(){
   OUT="$MIBR_SESSION_DIR/vehicle-summary.txt"
   AIR=/mnt/app/eso/lib/libairplay.so
   LSDJXE=/mnt/app/eso/hmi/lsd/lsd.jxe
+  [ -r /ifs/lsd.jxe ] && LSDJXE=/ifs/lsd.jxe
   LSD=/mnt/app/eso/hmi/lsd/lsd.sh
   SMART=/mnt/system/etc/eso/production/smartphone_integrator.json
+  DIOCFG=/mnt/system/etc/eso/production/dio_manager.json
+  DISPLAYCFG=""
+  for P in /etc/eso/production/displaymanager.json /mnt/system/etc/eso/production/displaymanager.json /mnt/app/eso/production/displaymanager.json; do
+    if [ -r "$P" ]; then
+      DISPLAYCFG=$P
+      break
+    fi
+  done
   JARDIR=/mnt/app/eso/hmi/lsd/jars
 
   TRAIN=$(mibr_e2p_ascii 3A0 19 2>/dev/null)
@@ -183,7 +192,17 @@ mibr_vehicle_summary(){
       fi
     done
 
-    for P in "$AIR" "$LSDJXE" "$LSD" "$SMART"              /mnt/app/eso/lib/libmibr_carplay111.so              /mnt/app/eso/lib/libmibr_isotx2_gate.so              "$JARDIR/MIBR-NavIgnore.jar"; do
+    for P in "$AIR" "$LSDJXE" "$LSD" "$SMART" "$DIOCFG" "$DISPLAYCFG" \
+             /mnt/app/eso/lib/factories/libdsicarplayproxy.so \
+             /mnt/app/armle/usr/sbin/mm-ipod \
+             /mnt/app/armle/usr/lib/libiap2client.so.1 \
+             /mnt/app/eso/bin/apps/smartphone_integrator \
+             /mnt/app/eso/bin/apps/dio_manager \
+             /mnt/app/eso/bin/apps/displaymanager \
+             /mnt/app/eso/lib/libmibr_carplay111.so \
+             /mnt/app/eso/lib/libmibr_isotx2_gate.so \
+             "$JARDIR/MIBR-NavIgnore.jar"; do
+      [ -n "$P" ] || continue
       if [ -r "$P" ]; then
         H=$(mibr_hash_file "$P" 2>/dev/null)
         echo "sha256 ${H:-HASH_FAILED} $P"
@@ -191,6 +210,16 @@ mibr_vehicle_summary(){
         echo "missing $P"
       fi
     done
+
+    echo "--- display / MOST endpoint presence ---"
+    for P in /dev/mlb/isoTX1 /dev/mlb/isoTX2 /net/rcc/dev/name/local/inic/isoTX1 /net/rcc/dev/name/local/inic/isoTX2; do
+      [ -e "$P" ] && echo "present $P" || echo "missing $P"
+    done
+
+    echo "--- relevant running processes ---"
+    pidin ar 2>/dev/null | awk '
+      /displaymanager|dio_manager|smartphone_integrator|mm-ipod|lsd/ { print }
+    ' || true
 
     echo "--- lsd custom bootclasspath lines ---"
     if [ -r "$LSD" ]; then
