@@ -149,10 +149,13 @@ preflight(){
     [ "$N" = "$EXPECTED_NAVIGNORE" ] || fail "navignore_hash_mismatch=$N"
     echo "INFO navignore_payload=valid"
   elif grep -Fq 'MIBR-NavIgnore.jar' "$LSD" 2>/dev/null; then
-    echo "INFO navignore=already_installed"
+    NAVJAR=/mnt/app/eso/hmi/lsd/jars/MIBR-NavIgnore.jar
+    [ -r "$NAVJAR" ] || fail "navignore_bootclasspath_without_jar"
+    N=$(hashf "$NAVJAR") || fail "installed_navignore_hash_failed"
+    [ "$N" = "$EXPECTED_NAVIGNORE" ] || fail "installed_navignore_hash_mismatch=$N"
+    echo "INFO navignore=already_installed hash=$N"
   else
-    echo "WARN navignore=absent"
-    echo "WARN the full vehicle-proven smartphone-navigation VC presentation used NavIgnore"
+    fail "navignore_required expected=$EXPECTED_NAVIGNORE"
   fi
 
   echo "PREFLIGHT=PASS"
