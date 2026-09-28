@@ -8,6 +8,16 @@ SUP=$BASE/scripts/direct_ts_auto_supervisor.sh
 WD=$BASE/scripts/direct_ts_auto_watchdog.sh
 SUPPID=/tmp/mibr-direct-auto-supervisor.pid
 WDPID=/tmp/mibr-direct-auto-watchdog.pid
+D2_PERSIST=/mnt/app/root/mibr-alt111-keyframe-policy.enabled
+D2_SESSION=/tmp/mibr-alt111-keyframe-policy.enabled
+
+# Compatibility bridge: current source reads the persistent marker directly;
+# older vehicle-tested GEN2 binaries read the volatile session marker.
+if [ -e "$D2_PERSIST" ]; then
+  touch "$D2_SESSION" 2>/dev/null || true
+else
+  rm -f "$D2_SESSION" 2>/dev/null || true
+fi
 
 [ -e "$ENABLED" ] || {
   echo "AUTO_DIRECT_START=DISABLED"
