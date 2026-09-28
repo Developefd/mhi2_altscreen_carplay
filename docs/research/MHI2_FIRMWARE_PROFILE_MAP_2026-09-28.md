@@ -22,6 +22,9 @@ MHI2_ER_SKG13_P4526_MU1440
 
 Static profile similarity does not extend that vehicle-support claim.
 
+For the practical patch-by-patch reuse estimate, see
+[MHI2 patch-portability estimate](MHI2_PATCH_PORTABILITY_ESTIMATE_2026-09-28.md).
+
 ---
 
 ## Corpus baselines
