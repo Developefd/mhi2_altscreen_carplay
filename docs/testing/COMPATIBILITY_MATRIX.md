@@ -24,6 +24,28 @@ Reference MU1440 stock `libairplay.so` SHA-256:
 
 A different hash is a **stop condition**, not permission to assume ABI compatibility. A matching/known MU firmware is also **not sufficient by itself**: cluster hardware/revision is a separate compatibility dimension.
 
+## Static firmware-profile corpus
+
+A separate six-baseline offline corpus now maps reusable firmware implementation profiles across
+Audi/Škoda/VW/SEAT MHI2 trains.
+
+Completed baselines:
+
+| Firmware | Static corpus result | Vehicle-support status |
+| --- | --- | --- |
+| `MHI2_ER_AUG22_K3346_MU1438` | canonical Audi AUG22/MU1438 comparator | not vehicle-tested by this project |
+| `MHI2_ER_SKG11_K3343_MU1433` | profile-mapped; several native layers MU1438-nearest | not vehicle-tested |
+| `MHI2_ER_VWG11_K3342_MU1427` | profile-mapped; complete AirPlay file equals Audi MU1438 | not vehicle-tested |
+| `MHI2_ER_SEG11_P4709_MU1447` | profile-mapped; several layers MU1440-nearest | not vehicle-tested |
+| `MHI2_ER_SKG13_P4526_MU1440` | profile-mapped and vehicle-proven reference | **supported reference target only** |
+| `MHI2_ER_VWG13_K4525_MU1367` | profile-mapped; AirPlay/config/JXE strongly MU1440-related | not vehicle-tested |
+
+The main static findings are documented in
+[MHI2 cross-firmware implementation profile map](../research/MHI2_FIRMWARE_PROFILE_MAP_2026-09-28.md).
+
+The next corpus comparison is AU37X P5089/P5153 MU1326. Static corpus similarity never bypasses the
+separate cluster hardware/routing/vehicle-validation gates below.
+
 ## Exact MU1438 versus MU1440 component matrix
 
 Scope is this **one exact pair**, not all Audi, all MU1438 or app70. These are
