@@ -28,7 +28,7 @@ static int copy_stream(FILE **outs, int count)
     while ((n = fread(buf, 1, sizeof(buf), stdin)) > 0) {
         if (fwrite(buf, 1, n, stdout) != n) {
             fprintf(stderr, "tee: stdout: write error\n");
-            rc = 1;
+            open_rc = 1;
         }
         for (i = 0; i < count; ++i) {
             if (outs[i] && fwrite(buf, 1, n, outs[i]) != n) {
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 {
     FILE *outs[64];
     int append = 0, ignore_int = 0;
-    int first = 1, count = 0, i, rc;
+    int first = 1, count = 0, i, rc = 0, open_rc = 0;
     const char *mode;
 
     while (first < argc && argv[first][0] == '-' && argv[first][1] != '\0') {
@@ -93,7 +93,7 @@ int main(int argc, char **argv)
         ++count;
     }
 
-    rc = copy_stream(outs, count);
+    rc = copy_stream(outs, count);\n    if (open_rc) rc = 1;
     for (i = 0; i < count; ++i)
         if (outs[i] && fclose(outs[i]) != 0) rc = 1;
 
