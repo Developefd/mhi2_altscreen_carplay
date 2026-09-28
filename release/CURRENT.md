@@ -24,7 +24,9 @@ The release ZIP contains every project-supplied file required for the currently 
 - `tee`
 - `MIBR-NavIgnore.jar`
 
-No additional project payload needs to be downloaded before testing.
+No additional project payload needs to be downloaded before testing. The publication audit checks
+that every payload reference in the shipped scripts resolves to a file inside the ZIP and that the
+payload directory contains no unmanifested extra dependency.
 
 Pinned hashes:
 
@@ -120,6 +122,9 @@ These remain development/research items rather than hidden prerequisites:
 
 The current D2 same-session keyframe policy remains an explicit developer switch while its watchdog
 timing is still being tuned.
+
+The release tag is recreated on the cleaned current repository commit, so GitHub's automatic
+source-code archives correspond to the same current source/documentation state.
 
 This remains a developer prerelease: the media-path payload bytes are vehicle-tested, while the
 integrated standalone installer, logging and foreign-Java recovery flow is undergoing broader
