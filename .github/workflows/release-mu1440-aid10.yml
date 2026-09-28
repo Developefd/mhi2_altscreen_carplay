@@ -45,6 +45,8 @@ jobs:
           grep -Fq 'EXPECTED_GATE=05673010a88c25022145ffb4e75d3715eaf686f4127ac188e91a52f512b9d957' deployment/mu1440/install.sh
           grep -Fq 'EXPECTED_NAVIGNORE=b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34' deployment/mu1440/install.sh
           grep -Fq 'fail "navignore_required expected=$EXPECTED_NAVIGNORE"' deployment/mu1440/install.sh
+          grep -Fq 'fail "navignore_lsd_insertion_point_missing"' deployment/mu1440/install.sh
+          grep -Fq 'navignore_state=PASS_EXACT' deployment/mu1440/status.sh
 
           grep -Fq 'TEST="$MEDIA_ROOT/.mibr-altscreen-write-test.$$"' deployment/mu1440/install.sh
           grep -Fq 'TEST="$BACKUPFOLDER/.write-test-$$"' runtime/auto-direct/common.sh
