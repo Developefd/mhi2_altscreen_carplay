@@ -262,17 +262,21 @@ jobs:
           test -x "$PKG/payload/tee"
           test -f "$PKG/payload/MIBR-NavIgnore.jar"
           test "$(sha256sum "$PKG/payload/MIBR-NavIgnore.jar" | awk '{print $1}')" = "b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34"
+          test -f "$PKG/payload/MIBR-Most20FPS.jar"
+          test "$(sha256sum "$PKG/payload/MIBR-Most20FPS.jar" | awk '{print $1}')" = "dbd45609fe4ba69948d39e9e649b224484f680f6aa7934b68c261a4d360ea5bb"
           test -x "$PKG/runtime/deployment/session.sh"
           grep -Fq 'payload/tee' "$PKG/PAYLOAD.sha256"
           grep -Fq 'payload/MIBR-NavIgnore.jar' "$PKG/PAYLOAD.sha256"
+          grep -Fq 'payload/MIBR-Most20FPS.jar' "$PKG/PAYLOAD.sha256"
           test -f "$PKG/PAYLOAD.sha256"
 
           # Stable public deployment intentionally does not ship the unvalidated
           # SafeArea candidate as its active runtime helper yet.
           test ! -e "$PKG/runtime/navigation/gen2_safearea.sh"
           test ! -e "$PKG/runtime/experimental"
-          test "$(find "$PKG" -type f -name '*.jar' -print | wc -l)" = "1"
+          test "$(find "$PKG" -type f -name '*.jar' -print | wc -l)" = "2"
           test -f "$PKG/payload/MIBR-NavIgnore.jar"
+          test -f "$PKG/payload/MIBR-Most20FPS.jar"
 
           (
             cd "$PKG"
