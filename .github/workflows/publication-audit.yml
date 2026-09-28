@@ -93,6 +93,10 @@ jobs:
           # Shell scripts deployed to the unit must not regress to it.
           ! grep -R -n -E '(^|[;&|[:space:]])printf[[:space:]]' deployment/mu1440 runtime
 
+          # Exact vehicle evidence also showed that relying on grep A\|B alternation is unsafe.
+          # Require separate fixed-string checks instead.
+          ! grep -R -n -F '\|' deployment/mu1440 runtime
+
           # The prepared developer package must carry its own hash helper instead of
           # depending on the classic M.I.B. /apps/sbin tree.
           grep -Fq 'SHA=${MIBR_SHA256:-$PAYLOAD/sha256sum}' deployment/mu1440/install.sh
@@ -106,6 +110,11 @@ jobs:
           # the DisplayManager gate.
           grep -Fq 'MIBR_PREPARE_ONLY=1' deployment/mu1440/install.sh
           grep -Fq 'runtime_start=SKIPPED_UNTIL_REBOOT' runtime/auto-direct/direct_ts_auto_enable.sh
+
+          # Top-level installer owns the /mnt/app writable lifetime even on error.
+          grep -Fq 'APP_RW=0' deployment/mu1440/install.sh
+          grep -Fq 'trap cleanup 0 1 2 15' deployment/mu1440/install.sh
+          grep -Fq 'app_ro' deployment/mu1440/install.sh
 
           # Install order: the fail-safe DisplayManager gate is installed before
           # the persistent CarPlay preload is prepared.
