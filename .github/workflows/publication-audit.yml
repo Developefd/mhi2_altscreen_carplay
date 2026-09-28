@@ -35,6 +35,7 @@ jobs:
           bash -n deployment/mu1440/install.sh
           bash -n deployment/mu1440/uninstall.sh
           bash -n deployment/mu1440/status.sh
+          bash -n deployment/mu1440/compatibility-report.sh
           bash -n runtime/diagnostics/keypanel_trace_discovery.sh
           bash -n runtime/auto-direct/common.sh
           bash -n runtime/deployment/session.sh
@@ -63,6 +64,7 @@ jobs:
             runtime/auto-direct/writev_gate.sh \
             runtime/auto-direct/altscreen111.conf \
             runtime/deployment/session.sh \
+            deployment/mu1440/compatibility-report.sh \
             runtime/isotx2-gate/install_preload.sh \
             runtime/isotx2-gate/restore_preload.sh \
             runtime/diagnostics/gen2_keyframes.sh \
@@ -141,6 +143,12 @@ jobs:
           grep -Fq 'Bundled exact NavIgnore payload verified before Java normalization.' deployment/mu1440/install.sh
           grep -Fq 'TMP=/tmp/lsd.sh.mibr-deploy-normalize.$' deployment/mu1440/install.sh
           grep -Fq 'VIN, FAZIT and device serial numbers are intentionally not collected.' runtime/deployment/session.sh
+          grep -Fq 'mode=READ_ONLY_TARGET' deployment/mu1440/compatibility-report.sh
+          grep -Fq 'writes=deployment_media_only' deployment/mu1440/compatibility-report.sh
+          grep -Fq 'displaymanager.json' deployment/mu1440/compatibility-report.sh
+          grep -Fq 'dio_manager.json' deployment/mu1440/compatibility-report.sh
+          grep -Fq 'smartphone_integrator.json' deployment/mu1440/compatibility-report.sh
+          ! grep -n -E 'mount[[:space:]]+-uw[[:space:]]+/(mnt|net/rcc)|app_rw|system_rw|(^|[;&|[:space:]])(rm|mv|chmod|slay|kill)[[:space:]]' deployment/mu1440/compatibility-report.sh
           ! grep -R -n -F '/apps/sbin' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
           ! grep -R -n -F 'config/BASICS' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
           ! grep -R -n -F 'apps/mounts' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
@@ -153,6 +161,7 @@ jobs:
               Path("deployment/mu1440/install.sh"),
               Path("deployment/mu1440/uninstall.sh"),
               Path("deployment/mu1440/status.sh"),
+              Path("deployment/mu1440/compatibility-report.sh"),
               Path("runtime/auto-direct/common.sh"),
               Path("runtime/deployment/session.sh"),
               Path("tools/prepare_mu1440_sd.sh"),
@@ -230,6 +239,7 @@ jobs:
           test -x "$PKG/install.sh"
           test -x "$PKG/uninstall.sh"
           test -x "$PKG/status.sh"
+          test -x "$PKG/compatibility-report.sh"
           test -x "$PKG/payload/sha256sum"
           test -x "$PKG/payload/libaltscreen111.so"
           test -x "$PKG/payload/direct-ts-remux"
@@ -278,7 +288,7 @@ jobs:
           for name in expected:
               assert f"payload/{name}" in manifest, name
           referenced=set()
-          for p in [pkg/"install.sh", pkg/"status.sh", pkg/"uninstall.sh", *pkg.glob("runtime/**/*.sh")]:
+          for p in [pkg/"install.sh", pkg/"status.sh", pkg/"uninstall.sh", pkg/"compatibility-report.sh", *pkg.glob("runtime/**/*.sh")]:
               s=p.read_text()
               referenced.update(re.findall(r'(?:\$PAYLOAD/|\.\./\.\./payload/)([A-Za-z0-9_.-]+)', s))
           missing=referenced-actual
