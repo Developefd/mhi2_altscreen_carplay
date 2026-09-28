@@ -47,6 +47,8 @@ commit:
 3bae6e82177c7084a008c42373042e6eebf5653e
 ```
 
+**Current comparison authority:** for new internal JXE -> JAR baselines, firmware-to-firmware Java comparisons and revalidation of older findings, use `luka-dev/jxe2jar` by default. `JeniCzech92/lsdtool` remains the historical/known-working licensed route and a useful cross-check, but it is not the preferred internal comparison baseline.
+
 Decompiler:
 
 ```text
