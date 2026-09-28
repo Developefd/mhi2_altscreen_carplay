@@ -39,6 +39,21 @@ The prepared package includes the exact vehicle-tested `payload/MIBR-NavIgnore.j
 `MIBR_SHA256` remains an expert override for a separately verified compatible helper. Missing or
 non-executable hash support is a hard stop; target/payload verification is never skipped.
 
+## Unknown target: collect first, do not install
+
+For a target that has not yet been validated, use the standalone read-only collector first:
+
+```sh
+./compatibility-report.sh
+```
+
+It creates the same sanitized vehicle/firmware summary used by install/status logging, then adds
+component hashes, relevant process/device observations, and read-only snapshots of
+`displaymanager.json`, `dio_manager.json`, and `smartphone_integrator.json`.
+
+No target filesystem is remounted writable and no vehicle file is changed. Only the deployment
+SD/USB medium is made writable for the report output.
+
 ## Apply
 
 ```sh
