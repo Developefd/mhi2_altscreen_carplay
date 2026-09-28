@@ -50,6 +50,28 @@ b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34
 ```
 
 Its upstream/provenance record and license are documented in `THIRD_PARTY/NavIgnore/`.
+
+The prepared package also includes the vehicle-validated standalone Most20 payload:
+
+```text
+payload/MIBR-Most20FPS.jar
+```
+
+Expected SHA-256:
+
+```text
+dbd45609fe4ba69948d39e9e649b224484f680f6aa7934b68c261a4d360ea5bb
+```
+
+Most20 is now part of the MU1440 reference default. Vehicle capture proved real
+1010x376 H.264 output changing from 10 fps to 20 fps. Provenance is recorded under
+`THIRD_PARTY/Most20FPS/`.
+
+The default install also enables the persistent GEN2 D2 keyframe policy:
+1 s source-IDR watchdog, 1 s minimum request gap, with event-triggered
+`turns`/`suggestUI` requests still debounced at 250 ms. Disable it with
+`/mnt/app/root/altscreen-u2/scripts/gen2_keyframes.sh off`.
+
 No external Java payload is required for the validated MU1440/AID10 test path.
 
 ## Compatibility helpers
