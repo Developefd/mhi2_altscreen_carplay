@@ -34,7 +34,7 @@ This writes the deployment directly into the SD-card root:
 There is deliberately no `esd/` or `MHI2AltScreen/` wrapper directory.
 
 The prepared payload uses the exact 2026-09-27 vehicle-tested GEN2 and direct-ts-remux binaries plus
-the current public build-confirmed isoTX2 gate.
+the byte-reproduced **vehicle-tested run51** isoTX2 gate.
 
 The project does **not** redistribute the current NavIgnore JAR because it contains modified
 OEM-derived classes. If a developer already has the exact compatible JAR, it may be placed at:
@@ -49,8 +49,8 @@ Expected SHA-256:
 b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34
 ```
 
-If it is absent, installation continues but reports that the complete vehicle-proven smartphone
-navigation presentation used NavIgnore.
+NavIgnore is required for the vehicle-proven path. Installation continues only when the exact JAR is
+already active on the target or the exact replacement is present in `payload/`.
 
 ## Compatibility helpers
 
@@ -75,7 +75,17 @@ Run from the prepared directory:
 ./install.sh --apply
 ```
 
-The apply path performs its own hash/firmware gates, creates persistent backups, installs the
+Every `install.sh`, `status.sh` and `uninstall.sh` invocation creates a timestamped session under
+`mhi2-altscreen-logs/` on the SD card. The session contains the complete console log and a sanitized
+vehicle/firmware summary. VIN, FAZIT and device serial numbers are intentionally not collected.
+
+If the installer finds an existing Java/bootclasspath state other than the validated NavIgnore-only
+state, `--check` archives the current `lsd.sh`, available backups, JARs and hashes on the SD and
+returns `PREFLIGHT=ATTENTION`. `--apply` then asks whether to abort or to use that archive as the
+recovery copy, normalize the conflicting Java startup state and continue with the exact NavIgnore.
+No target-side Java mutation is made until the required exact NavIgnore is known to be available.
+
+The apply path then performs its hash/firmware gates, creates persistent backups, installs the
 Stream-111 hook, installs the DisplayManager writev gate in STOCK-default mode, sets the navigation
 profile to `map-rich`, and enables Auto-Direct persistence.
 
@@ -105,6 +115,12 @@ The uninstaller stops/disables Auto-Direct, restores the exact backed-up stock
 NavIgnore only if this deployment installed it itself.
 
 A reboot is required after restore.
+
+### Issue evidence
+
+For a public issue, attach `session.log` and `vehicle-summary.txt` from the relevant
+`mhi2-altscreen-logs/<session>/` directory. The `archive/` subdirectory can contain copied
+third-party/OEM JAR bytes and is intended for local recovery; do not upload it blindly.
 
 ## Scope
 
