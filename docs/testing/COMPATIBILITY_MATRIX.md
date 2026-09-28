@@ -6,10 +6,11 @@ This table separates **project goal** from **actual evidence**.
 
 | Platform | Firmware / baseline | Status | Evidence |
 | --- | --- | --- | --- |
-| Škoda MHI2 / MU1440 | `MHI2_ER_SKG13_P4526_MU1440` | primary proven target | vehicle-tested |
-| other Škoda MHI2 trains | unknown | not assumed compatible | needs testers + exact hashes |
-| SEAT/CUPRA MHI2 | planned | unvalidated | help wanted |
-| Volkswagen MHI2 | planned | unvalidated | help wanted |
+| Škoda MHI2 / MU1440 + AID10-class | `MHI2_ER_SKG13_P4526_MU1440` | primary proven target | vehicle-tested on one 10.x-inch MQB Virtual Cockpit |
+| other Škoda MHI2 + AID10-class | unknown | plausible family target, not assumed compatible | needs exact hashes + cluster identity + vehicle test |
+| SEAT/CUPRA MHI2 + 10.25-inch Digital Cockpit | planned | likely related 1280x480 family; unvalidated here | help wanted |
+| Volkswagen MHI2 + AID10-class | planned | unvalidated | help wanted |
+| Volkswagen 12.3-inch AID / other large AID revisions | separate target | **not assumed equivalent to AID10-class** | needs hardware/transport/layout audit + vehicle test |
 | MHI2Q / Qualcomm | comparator only | not this runtime target | public prior art exists |
 
 Reference MU1440 stock `libairplay.so` SHA-256:
@@ -18,7 +19,7 @@ Reference MU1440 stock `libairplay.so` SHA-256:
 193a4fd9101ec2aa05e7159cfa307b96500810d379ca74a194f172adc13a46b5
 ```
 
-A different hash is a **stop condition**, not permission to assume ABI compatibility.
+A different hash is a **stop condition**, not permission to assume ABI compatibility. A matching/known MU firmware is also **not sufficient by itself**: cluster hardware/revision is a separate compatibility dimension.
 
 ## Functional validation matrix
 
@@ -56,10 +57,29 @@ A useful compatibility report needs:
 - firmware train + MU;
 - stock `libairplay.so` SHA-256;
 - DisplayManager binary/config identity if known;
-- cluster/AID type;
+- cluster/AID type, part number and HW/SW identification if available;
 - SSH transport used;
 - result of stock map -> DIRECT -> STOCK sequence;
 - project artifact hashes;
 - logs with personal/navigation data removed.
 
 Do not post VINs.
+
+
+## Cluster-family note
+
+`AID10-class` is a **project shorthand**, not a claim that Volkswagen Group uses one universal official
+type name. Public OEM material shows materially different digital-cluster generations/sizes, including
+a 12.3-inch 1440x540 Active Info Display and smaller/newer 1280x480 families marketed around
+10.25/10.3/11.7 inches depending on brand/model/generation.
+
+For this project, do not infer compatibility from display size alone. Future target admission should gate on:
+
+1. MHI2 firmware/component identity;
+2. cluster part number / hardware+software identity;
+3. observed display/MOST/DCIVIDEO contract;
+4. view geometry / SafeArea behavior;
+5. real STOCK -> DIRECT -> STOCK vehicle validation.
+
+TODO: add a read-only `cluster_probe`/preflight report that identifies the cluster family from available
+diagnostic/component data. This is intentionally deferred until after the current MU1440/AID10 lifecycle work.
