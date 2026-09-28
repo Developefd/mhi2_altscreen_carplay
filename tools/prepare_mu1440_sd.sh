@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEST="${1:-}"
 
 if [[ -z "$DEST" ]]; then
-  echo "usage: $0 /path/to/sd/esd"
+  echo "usage: $0 /path/to/mounted-sd-root"
   exit 2
 fi
 
@@ -22,9 +22,14 @@ for f in "$GEN2" "$REMUX" "$GATE" "$SHAHELP"; do
   }
 done
 
-OUT="$DEST/MHI2AltScreen"
-rm -rf "$OUT"
-mkdir -p "$OUT/payload" "$OUT/runtime"
+OUT="$DEST"
+mkdir -p "$OUT"
+
+# The developer package intentionally lives directly in the SD-card root.
+# Never remove the SD root itself; replace only project-owned deployment paths.
+rm -f "$OUT/install.sh" "$OUT/uninstall.sh" "$OUT/status.sh" "$OUT/PAYLOAD.sha256"
+rm -rf "$OUT/runtime/auto-direct" "$OUT/runtime/isotx2-gate" "$OUT/runtime/diagnostics" "$OUT/runtime/navigation"
+mkdir -p "$OUT/payload" "$OUT/runtime/auto-direct" "$OUT/runtime/isotx2-gate" "$OUT/runtime/diagnostics" "$OUT/runtime/navigation"
 
 cp "$ROOT/deployment/mu1440/install.sh" "$OUT/install.sh"
 cp "$ROOT/deployment/mu1440/uninstall.sh" "$OUT/uninstall.sh"
@@ -34,7 +39,6 @@ cp "$REMUX" "$OUT/payload/direct-ts-remux"
 cp "$GATE" "$OUT/payload/libmibr_isotx2_gate.so"
 cp "$SHAHELP" "$OUT/payload/sha256sum"
 
-mkdir -p "$OUT/runtime/auto-direct" "$OUT/runtime/isotx2-gate" "$OUT/runtime/diagnostics" "$OUT/runtime/navigation"
 cp "$ROOT/runtime/auto-direct/"*.sh "$OUT/runtime/auto-direct/"
 cp "$ROOT/runtime/auto-direct/altscreen111.conf" "$OUT/runtime/auto-direct/"
 cp "$ROOT/runtime/isotx2-gate/"*.sh "$OUT/runtime/isotx2-gate/"
@@ -51,5 +55,5 @@ chmod +x "$OUT/"*.sh "$OUT/runtime/"*/*.sh "$OUT/payload/libaltscreen111.so" "$O
   sha256sum payload/libaltscreen111.so payload/direct-ts-remux payload/libmibr_isotx2_gate.so payload/sha256sum > PAYLOAD.sha256
 )
 
-echo "prepared: $OUT"
+echo "prepared SD root: $OUT"
 echo "optional: place the separately obtained exact MIBR-NavIgnore.jar in $OUT/payload/"
