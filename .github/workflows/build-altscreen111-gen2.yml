@@ -95,6 +95,7 @@ jobs:
           strings "$BIN" | grep -Fq 'showSpeedLimit=%s&showCompass=%s&showETA=%s&maneuverLayout=%s'
           strings "$BIN" | grep -Fq 'mibr-carplay111-safearea.conf'
           strings "$BIN" | grep -Fq 'GEN2 RESYNC ARM'
+          strings "$BIN" | grep -Fq '/mnt/app/root/mibr-alt111-keyframe-policy.enabled'
           sha256sum "$BIN" > build/gen2/libaltscreen111.so.sha256
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
