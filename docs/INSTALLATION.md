@@ -137,3 +137,21 @@ performing that target-side Java mutation.
 For public issue reports, `session.log` and `vehicle-summary.txt` are the intended default
 attachments. Review `archive/` locally before sharing it; copied JARs there may contain
 third-party/OEM-derived code.
+
+
+## Current MU1440 reference defaults
+
+The validated developer install now treats these as the reference defaults:
+
+- exact `MIBR-NavIgnore.jar` active in J9;
+- exact `MIBR-Most20FPS.jar` active in J9;
+- 1010x376 coded-frame/map-surface baseline;
+- Auto-Direct persistent;
+- GEN2 D2 keyframe recovery persistent with a 1,000 ms source-IDR watchdog and 1,000 ms minimum request gap.
+
+Most20 is no longer an experimental optional add-on on the MU1440 reference target. The 2026-09-29
+stock-`isoTX2` capture proved that the standalone patch changes the real native H.264/MPEG-TS stream
+from 10 fps to 20 fps.
+
+Advanced and diagnostic runtime switches are documented in
+[ADVANCED_RUNTIME_SWITCHES.md](architecture/ADVANCED_RUNTIME_SWITCHES.md).
