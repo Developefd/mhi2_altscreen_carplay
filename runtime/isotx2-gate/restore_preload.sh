@@ -1,8 +1,8 @@
 #!/bin/ksh
 set -u
 
-BASE=$(cd "$(dirname "$0")" 2>/dev/null && pwd)
-HASH="${MIBR_SHA256:-/net/mmx/fs/sda0/apps/sbin/sha256sum}"
+SELF=$0\ncase "$SELF" in */*) BASE=${SELF%/*} ;; *) BASE=. ;; esac\nBASE=$(cd "$BASE" 2>/dev/null && pwd) || exit 2
+HASH="${MIBR_SHA256:-$BASE/../../payload/sha256sum}"
 TARGET=/mnt/system/etc/boot/startup.sh
 DST_LIB=/mnt/app/eso/lib/libmibr_isotx2_gate.so
 BACKUP=/mnt/app/root/mibr-isotx2-gate-backup/startup.sh.stock
