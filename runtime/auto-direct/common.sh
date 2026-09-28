@@ -11,32 +11,17 @@ export LD_LIBRARY_PATH=/lib:/mnt/app/root/lib-target:/eso/lib:/mnt/app/usr/lib:/
 unset LD_PRELOAD
 export GEM=1
 
-# SD/GEM path: use the same BASIC -> GLOBALS -> LOGS bootstrap pattern as M.I.B.
-# The build rewrites BASE to /net/mmx/fs/sda0/esd for the SD-only package.
-case "$BASE" in
-  /net/mmx/fs/*/esd)
-    CARDROOT="${BASE%/esd}"
-    . "$CARDROOT/config/BASICS" || {
-      echo "ERROR M.I.B.-style U2 BASICS/GLOBALS bootstrap failed"
-      return 1 2> /dev/null
-      exit 1
-    }
-    ;;
-  *)
-    # Preserved SWDL/install fallback. The preferred vehicle path is SD/GEM.
-    VOLUME="$BASE"
-    TEE=tee
-    SED=sed
-    CUT=cut
-    SHA256="$BASE/bin/sha256sum"
-    TIMESTAMP="/net/rcc/usr/bin/date +%Y_%m_%d_%H_%M_%S"
-    TMP="/net/rcc/dev/shmem"
-    BACKUPFOLDER="$BASE/logs"
-    LOG="$BACKUPFOLDER/U2-LOG.txt"
-    mkdir -p "$BACKUPFOLDER" 2>/dev/null || true
-    [ -f "$LOG" ] || echo "MU1440 AltScreen U2 fallback runtime" > "$LOG" 2>/dev/null || true
-    ;;
-esac
+# Installed runtime is deliberately self-contained under /mnt/app/root/altscreen-u2.
+# Do not import M.I.B. BASICS/GLOBALS or depend on an SD-card apps/ tree.
+VOLUME="$BASE"
+SHA256="$BASE/bin/sha256sum"
+TIMESTAMP="/net/rcc/usr/bin/date +%Y_%m_%d_%H_%M_%S"
+TMP="/net/rcc/dev/shmem"
+BACKUPFOLDER="$BASE/logs"
+LOG="$BACKUPFOLDER/U2-LOG.txt"
+U2_STORAGE_READY=0
+mkdir -p "$BACKUPFOLDER" 2>/dev/null || true
+[ -f "$LOG" ] || echo "MU1440 AltScreen runtime" > "$LOG" 2>/dev/null || true
 
 CARPLAY_HOOK=/mnt/app/eso/lib/libmibr_carplay111.so
 CARPLAY_BACKDIR=/mnt/app/root/mibr-carplay111-backup
@@ -64,13 +49,9 @@ runtime_find_cmd(){
 
 runtime_emit(){
   MSG="$*"
-  if [ -n "$TEE" ] && [ -x "$TEE" ] && [ -n "$LOG" ]; then
-    echo "$MSG" 2>&1 | "$TEE" -a "$LOG"
-  else
-    echo "$MSG"
-    if [ -n "$LOG" ] && [ -n "$BACKUPFOLDER" ] && [ -d "$BACKUPFOLDER" ]; then
-      echo "$MSG" >> "$LOG" 2>/dev/null || true
-    fi
+  echo "$MSG"
+  if [ -n "${LOG:-}" ] && [ -n "${BACKUPFOLDER:-}" ] && [ -d "$BACKUPFOLDER" ]; then
+    echo "$MSG" >> "$LOG" 2>/dev/null || true
   fi
 }
 
@@ -116,11 +97,6 @@ prepare_log_storage(){
     return 0
   fi
 
-  case "$BASE" in
-    /net/mmx/fs/*/esd)
-      "$CARDROOT/apps/mounts" -usb >/dev/null 2>&1 || return 1
-      ;;
-  esac
   mkdir -p "$BASE/logs" 2>/dev/null || return 1
   TEST="$BASE/logs/.write-test-$"
   touch "$TEST" 2>/dev/null || return 1
@@ -137,11 +113,6 @@ runtime_init(){
     runtime_emit "ERROR bundled SHA-256 helper missing/not executable: $SHA256"
     return 2
   }
-  case "$BASE" in
-    /net/mmx/fs/*/esd)
-      [ -x "$TEE" ] || { runtime_emit "ERROR bundled M.I.B. tee unavailable: $TEE"; return 3; }
-      ;;
-  esac
   return 0
 }
 
@@ -178,7 +149,9 @@ emit_to_file(){
   OUT=$1
   shift
   MSG="$*"
-  echo "$MSG" 2>&1 | "$TEE" -a "$OUT" | "$TEE" -a "$LOG"
+  echo "$MSG"
+  echo "$MSG" >> "$OUT" 2>/dev/null || true
+  [ -n "${LOG:-}" ] && echo "$MSG" >> "$LOG" 2>/dev/null || true
 }
 
 hash256(){
@@ -281,7 +254,9 @@ mkdir -p "$DIRECT_LOG_ROOT" 2>/dev/null || true
 direct_log(){
   mkdir -p "$DIRECT_LOG_ROOT" 2>/dev/null || true
   MSG="$(timestamp_now) $*"
-  echo "$MSG" 2>&1 | "$TEE" -a "$LOG" | "$TEE" -a "$DIRECT_MASTER_LOG"
+  echo "$MSG"
+  [ -n "${LOG:-}" ] && echo "$MSG" >> "$LOG" 2>/dev/null || true
+  echo "$MSG" >> "$DIRECT_MASTER_LOG" 2>/dev/null || true
 }
 
 direct_new_run(){
