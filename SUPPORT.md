@@ -30,6 +30,11 @@ Recommended category: **Vehicle testing** for new hardware/firmware observations
 - expected vs observed result;
 - sanitized logs.
 
+The MU1440 developer deployment writes timestamped sessions under `mhi2-altscreen-logs/` on the
+SD card. For an Issue, the preferred attachments are `session.log` and `vehicle-summary.txt`.
+The `archive/` directory is a local recovery archive and may contain copied third-party/OEM JARs;
+do not upload it blindly.
+
 Before posting any log, screenshot or vehicle information, follow the redaction/privacy rules in [SECURITY.md](SECURITY.md). That file is the canonical policy for credentials, identifiers, locations and security-sensitive findings.
 
 ## Screenshots
