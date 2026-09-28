@@ -123,6 +123,7 @@ Use the off-unit parser:
 
 ```bash
 python3 tools/parse_keypanel_trace.py keypanel.log
+python3 tools/parse_keypanel_trace.py --summary keypanel.log
 python3 tools/parse_keypanel_trace.py --csv keypanel.log > keypanel.csv
 ```
 
