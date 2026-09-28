@@ -2,7 +2,7 @@
 
 **Open research and engineering for bringing CarPlay secondary-screen navigation to the Virtual Cockpit on Volkswagen Group MHI2 platforms.**
 
-[**Roadmap**](ROADMAP.md) · [Installation](docs/INSTALLATION.md) · [Contributing](CONTRIBUTING.md) · [Support](SUPPORT.md) · [Security & privacy](SECURITY.md)
+[**Roadmap**](ROADMAP.md) · [Cluster / display KB](docs/research/MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md) · [Installation](docs/INSTALLATION.md) · [Contributing](CONTRIBUTING.md) · [Support](SUPPORT.md) · [Security & privacy](SECURITY.md)
 
 > [!CAUTION]
 > ## NOT SD-CARD READY — ACTIVE DEVELOPMENT / HELP WANTED
@@ -237,12 +237,13 @@ If you want to understand the project without reading the entire repository, use
 6. [Current development status](docs/status/CURRENT_DEVELOPMENT_STATUS.md) — where the implementation has already moved beyond the published binary checkpoint.
 7. [Known issues](docs/findings/KNOWN_ISSUES.md) — the exact lifecycle/provider-switch problems still being worked.
 8. [Compatibility matrix](docs/testing/COMPATIBILITY_MATRIX.md) — what is actually proven, partial, open or only planned.
-9. [MU1440 stock reference](docs/research/MU1440_STOCK_REFERENCE.md) — exact stock component hashes for the first proven target.
-10. [iOS 27 sender research](docs/research/IOS27_SENDER_LIFECYCLE.md) — exact build/hash authority behind the current lifecycle model.
-11. [Public references](docs/research/PUBLIC_REFERENCES.md) — prior art and external projects worth reading.
-12. [Developer installation](docs/INSTALLATION.md) — guarded install/restore path for the exact MU1440 reference target.
-13. [MU1440 QNX shell compatibility](docs/testing/MU1440_QNX_SHELL_COMPATIBILITY.md) — exact-target command/paste constraints behind the scripts.
-14. [Roadmap](ROADMAP.md) — current priorities and concrete help-wanted areas.
+9. [Cluster / display transport KB](docs/research/MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md) — MIB2-era VW/Škoda/Audi cluster families, panel vs. map geometry, MOST/LVDS transport and open-source renderer evidence.
+10. [MU1440 stock reference](docs/research/MU1440_STOCK_REFERENCE.md) — exact stock component hashes for the first proven target.
+11. [iOS 27 sender research](docs/research/IOS27_SENDER_LIFECYCLE.md) — exact build/hash authority behind the current lifecycle model.
+12. [Public references](docs/research/PUBLIC_REFERENCES.md) — prior art and external projects worth reading.
+13. [Developer installation](docs/INSTALLATION.md) — guarded install/restore path for the exact MU1440 reference target.
+14. [MU1440 QNX shell compatibility](docs/testing/MU1440_QNX_SHELL_COMPATIBILITY.md) — exact-target command/paste constraints behind the scripts.
+15. [Roadmap](ROADMAP.md) — current priorities and concrete help-wanted areas.
 
 ### Want to help?
 
