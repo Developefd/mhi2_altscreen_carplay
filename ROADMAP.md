@@ -18,7 +18,7 @@ The project deliberately separates the **CarPlay AltScreen / Stream-111 video pl
 | ⬜ | Planned | Multi-ViewArea / automatic VC-layout coupling | Pre-advertise calibrated layouts, switch in-session, later bind to proven cluster state |
 | ⬜ | Planned | Native navigation arrows / RGI | Feed CarPlay maneuver metadata into the stock cluster navigation UI (arrow, distance, text) |
 | ⬜ | Research | Now Playing / native media metadata | Investigate native cluster media surfaces separately from Stream 111 |
-| ⬜ | Research | AID / firmware compatibility matrix | Detect cluster family and validate other Škoda / VW / SEAT / CUPRA targets |
+| ⬜ | Research | AID / firmware compatibility matrix | Detect cluster family and validate other Škoda / VW / SEAT / CUPRA targets |\n| 🧭 | Lead | Audi B9 / AUG22 MU1438 compatibility | Identify the exact Virtual Cockpit generation and prove whether the productive second-display path is MOST, LVDS/HDMI, or a combination before any runtime port |
 
 The strict current vehicle order is:
 
@@ -136,7 +136,7 @@ Before broader support, collect and correlate:
 - SafeArea / ViewArea behavior;
 - firmware/component hashes.
 
-The larger/older 12.3-inch AID family is a separate compatibility target and must not be assumed equivalent.
+The larger/older 12.3-inch AID family is a separate compatibility target and must not be assumed equivalent.\n\nAn Audi B9 / AUG22 MU1438 contributor lead is now tracked separately. Stock configuration evidence exposes both `/dev/mlb/isoTX2` MOST encoding and a `2_lvds` / `Tegra:HDMI0` second-display mode, so the decisive question is the **exact cluster generation and productive vehicle routing**, not the firmware family name alone.
 
 ## P2 — developer deployment / tester expansion
 
