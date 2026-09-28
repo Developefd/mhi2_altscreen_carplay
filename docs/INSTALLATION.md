@@ -34,7 +34,7 @@ The prepared developer directory carries its own reproducibly built QNX ARMv7 `p
 
 The current deployment does not require `sed`; the only former runtime use was replaced with stock `awk` because older firmware trains are known not to provide `sed` consistently.
 
-`MIBR_SHA256` remains an expert override for a separately verified compatible helper. Missing or
+NavIgnore itself is not redistributed because it contains modified OEM-derived classes. The installer fails closed unless the exact required JAR is already installed or is placed at `payload/MIBR-NavIgnore.jar`.\n\n`MIBR_SHA256` remains an expert override for a separately verified compatible helper. Missing or
 non-executable hash support is a hard stop; target/payload verification is never skipped.
 
 ## Apply
@@ -51,7 +51,7 @@ The installer:
 3. stages the tested GEN2 and direct remux runtime internally;
 4. preflights and installs the DisplayManager isoTX2 writev gate with STOCK as the fail-safe/default mode;
 5. prepares the persistent CarPlay Stream-111 preload with a verified stock backup;
-6. optionally keeps/installs an exact compatible NavIgnore if supplied separately;
+6. requires the exact vehicle-proven NavIgnore (`b065bab0…`) either already installed or supplied separately, and installs it when supplied;
 7. sets the initial navigation composition profile to `map-rich`;
 8. prepares Auto-Direct persistence **without starting a pre-reboot takeover**;
 9. requires a reboot rather than hot-restarting the CarPlay process stack.
