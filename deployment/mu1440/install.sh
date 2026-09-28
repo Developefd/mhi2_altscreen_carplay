@@ -25,7 +25,7 @@ media_rw(){
       mount -uw "$MEDIA_ROOT" 2>/dev/null || return 1
       ;;
   esac
-  TEST="$MEDIA_ROOT/.mibr-altscreen-write-test.$"
+  TEST="$MEDIA_ROOT/.mibr-altscreen-write-test.$$"
   touch "$TEST" 2>/dev/null || return 1
   [ -f "$TEST" ] || return 1
   rm -f "$TEST" 2>/dev/null || return 1
@@ -205,6 +205,10 @@ stage_runtime(){
   cp "$RUNTIME/auto-direct/altscreen111.conf" "$DST/config/altscreen111.conf.new" || fail "copy_config"
   chmod 644 "$DST/config/altscreen111.conf.new" 2>/dev/null || true
   mv "$DST/config/altscreen111.conf.new" "$DST/config/altscreen111.conf" || fail "install_config"
+
+  echo "$MEDIA_ROOT" > "$DST/config/deployment_media_root.new" || fail "write_deployment_media_root"
+  chmod 644 "$DST/config/deployment_media_root.new" 2>/dev/null || true
+  mv "$DST/config/deployment_media_root.new" "$DST/config/deployment_media_root" || fail "install_deployment_media_root"
 
   app_ro
   echo "STAGE_RUNTIME=PASS"
