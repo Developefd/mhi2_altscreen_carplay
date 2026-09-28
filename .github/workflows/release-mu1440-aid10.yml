@@ -15,7 +15,7 @@ concurrency:
 
 env:
   TAG: mu1440-aid10-dev-2026-09-28
-  ZIP: MHI2_AltScreen_MU1440_AID10_DEV_2026-09-28.zip
+  ZIP_NAME: MHI2_AltScreen_MU1440_AID10_DEV_2026-09-28.zip
 
 jobs:
   release:
@@ -137,10 +137,10 @@ jobs:
           (
             cd "$PKG"
             sha256sum $(find . -type f ! -name RELEASE-SHA256SUMS.txt -print | sort) > RELEASE-SHA256SUMS.txt
-            zip -9 -r "$GITHUB_WORKSPACE/$ZIP" .
+            zip -9 -r "$GITHUB_WORKSPACE/$ZIP_NAME" .
           )
-          unzip -t "$ZIP"
-          sha256sum "$ZIP" > "$ZIP.sha256"
+          unzip -t "$ZIP_NAME"
+          sha256sum "$ZIP_NAME" > "$ZIP_NAME.sha256"
 
       - name: Publish GitHub prerelease
         shell: bash
@@ -150,10 +150,10 @@ jobs:
           set -euxo pipefail
           NOTES=release/MU1440_AID10_DEV_2026-09-28.md
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$ZIP" "$ZIP.sha256" --clobber
+            gh release upload "$TAG" "$ZIP_NAME" "$ZIP_NAME.sha256" --clobber
             gh release edit "$TAG" --title "MU1440 / AID10 developer test — 2026-09-28" --notes-file "$NOTES" --prerelease
           else
-            gh release create "$TAG" "$ZIP" "$ZIP.sha256" \
+            gh release create "$TAG" "$ZIP_NAME" "$ZIP_NAME.sha256" \
               --target "$GITHUB_SHA" \
               --title "MU1440 / AID10 developer test — 2026-09-28" \
               --notes-file "$NOTES" \
