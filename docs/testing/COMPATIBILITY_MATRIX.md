@@ -28,13 +28,15 @@ A different hash is a **stop condition**, not permission to assume ABI compatibi
 
 This is the short operational view. See the [full cluster/display transport knowledge base](../research/MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md) for evidence, sources and caveats.
 
-| Family | Example part numbers | Physical panel | External map/video surface | Map transport from infotainment | Project interpretation |
-| --- | --- | --- | --- | --- | --- |
-| MQB AID1 / older Continental FPK | `5G1920791x`, `3G0920791x`, `5NA920791x` | VW OEM: 12.3", 1440x540 | OneB1t old-`791` default: 800x480 renderer window | MOST streaming, H.264 | same broad MQB video architecture, different geometry from current reference target |
-| MQB later Continental FPK / AID2-class | `17A920790`, `5NA920790D`, `5E0920790A`, related `3V0/565/5F0...790` | VW AID2 example: 1280x480; brand/model-specific panel details still being mapped | OneB1t explicitly: **1010x376** on 17A/5NA-D/5E0 targets | MOST streaming, H.264 | closest family to current Škoda reference; strong cross-brand platform evidence |
-| Škoda Octavia III reference | `5E0920790A` family | 10.x-inch VC | **1010x376** | MOST150 / DCIVIDEO / `/dev/mlb/isoTX2` | **vehicle-proven reference target** |
-| Audi B9 MIB2 Virtual Cockpit Gen1 | `8W5...790` VC family | early Audi VC: 12.3", 1440x540 | target LVDS map surface; exact MU1438 geometry not yet captured | **LVDS J794 -> J285 for large map/intersection map**; MOST for other cluster content | separate display-transport port, not an `isoTX2` clone |
-| Audi MIB2 Top non-VC cluster | target-specific | analog + center display | target-specific | **MOST carries navigation including map** | useful Audi counterexample / comparator |
+| Family | Example part numbers | Native panel raster | Stock / known map-video surface | Direct-TS test guidance | Transport |
+| --- | --- | ---: | ---: | --- | --- |
+| MQB AID1 / older Continental FPK | `5G1920791x`, `3G0920791x`, `5NA920791x` | **1440x540** | OneB1t older-family baseline: **800x480** | do not assume full-panel H.264 acceptance; capture exact stock/DMDT geometry first | MOST + H.264 |
+| Later Continental FPK Entry / `...790(A)` | `17A920790`, `5NA920790D`, `5E0920790A`, related `3V0/565/5F0...790` | **1280x480-class** | **1010x376** on OneB1t-tested 17A/5NA-D/5E0; exact Octavia stock DMDT also reports 1010x376 | baseline 1010x376; **1280x480 experimental native-panel probe** | MOST + H.264 |
+| Škoda Octavia III reference | `5E0920790A`, HW 508 / SW 1691, `EV_DashBoardVDDMQBA0 001026` | **1280x480-class** | **1010x376 OEM/QNX `DISPLAYABLE_KOMBI_MAP_VIEW`** | A/B 1010x376 vs 1280x480 with SafeArea disabled; compare sharpness, coverage and decoder behavior | MOST150 / DCIVIDEO / `/dev/mlb/isoTX2` |
+| SEAT Leon later-FPK example | `5F0920790A`, HW 609 / SW 1701, `EV_DashBoardVDDMQBA0 001026` | **1280x480-class** | exact stock map-plane not yet captured here | likely same family, but require target-specific DMDT/vehicle proof | MOST/H.264 candidate |
+| Škoda Kodiaq/Karoq later-FPK example | `565920790A`, SW 1691, `EV_DashBoardVDDMQBA0 001026` | **1280x480 / 10.25-inch-class** | exact stock map-plane not yet captured here | likely same family, but require target-specific DMDT/vehicle proof | MOST/H.264 candidate |
+| Audi B9 MIB2 Virtual Cockpit Gen1 | `8W5...790` VC family | early Audi VC: **1440x540** | dedicated LVDS map surface; exact MU1438 geometry still to capture | separate LVDS target, not a MOST Direct-TS geometry assumption | **LVDS J794 -> J285** for large map/intersection map |
+| Audi MIB2 Top non-VC cluster | target-specific | analog + center display | target-specific | comparator only | **MOST carries navigation including map** |
 
 ## Functional validation matrix
 
@@ -58,7 +60,8 @@ This is the short operational view. See the [full cluster/display transport know
 | Waze end-to-end | PASS in tested sequence | rich lower trip-summary UI exposed a SafeArea issue |
 | `suggestUI` lifecycle interpretation | STRONG RESEARCH EVIDENCE | exact iOS 27.2 + vehicle tracing |
 | navigation composition query controls | PASS / VEHICLE-OBSERVED | ETA/compass/maneuver layout alter real provider composition |
-| SafeArea configuration | BUILD-CONFIRMED / NOT YET VEHICLE-VALIDATED | development source exposes configurable geometry |
+| Direct 1280x480 geometry probe | PREPARED / NOT YET VEHICLE-VALIDATED | direct path can A/B the OEM 1010x376 map plane against native-panel-class 1280x480 without an image scaler/re-encoder |
+| SafeArea configuration | BUILD-CONFIRMED / NOT YET VEHICLE-VALIDATED | finalize only after the outer 1010x376 vs 1280x480 geometry gate |
 | dynamic ViewArea | RESEARCH / NOT RELEASED | in-session update mechanism identified; runtime preset switching planned |
 | navigation arrows / RGI | FUTURE/SEPARATE | not required for map-video proof |
 | SD-card installer | INTENTIONALLY NOT PROVIDED | SSH/developer phase |
