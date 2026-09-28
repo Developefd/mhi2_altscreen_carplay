@@ -106,6 +106,10 @@ jobs:
           grep -Fq 'SHA=${MIBR_SHA256:-$PAYLOAD/sha256sum}' deployment/mu1440/install.sh
           grep -Fq 'SHA=${MIBR_SHA256:-$PAYLOAD/sha256sum}' deployment/mu1440/uninstall.sh
           grep -Fq 'payload/sha256sum' tools/prepare_mu1440_sd.sh
+          grep -Fq 'payload/tee' tools/prepare_mu1440_sd.sh
+          grep -Fq 'TEE=${MIBR_TEE:-$PAYLOAD/tee}' deployment/mu1440/install.sh
+          grep -Fq 'media_rw || fail "deployment_media_not_writable=$MEDIA_ROOT"' deployment/mu1440/install.sh
+          grep -Fq 'TEE="$BASE/bin/tee"' runtime/auto-direct/common.sh
           ! grep -R -n -F '/apps/sbin' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
           ! grep -R -n -F 'config/BASICS' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
           ! grep -R -n -F 'apps/mounts' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
@@ -155,6 +159,9 @@ jobs:
           test -x "$PKG/payload/libaltscreen111.so"
           test -x "$PKG/payload/direct-ts-remux"
           test -x "$PKG/payload/libmibr_isotx2_gate.so"
+          test -x "$PKG/payload/sha256sum"
+          test -x "$PKG/payload/tee"
+          grep -Fq 'payload/tee' "$PKG/PAYLOAD.sha256"
           test -f "$PKG/PAYLOAD.sha256"
 
           # Stable public deployment intentionally does not ship the unvalidated
