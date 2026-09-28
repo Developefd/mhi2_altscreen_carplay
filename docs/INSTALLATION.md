@@ -20,10 +20,10 @@ Different target hashes are stop conditions.
 From a workstation checkout:
 
 ```sh
-tools/prepare_mu1440_sd.sh /path/to/sd/esd
+tools/prepare_mu1440_sd.sh /path/to/mounted-sd-root
 ```
 
-Then use the resulting `MHI2AltScreen/` directory on the target.
+The generated `install.sh`, `status.sh`, `uninstall.sh`, `PAYLOAD.sha256`, `payload/` and `runtime/` paths live directly in the SD-card root. No `esd/` or `MHI2AltScreen/` wrapper directory is created.
 
 The deployment contains individually auditable payload files; it deliberately does not publish an
 opaque install archive.
