@@ -175,3 +175,5 @@ Vehicle capture at the stock DisplayManager -> `/dev/mlb/isoTX2` boundary measur
 GEN2 D2 remains a separate source-side recovery mechanism. Its public default is now persistent
 with a 1 s source-IDR watchdog and 1 s minimum request gap; it can be disabled at runtime and
 persistently with `gen2_keyframes.sh off`.
+
+Packaging gate: the current self-contained SD package is audited as a closed seven-file payload set, including both split Java JARs and the published persistent-D2 runtime controls.
