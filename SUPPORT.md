@@ -30,25 +30,14 @@ Recommended category: **Vehicle testing** for new hardware/firmware observations
 - expected vs observed result;
 - sanitized logs.
 
-## Privacy
-
-Do not post:
-
-- VIN;
-- home/work/navigation addresses;
-- credentials;
-- Wi-Fi keys;
-- SSH private keys;
-- private account identifiers.
+Before posting any log, screenshot or vehicle information, follow the redaction/privacy rules in [SECURITY.md](SECURITY.md). That file is the canonical policy for credentials, identifiers, locations and security-sensitive findings.
 
 ## Screenshots
 
-Screenshots are not required for technical credibility.
+Screenshots are optional. For this project, logs, counters and hashes are often better evidence and easier to sanitize.
 
-For this project, logs/counters/hashes are often better evidence because navigation screenshots can
-reveal precise location.
+If a screenshot is genuinely useful, crop/redact it according to [SECURITY.md](SECURITY.md) before posting.
 
 ## Security issues
 
-Use the process in `SECURITY.md` for vulnerabilities that should not be disclosed publicly before
-a fix/mitigation is available.
+For vulnerabilities that should not be disclosed publicly before a fix or mitigation is available, use the responsible-reporting process in [SECURITY.md](SECURITY.md).
