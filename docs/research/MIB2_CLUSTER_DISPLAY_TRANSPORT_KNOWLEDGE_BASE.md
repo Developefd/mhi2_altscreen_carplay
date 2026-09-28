@@ -205,40 +205,33 @@ Plausible explanations include:
 
 Do **not** currently state that 1010x376 merely omits pixels hidden under the gauges. On the reference vehicle, map content can still be perceived beneath partially transparent gauge overlays, so the composition is more complex than a simple opaque central cut-out.
 
-### Why the direct path deserves a 1280x480 test
+### Current project decision
 
-OneB1t's path is:
+The physical-panel question and the Direct-TS coded-frame question are now deliberately separated.
 
-```text
-source framebuffer
- -> VNC decode
- -> OpenGL / QNX Displayable
- -> stock DisplayManager encoder
- -> MPEG-TS / MOST
- -> cluster
-```
-
-The current project path is:
+For the reference target the project fixes:
 
 ```text
-iPhone Stream 111 H.264
- -> Annex-B / MPEG-TS remux only
- -> /dev/mlb/isoTX2
- -> MOST
- -> cluster decoder
+Direct-TS / Stream-111 outer canvas = 1010x376
 ```
 
-There is **no image decoder, OpenGL renderer or stock NVIDIA re-encoder** in the direct path. Therefore the stock QNX map-window size does not automatically prove that the cluster decoder itself requires a 1010x376 coded frame.
+because three independent layers converge on that geometry:
 
-The project now tracks a bounded A/B test:
+- the live MU1440 `DISPLAYABLE_KOMBI_MAP_VIEW`;
+- the OneB1t later-FPK external rendering window for the matching cluster family;
+- the already vehicle-proven CarPlay Stream-111 baseline.
 
-1. baseline: **1010x376**;
-2. native-panel-class probe: **1280x480**;
-3. no SafeArea during the geometry comparison;
-4. compare edge coverage, gauge-overlay behavior, text/road sharpness and any decoder rejection;
-5. only after outer geometry is chosen, calibrate SafeArea.
+The **1280x480** value remains useful as the physical later-FPK panel class. It does not, by itself,
+establish a 1280x480 H.264/MOST decoder contract.
 
-A true pixel-grid / one-pixel checker test is preferred over subjective map sharpness when possible.
+The project has **not** proven that the cluster decoder rejects 1280x480. Rather, the engineering
+question is considered resolved for the current runtime because there is no evidence that the larger
+coded frame is required to obtain the OEM map surface, while 1010x376 is independently grounded at
+the stock QNX surface and the proven direct path.
+
+Accordingly, a future 1280x480 decoder-acceptance experiment is optional research and no longer
+blocks SafeArea/ViewArea calibration. If revisited, it should remain a separate bounded experiment
+with no implication that physical LCD raster and external map-video contract are the same thing.
 
 ## Known MQB cluster part-number anchors
 
@@ -473,7 +466,7 @@ Every new cluster target should eventually have these fields:
 - [ ] collect exact panel/LCD module identifiers for `5G1920791x`, `17A920790`, `5NA920790D`, `5E0920790A`;
 - [ ] compare rear labels / PCB / LCD module numbers inside the Continental `17101001` later-FPK family to determine exactly what is shared beneath the brand-specific housings;
 - [ ] map `resolution_1/2/3` adaptation values to exact encoded pixel dimensions for each family;
-- [ ] run the reference Octavia Direct-TS A/B at 1010x376 vs 1280x480 with SafeArea disabled and a pixel-grid pattern;
+- [x] fix 1010x376 as the current Direct-TS reference geometry from OEM/QNX + upstream + vehicle evidence; keep any 1280x480 decoder probe optional and separate;
 - [ ] capture stock DisplayManager context/display IDs for MQB AID1 vs AID2;
 - [ ] capture Audi B9 MU1438 LVDS display/context and native geometry;
 - [ ] add SEAT/CUPRA exact cluster part numbers;
