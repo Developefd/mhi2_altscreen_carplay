@@ -36,6 +36,10 @@ jobs:
           bash -n deployment/mu1440/uninstall.sh
           bash -n deployment/mu1440/status.sh
           bash -n runtime/diagnostics/keypanel_trace_discovery.sh
+          bash -n runtime/auto-direct/common.sh
+          bash -n runtime/isotx2-gate/install_preload.sh
+          bash -n runtime/isotx2-gate/restore_preload.sh
+          bash -n runtime/isotx2-gate/verify_preload_boot.sh
           bash -n tools/prepare_mu1440_sd.sh
 
           for f in \
@@ -97,14 +101,18 @@ jobs:
           # Require separate fixed-string checks instead.
           ! grep -R -n -F '\|' deployment/mu1440 runtime
 
-          # The prepared developer package must carry its own hash helper instead of
-          # depending on the classic M.I.B. /apps/sbin tree.
+          # The prepared developer package must carry its own hash helper and must
+          # not depend on the classic M.I.B. SD bootstrap/binary tree.
           grep -Fq 'SHA=${MIBR_SHA256:-$PAYLOAD/sha256sum}' deployment/mu1440/install.sh
           grep -Fq 'SHA=${MIBR_SHA256:-$PAYLOAD/sha256sum}' deployment/mu1440/uninstall.sh
           grep -Fq 'payload/sha256sum' tools/prepare_mu1440_sd.sh
+          ! grep -R -n -F '/apps/sbin' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
+          ! grep -R -n -F 'config/BASICS' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
+          ! grep -R -n -F 'apps/mounts' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
+          ! grep -R -n -F 'M.I.B.-style' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
 
-          # Fail before persistent mutation if the exact runtime command set is absent.
-          grep -Fq 'require_cmds mount cp mv chmod sync mkdir rm touch sleep grep awk sed wc cat pidin on slay' deployment/mu1440/install.sh
+          # Fail before persistent mutation if the exact mandatory runtime command set is absent.
+          grep -Fq 'require_cmds mount cp mv chmod sync mkdir rm touch sleep grep awk sed wc cat pidin on slay /bin/sh /bin/ksh /eso/bin/apps/dmdt' deployment/mu1440/install.sh
 
           # Auto-Direct must be prepared, not started, before the reboot that loads
           # the DisplayManager gate.
@@ -131,11 +139,14 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          DEST="$RUNNER_TEMP/fake-sd/esd"
+          DEST="$RUNNER_TEMP/fake-sd"
           mkdir -p "$DEST"
+          echo keep > "$DEST/KEEP.ME"
           tools/prepare_mu1440_sd.sh "$DEST"
 
-          PKG="$DEST/MHI2AltScreen"
+          PKG="$DEST"
+          test -f "$DEST/KEEP.ME"
+          test ! -e "$DEST/MHI2AltScreen"
           test -x "$PKG/install.sh"
           test -x "$PKG/uninstall.sh"
           test -x "$PKG/status.sh"
@@ -143,6 +154,7 @@ jobs:
           test -x "$PKG/payload/libaltscreen111.so"
           test -x "$PKG/payload/direct-ts-remux"
           test -x "$PKG/payload/libmibr_isotx2_gate.so"
+          test -f "$PKG/PAYLOAD.sha256"
 
           # Stable public deployment intentionally does not ship the unvalidated
           # SafeArea candidate as its active runtime helper yet.
