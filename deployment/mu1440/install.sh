@@ -277,14 +277,9 @@ handle_java_conflict(){
   echo "The original state has already been archived in this SD session."
 
   if [ "$JAVA_EXACT_NAV_ACTIVE" -ne 1 ]; then
-    [ -r "$PAYLOAD/MIBR-NavIgnore.jar" ] || {
-      echo "Cannot reach the validated NavIgnore-only state: exact replacement JAR is not present in payload/."
-      echo "No target Java files have been changed. Place the exact JAR on the SD and rerun."
-      return 30
-    }
     H=$(hashf "$PAYLOAD/MIBR-NavIgnore.jar" 2>/dev/null)
     [ "$H" = "$EXPECTED_NAVIGNORE" ] || fail "replacement_navignore_hash_mismatch=$H"
-    echo "Exact replacement NavIgnore payload verified before Java normalization."
+    echo "Bundled exact NavIgnore payload verified before Java normalization."
   fi
 
   case "${MIBR_FOREIGN_JAVA_ACTION:-ask}" in
@@ -335,6 +330,7 @@ preflight(){
   check_hash "$PAYLOAD/libaltscreen111.so" "$EXPECTED_GEN2"
   check_hash "$PAYLOAD/direct-ts-remux" "$EXPECTED_REMUX"
   check_hash "$PAYLOAD/libmibr_isotx2_gate.so" "$EXPECTED_GATE"
+  check_hash "$PAYLOAD/MIBR-NavIgnore.jar" "$EXPECTED_NAVIGNORE"
 
   [ -r "$RUNTIME/auto-direct/common.sh" ] || fail "runtime_common_missing"
   [ -r "$RUNTIME/auto-direct/patch_carplay.sh" ] || fail "patch_carplay_missing"
