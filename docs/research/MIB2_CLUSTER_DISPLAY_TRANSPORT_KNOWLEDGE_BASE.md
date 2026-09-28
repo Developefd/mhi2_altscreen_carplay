@@ -3,6 +3,8 @@
 **Scope:** Volkswagen Group digital instrument clusters relevant to the MIB2 / MHI2 development period, roughly 2015-2021.  
 **Last research pass:** 2026-09-28.
 
+Related: [FPK / Virtual Cockpit firmware and control access](FPK_FIRMWARE_AND_CONTROL_ACCESS.md).
+
 This document intentionally separates four things that are often mixed together:
 
 1. the **physical panel resolution** of the instrument cluster;
