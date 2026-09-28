@@ -83,3 +83,19 @@ For this project, do not infer compatibility from display size alone. Future tar
 
 TODO: add a read-only `cluster_probe`/preflight report that identifies the cluster family from available
 diagnostic/component data. This is intentionally deferred until after the current MU1440/AID10 lifecycle work.
+
+
+### Public OEM cluster references
+
+These links are background references only; they do **not** establish project compatibility:
+
+- Volkswagen first-generation 12.3-inch AID (1440x540) and newer 11.7-inch AID (1280x480):
+  https://www.volkswagen-newsroom.com/en/active-info-display-3950
+- Škoda 10.25-inch Virtual Cockpit examples:
+  https://www.skoda-storyboard.com/en/press-kits/skoda-scala-press-kit/always-online-thanks-to-the-new-skoda-connect-generation-including-new-infotainment-apps/
+- SEAT 10.25-inch Digital Cockpit:
+  https://mundoseat.seat.com/mediacenter_netstor/seat-media-center/Img/2018/07/2018-07-31/SEAT-introduces-its-Digital-Cockpit-to-the-Arona-and-Ibiza.pdf
+- CUPRA Ateca 10.25-inch Digital Cockpit:
+  https://www.cupraofficial.com/content/dam/public/cupra-website/generic/pdf/cupra-ateca-brochure-my25-w38.pdf
+
+The dimensions/marketing names alone must never be used as an installer compatibility gate.
