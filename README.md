@@ -2,6 +2,8 @@
 
 **Open research and engineering for bringing CarPlay secondary-screen navigation to the Virtual Cockpit on Volkswagen Group MHI2 platforms.**
 
+[**Roadmap**](ROADMAP.md) · [Installation](docs/INSTALLATION.md) · [Contributing](CONTRIBUTING.md) · [Support](SUPPORT.md) · [Security & privacy](SECURITY.md)
+
 > [!CAUTION]
 > ## NOT SD-CARD READY — ACTIVE DEVELOPMENT / HELP WANTED
 >
@@ -607,6 +609,7 @@ The public repository is deliberately smaller and cleaner than the private explo
 ```text
 .
 ├── README.md
+├── ROADMAP.md
 ├── LICENSE
 ├── THIRD_PARTY_NOTICES.md
 ├── CONTRIBUTING.md
