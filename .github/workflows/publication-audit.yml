@@ -299,6 +299,7 @@ jobs:
               "sha256sum",
               "tee",
               "MIBR-NavIgnore.jar",
+              "MIBR-Most20FPS.jar",
           }
           actual={p.name for p in (pkg/"payload").iterdir() if p.is_file()}
           assert actual == expected, (actual, expected)
