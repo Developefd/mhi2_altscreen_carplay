@@ -49,14 +49,15 @@ non-executable hash support is a hard stop; target/payload verification is never
 The installer:
 
 1. verifies exact target and payload hashes;
-2. refuses to proceed while the experimental DirectVC Java override is installed;
-3. stages the tested GEN2 and direct remux runtime internally;
-4. preflights and installs the DisplayManager isoTX2 writev gate with STOCK as the fail-safe/default mode;
-5. prepares the persistent CarPlay Stream-111 preload with a verified stock backup;
-6. requires the exact vehicle-proven NavIgnore (`b065bab0…`) either already installed or supplied separately, and installs it when supplied;
-7. sets the initial navigation composition profile to `map-rich`;
-8. prepares Auto-Direct persistence **without starting a pre-reboot takeover**;
-9. requires a reboot rather than hot-restarting the CarPlay process stack.
+2. inventories the current Java/bootclasspath state and archives foreign patch state to the SD before any Java replacement;
+3. in `--apply` mode, asks whether to abort or normalize an archived foreign Java state before continuing;
+4. stages the tested GEN2 and direct remux runtime internally;
+5. preflights and installs the DisplayManager isoTX2 writev gate with STOCK as the fail-safe/default mode;
+6. prepares the persistent CarPlay Stream-111 preload with a verified stock backup;
+7. requires the exact vehicle-proven NavIgnore (`b065bab0…`) either already active or supplied separately, and installs it when needed;
+8. sets the initial navigation composition profile to `map-rich`;
+9. prepares Auto-Direct persistence **without starting a pre-reboot takeover**;
+10. requires a reboot rather than hot-restarting the CarPlay process stack.
 
 ## Keyframe policy
 
@@ -93,3 +94,30 @@ assumed to exist on QNX.
 The top-level preflight also rejects the experimental DirectVC Java override, legacy Most20FPS
 bootclasspath patches, and the older combined `NavActiveIgnore.jar` before persistent changes are
 made.
+
+
+## SD session logs and recovery evidence
+
+The top-level `install.sh`, `status.sh` and `uninstall.sh` commands log their complete stdout/stderr
+to a timestamped SD-card directory:
+
+```text
+mhi2-altscreen-logs/<timestamp>-<action>-<pid>/
+  session.log
+  vehicle-summary.txt
+  archive/
+```
+
+The summary records firmware/train/MU when readable, selected version/board metadata, relevant target
+hashes, active Java bootclasspath lines and JAR hashes. VIN, FAZIT and device serial numbers are
+deliberately excluded.
+
+Known or unknown active Java overrides are not silently overwritten. The original Java state is
+archived first. `install.sh --check` remains non-interactive and reports `PREFLIGHT=ATTENTION`.
+During `install.sh --apply`, the operator may abort or explicitly continue with archive + Java
+normalization. The installer verifies that the exact required NavIgnore can be reached **before**
+performing that target-side Java mutation.
+
+For public issue reports, `session.log` and `vehicle-summary.txt` are the intended default
+attachments. Review `archive/` locally before sharing it; copied JARs there may contain
+third-party/OEM-derived code.
