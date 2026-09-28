@@ -156,7 +156,7 @@ from unrelated implementations.
 
 The project goal includes Škoda, SEAT/CUPRA and Volkswagen MHI2.
 
-The current hard vehicle evidence is still based on the first Škoda MU1440 reference system.
+The current hard vehicle evidence is still based on the first Škoda MU1440 reference system **with the project's AID10-class 10.x-inch MQB Virtual Cockpit target**.
 
 Do not assume that:
 
@@ -165,9 +165,10 @@ Do not assume that:
 - DisplayManager behavior;
 - Java classes;
 - ViewArea geometry;
-- startup scripts
+- startup scripts;
+- instrument-cluster generation, native geometry or MOST/DCIVIDEO behavior
 
-are identical on another train.
+are identical on another train or another AID generation.
 
 Compatibility should be gated by exact firmware/component evidence.
 
