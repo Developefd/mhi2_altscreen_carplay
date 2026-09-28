@@ -213,12 +213,18 @@ find_clean_java_backup(){
 normalize_java_state(){
   JARDIR=/mnt/app/eso/hmi/lsd/jars
   NAVJAR=$JARDIR/MIBR-NavIgnore.jar
+  MOSTJAR=$JARDIR/MIBR-Most20FPS.jar
   TMP=/tmp/lsd.sh.mibr-deploy-normalize.$$
   KEEP_NAV=0
+  KEEP_MOST=0
 
   if [ -r "$NAVJAR" ]; then
     H=$(hashf "$NAVJAR" 2>/dev/null)
     [ "$H" = "$EXPECTED_NAVIGNORE" ] && KEEP_NAV=1
+  fi
+  if [ -r "$MOSTJAR" ]; then
+    H=$(hashf "$MOSTJAR" 2>/dev/null)
+    [ "$H" = "$EXPECTED_MOST20" ] && KEEP_MOST=1
   fi
 
   app_rw || fail "java_normalize_mount_app_rw"
@@ -231,8 +237,8 @@ normalize_java_state(){
     echo "Restoring clean pre-Java lsd.sh backup: $B"
     cp "$B" "$TMP" || fail "java_copy_clean_backup"
   else
-    awk -v keep_nav="$KEEP_NAV" '
-      BEGIN { nav_seen=0 }
+    awk -v keep_nav="$KEEP_NAV" -v keep_most="$KEEP_MOST" '
+      BEGIN { nav_seen=0; most_seen=0 }
       $0 == "# MIBR NAVIGNORE" { next }
       $0 == "# MIBR MOST20FPS" { next }
       $0 == "# MIBR DIRECT-VC POLICY" { next }
@@ -241,6 +247,9 @@ normalize_java_state(){
         if (keep_nav && index($0,"MIBR-NavIgnore.jar") && !nav_seen) {
           print
           nav_seen=1
+        } else if (keep_most && index($0,"MIBR-Most20FPS.jar") && !most_seen) {
+          print
+          most_seen=1
         }
         next
       }
@@ -251,7 +260,7 @@ normalize_java_state(){
   chmod 755 "$TMP" 2>/dev/null || true
   mv "$TMP" "$LSD" || fail "java_install_normalized_lsd"
 
-  for P in "$JARDIR/MIBR-DirectVCPolicy.jar" "$JARDIR/MIBR-Most20FPS.jar" "$JARDIR/NavActiveIgnore.jar"; do
+  for P in "$JARDIR/MIBR-DirectVCPolicy.jar" "$JARDIR/NavActiveIgnore.jar"; do
     if [ -e "$P" ]; then
       echo "Removing archived known conflicting Java artifact: $P"
       rm -f "$P" "$P.new" 2>/dev/null || fail "java_remove_conflicting_artifact=$P"
@@ -265,6 +274,13 @@ normalize_java_state(){
       rm -f "$NAVJAR" "$NAVJAR.new" 2>/dev/null || fail "java_remove_wrong_navignore"
     fi
   fi
+  if [ -r "$MOSTJAR" ]; then
+    H=$(hashf "$MOSTJAR" 2>/dev/null)
+    if [ "$H" != "$EXPECTED_MOST20" ]; then
+      echo "Removing archived incompatible Most20 before exact replacement: hash=$H"
+      rm -f "$MOSTJAR" "$MOSTJAR.new" 2>/dev/null || fail "java_remove_wrong_most20"
+    fi
+  fi
 
   app_ro
   echo "JAVA_NORMALIZE=PASS"
@@ -272,13 +288,18 @@ normalize_java_state(){
 
 handle_java_conflict(){
   echo
-  echo "Existing Java patch state differs from the validated NavIgnore-only setup."
+  echo "Existing Java patch state differs from the validated NavIgnore + Most20 setup."
   echo "The original state has already been archived in this SD session."
 
   if [ "$JAVA_EXACT_NAV_ACTIVE" -ne 1 ]; then
     H=$(hashf "$PAYLOAD/MIBR-NavIgnore.jar" 2>/dev/null)
     [ "$H" = "$EXPECTED_NAVIGNORE" ] || fail "replacement_navignore_hash_mismatch=$H"
     echo "Bundled exact NavIgnore payload verified before Java normalization."
+  fi
+  if [ "$JAVA_EXACT_MOST20_ACTIVE" -ne 1 ]; then
+    H=$(hashf "$PAYLOAD/MIBR-Most20FPS.jar" 2>/dev/null)
+    [ "$H" = "$EXPECTED_MOST20" ] || fail "replacement_most20_hash_mismatch=$H"
+    echo "Bundled exact Most20 payload verified before Java normalization."
   fi
 
   case "${MIBR_FOREIGN_JAVA_ACTION:-ask}" in
@@ -292,7 +313,7 @@ handle_java_conflict(){
     *)
       echo
       echo "Choose:"
-      echo "  C = continue: archive is already on SD, deactivate detected Java boot patches, then use exact NavIgnore"
+      echo "  C = continue: archive is already on SD, deactivate foreign Java boot patches, then use exact NavIgnore + Most20"
       echo "  Q = abort now without changing Java state"
       echo "Enter C or Q:"
       read ANSWER
