@@ -48,6 +48,7 @@ mibr_e2p_ascii(){
     }
     {
       line=$0
+      if (line !~ /^0x[0-9A-Fa-f]+/) next
       sub(/^0x[0-9A-Fa-f]+[^0-9A-Fa-f]+/,"",line)
       gsub(/[^0-9A-Fa-f]/,"",line)
       for (i=1; i+1<=length(line); i+=2) {
@@ -107,7 +108,9 @@ mibr_run_logged(){
   fi
   sync 2>/dev/null || true
   echo "Issue log: $MIBR_LOG_FILE"
-  echo "Issue bundle: $MIBR_SESSION_DIR"
+  echo "Issue-safe summary: $MIBR_SESSION_DIR/vehicle-summary.txt"
+  echo "Recovery archive: $MIBR_ARCHIVE_DIR"
+  echo "NOTE: recovery archive may contain third-party/OEM JAR bytes; review before attaching it to a public issue."
   return "$RC"
 }
 
@@ -190,8 +193,10 @@ mibr_vehicle_summary(){
       echo "jar_sha256 ${H:-HASH_FAILED} $P"
     done
 
-    echo "--- privacy note ---"
+    echo "--- privacy / sharing note ---"
     echo "VIN, FAZIT and device serial numbers are intentionally not collected."
+    echo "This vehicle-summary.txt and session.log are intended to be safe defaults for issue reports."
+    echo "Do not upload files from archive/ blindly; it may contain third-party/OEM JAR bytes."
   } > "$OUT"
 
   cat "$OUT"
