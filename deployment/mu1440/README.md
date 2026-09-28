@@ -19,16 +19,19 @@ From a repository checkout:
 tools/prepare_mu1440_sd.sh /path/to/mounted-sd-root
 ```
 
-This creates:
+This writes the deployment directly into the SD-card root:
 
 ```text
-MHI2AltScreen/
+<SD root>/
   install.sh
   uninstall.sh
   status.sh
+  PAYLOAD.sha256
   payload/
   runtime/
 ```
+
+There is deliberately no `esd/` or `MHI2AltScreen/` wrapper directory.
 
 The prepared payload uses the exact 2026-09-27 vehicle-tested GEN2 and direct-ts-remux binaries plus
 the current public build-confirmed isoTX2 gate.
@@ -49,13 +52,16 @@ b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34
 If it is absent, installation continues but reports that the complete vehicle-proven smartphone
 navigation presentation used NavIgnore.
 
-## Hash helper
+## Compatibility helpers
 
-The prepared directory includes the project-owned, reproducibly built QNX ARMv7 helper:
+The prepared directory includes project-owned, reproducibly built QNX ARMv7 helpers rather than depending on a pre-existing M.I.B. `apps/sbin` tree:
 
 ```text
 payload/sha256sum
+payload/tee
 ```
+
+The historical M.I.B. `sed` dependency is intentionally avoided in this deployment; the one required trim operation is implemented with stock `awk`.
 
 The installer uses it by default. An experienced developer may override it with `MIBR_SHA256`, but
 only after independently verifying the replacement binary.
@@ -103,7 +109,7 @@ A reboot is required after restore.
 ## Scope
 
 This is a developer convenience layer over vehicle-tested lower-level scripts. It does not change
-the project's compatibility claims: a different firmware/hash is a stop condition.
+the project's compatibility claims: a different firmware/hash is a stop condition, and matching firmware alone is not enough. The vehicle-proven reference also uses the project's **AID10-class** 10.x-inch MQB Virtual Cockpit family. A 12.3-inch AID or another cluster generation is a separate unvalidated target.
 
 
 ## Raw steering-wheel/keypanel mapping
