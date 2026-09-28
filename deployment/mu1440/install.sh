@@ -128,6 +128,173 @@ check_hash(){
   echo "PASS hash $F $H"
 }
 
+java_scan_state(){
+  JARDIR=/mnt/app/eso/hmi/lsd/jars
+  NAVJAR=$JARDIR/MIBR-NavIgnore.jar
+  JAVA_CONFLICT=0
+  JAVA_NEEDS_PAYLOAD=0
+  JAVA_OLD_DYNAMIC=0
+  JAVA_REASON=""
+
+  NAVREFS=$(awk 'index($0,"MIBR-NavIgnore.jar"){n++} END{print n+0}' "$LSD" 2>/dev/null)
+  FOREIGNREFS=$(awk '
+    index($0,"-Xbootclasspath/p:") && index($0,"/lsd/jars/") && !index($0,"MIBR-NavIgnore.jar") {n++}
+    END{print n+0}' "$LSD" 2>/dev/null)
+
+  grep -Fq 'Find and append jar files' "$LSD" 2>/dev/null && JAVA_OLD_DYNAMIC=1
+
+  NAVHASH=""
+  if [ -r "$NAVJAR" ]; then
+    NAVHASH=$(hashf "$NAVJAR" 2>/dev/null)
+  fi
+
+  if [ "$NAVREFS" -gt 1 ]; then
+    JAVA_CONFLICT=1
+    JAVA_REASON="$JAVA_REASON duplicate_navignore_ref"
+  fi
+  if [ "$FOREIGNREFS" -gt 0 ]; then
+    JAVA_CONFLICT=1
+    JAVA_REASON="$JAVA_REASON foreign_bootclasspath_ref"
+  fi
+  if [ "$JAVA_OLD_DYNAMIC" -eq 1 ]; then
+    JAVA_CONFLICT=1
+    JAVA_REASON="$JAVA_REASON old_dynamic_jar_loader"
+  fi
+
+  if [ "$NAVREFS" -gt 0 ]; then
+    if [ "$NAVHASH" != "$EXPECTED_NAVIGNORE" ]; then
+      JAVA_CONFLICT=1
+      JAVA_NEEDS_PAYLOAD=1
+      JAVA_REASON="$JAVA_REASON navignore_hash_or_file_mismatch"
+    fi
+  elif [ -r "$NAVJAR" ] && [ "$NAVHASH" != "$EXPECTED_NAVIGNORE" ]; then
+    JAVA_CONFLICT=1
+    JAVA_NEEDS_PAYLOAD=1
+    JAVA_REASON="$JAVA_REASON unreferenced_wrong_navignore"
+  fi
+
+  for P in "$JARDIR/MIBR-DirectVCPolicy.jar" "$JARDIR/MIBR-Most20FPS.jar" "$JARDIR/NavActiveIgnore.jar"; do
+    if [ -e "$P" ]; then
+      JAVA_CONFLICT=1
+      JAVA_REASON="$JAVA_REASON known_patch_artifact"
+    fi
+  done
+
+  echo "java_navignore_refs=$NAVREFS"
+  echo "java_foreign_bootclasspath_refs=$FOREIGNREFS"
+  echo "java_old_dynamic_loader=$JAVA_OLD_DYNAMIC"
+  echo "java_navignore_hash=${NAVHASH:-ABSENT}"
+  if [ "$JAVA_CONFLICT" -eq 1 ]; then
+    echo "JAVA_STATE=FOREIGN reason=$JAVA_REASON"
+    return 30
+  fi
+  echo "JAVA_STATE=CLEAN"
+  return 0
+}
+
+find_clean_java_backup(){
+  for B in "$LSD.bu" "$LSD.mibr-directvc-stock" "$LSD.mibr-most20fps-stock" "$LSD.mibr-navignore-stock"; do
+    [ -r "$B" ] || continue
+    grep -Fq 'Find and append jar files' "$B" 2>/dev/null && continue
+    grep -Fq '/lsd/jars/' "$B" 2>/dev/null && continue
+    grep -Fq 'NavActiveIgnore' "$B" 2>/dev/null && continue
+    grep -Fq 'MIBR-' "$B" 2>/dev/null && continue
+    echo "$B"
+    return 0
+  done
+  return 1
+}
+
+normalize_java_state(){
+  JARDIR=/mnt/app/eso/hmi/lsd/jars
+  NAVJAR=$JARDIR/MIBR-NavIgnore.jar
+  TMP=/tmp/lsd.sh.mibr-deploy-normalize.$
+  KEEP_NAV=0
+
+  if [ -r "$NAVJAR" ]; then
+    H=$(hashf "$NAVJAR" 2>/dev/null)
+    [ "$H" = "$EXPECTED_NAVIGNORE" ] && KEEP_NAV=1
+  fi
+
+  app_rw || fail "java_normalize_mount_app_rw"
+
+  if grep -Fq 'Find and append jar files' "$LSD" 2>/dev/null; then
+    B=$(find_clean_java_backup 2>/dev/null) || {
+      app_ro
+      fail "java_old_dynamic_loader_without_clean_backup"
+    }
+    echo "Restoring clean pre-Java lsd.sh backup: $B"
+    cp "$B" "$TMP" || fail "java_copy_clean_backup"
+  else
+    awk -v keep_nav="$KEEP_NAV" '
+      BEGIN { nav_seen=0 }
+      $0 == "# MIBR NAVIGNORE" { next }
+      $0 == "# MIBR MOST20FPS" { next }
+      $0 == "# MIBR DIRECT-VC POLICY" { next }
+      $0 == "#Append jar files" { next }
+      index($0,"-Xbootclasspath/p:") && index($0,"/lsd/jars/") {
+        if (keep_nav && index($0,"MIBR-NavIgnore.jar") && !nav_seen) {
+          print
+          nav_seen=1
+        }
+        next
+      }
+      { print }
+    ' "$LSD" > "$TMP" || fail "java_normalize_lsd"
+  fi
+
+  chmod 755 "$TMP" 2>/dev/null || true
+  mv "$TMP" "$LSD" || fail "java_install_normalized_lsd"
+  app_ro
+  echo "JAVA_NORMALIZE=PASS"
+}
+
+handle_java_conflict(){
+  echo
+  echo "Existing Java patch state differs from the validated NavIgnore-only setup."
+  mibr_archive_java_state foreign-before-install || fail "java_archive_failed"
+
+  if [ "$JAVA_NEEDS_PAYLOAD" -eq 1 ]; then
+    [ -r "$PAYLOAD/MIBR-NavIgnore.jar" ] || {
+      echo "Cannot replace the existing NavIgnore state because the exact replacement JAR is not present in payload/."
+      echo "Place the exact JAR on the SD and rerun."
+      return 30
+    }
+    H=$(hashf "$PAYLOAD/MIBR-NavIgnore.jar" 2>/dev/null)
+    [ "$H" = "$EXPECTED_NAVIGNORE" ] || fail "replacement_navignore_hash_mismatch=$H"
+  fi
+
+  case "${MIBR_FOREIGN_JAVA_ACTION:-ask}" in
+    archive-replace)
+      ANSWER=C
+      echo "Foreign Java action pre-authorized by MIBR_FOREIGN_JAVA_ACTION=archive-replace"
+      ;;
+    abort)
+      ANSWER=Q
+      ;;
+    *)
+      echo
+      echo "Choose:"
+      echo "  C = continue: archive is already on SD, deactivate detected Java boot patches, then use exact NavIgnore"
+      echo "  Q = abort now without changing Java state"
+      echo "Enter C or Q:"
+      read ANSWER
+      ;;
+  esac
+
+  case "$ANSWER" in
+    C|c)
+      echo "JAVA_USER_DECISION=ARCHIVE_AND_CONTINUE"
+      normalize_java_state
+      ;;
+    *)
+      echo "JAVA_USER_DECISION=ABORT"
+      return 30
+      ;;
+  esac
+  return 0
+}
+
 preflight(){
   echo "=== MHI2 AltScreen MU1440 developer install preflight ==="
   [ -x "$SHA" ] || fail "missing_sha256_helper=$SHA"
@@ -151,15 +318,15 @@ preflight(){
   [ -r "$RUNTIME/isotx2-gate/install_preload.sh" ] || fail "gate_installer_missing"
   [ -r "$RUNTIME/isotx2-gate/restore_preload.sh" ] || fail "gate_restore_missing"
 
-  if grep -Fq 'MIBR-DirectVCPolicy.jar' "$LSD" 2>/dev/null ||
-     grep -Fq '# MIBR DIRECT-VC POLICY' "$LSD" 2>/dev/null; then
-    fail "directvc_java_override_present_restore_stock_java_first"
-  fi
-  if grep -Fq 'Most20FPS.jar' "$LSD" 2>/dev/null; then
-    fail "most20_java_override_present_remove_before_install"
-  fi
-  if grep -Fq 'NavActiveIgnore.jar' "$LSD" 2>/dev/null; then
-    fail "legacy_combined_navactiveignore_present_use_split_navignore_only"
+  echo "=== Java state scan ==="
+  java_scan_state
+  JAVA_SCAN_RC=$?
+  if [ "$JAVA_SCAN_RC" -eq 30 ]; then
+    mibr_archive_java_state preflight-foreign || fail "java_archive_failed"
+    echo "PREFLIGHT=ATTENTION java_state_requires_user_decision"
+    return 30
+  elif [ "$JAVA_SCAN_RC" -ne 0 ]; then
+    fail "java_scan_failed_rc_$JAVA_SCAN_RC"
   fi
 
   echo "=== DisplayManager gate preflight ==="
