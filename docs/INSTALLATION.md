@@ -91,9 +91,10 @@ The preflight also verifies the exact command set required by the currently publ
 before any persistent mutation. This is intentional: common Linux command names/options are not
 assumed to exist on QNX.
 
-The top-level preflight also rejects the experimental DirectVC Java override, legacy Most20FPS
-bootclasspath patches, and the older combined `NavActiveIgnore.jar` before persistent changes are
-made.
+The top-level preflight inventories experimental DirectVC, legacy Most20FPS, the older combined
+`NavActiveIgnore.jar`, and other foreign bootclasspath/JAR states. It archives the original state
+to the SD before any Java replacement; `--check` stops with `PREFLIGHT=ATTENTION`, while
+`--apply` requires an explicit continue/abort decision before normalization.
 
 
 ## SD session logs and recovery evidence
