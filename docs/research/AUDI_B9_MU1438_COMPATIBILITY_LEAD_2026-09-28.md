@@ -61,7 +61,7 @@ The same DisplayManager config also exposes an extended `2_lvds` mode:
 - secondary display: ID 4;
 - HBAS test/production profiles force `kombi_type = lvds`.
 
-Therefore the evidence does **not** justify reducing the architecture to "Audi uses LVDS, Škoda uses MOST". Both mechanisms are present in the Audi stock configuration.
+Therefore the evidence does **not** justify reducing the architecture to "Audi uses LVDS, Škoda uses MOST". The Audi stock configuration contains support for both mechanisms; they may be selected according to the connected display/vehicle variant rather than used simultaneously. Which path is active for the concrete B9 Virtual Cockpit remains to be measured.
 
 ## Main unknown: exact cluster and productive route
 
@@ -71,7 +71,7 @@ For the concrete Audi B9 vehicle, we still need to identify:
 - HW/SW identification and generation;
 - native resolution;
 - stock navigation DisplayManager context/display IDs;
-- whether the live cluster map/video path is carried by MOST, the second LVDS/HDMI terminal, or a combination of both;
+- which configured output path is actually active for the live cluster map/video presentation on this vehicle (MOST, second LVDS/HDMI, or a staged combination);
 - how ownership/arbitration differs from the MU1440/AID10 reference target.
 
 This is likely one of the principal portability gates.
