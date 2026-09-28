@@ -238,12 +238,13 @@ If you want to understand the project without reading the entire repository, use
 7. [Known issues](docs/findings/KNOWN_ISSUES.md) — the exact lifecycle/provider-switch problems still being worked.
 8. [Compatibility matrix](docs/testing/COMPATIBILITY_MATRIX.md) — what is actually proven, partial, open or only planned.
 9. [Cluster / display transport KB](docs/research/MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md) — MIB2-era VW/Škoda/Audi cluster families, panel vs. map geometry, MOST/LVDS transport and open-source renderer evidence.
-10. [MU1440 stock reference](docs/research/MU1440_STOCK_REFERENCE.md) — exact stock component hashes for the first proven target.
-11. [iOS 27 sender research](docs/research/IOS27_SENDER_LIFECYCLE.md) — exact build/hash authority behind the current lifecycle model.
-12. [Public references](docs/research/PUBLIC_REFERENCES.md) — prior art and external projects worth reading.
-13. [Developer installation](docs/INSTALLATION.md) — guarded install/restore path for the exact MU1440 reference target.
-14. [MU1440 QNX shell compatibility](docs/testing/MU1440_QNX_SHELL_COMPATIBILITY.md) — exact-target command/paste constraints behind the scripts.
-15. [Roadmap](ROADMAP.md) — current priorities and concrete help-wanted areas.
+10. [MHI2 firmware profile map](docs/research/MHI2_FIRMWARE_PROFILE_MAP_2026-09-28.md) — six-baseline cross-brand native/Java/config profile relationships and current corpus run status.
+11. [MU1440 stock reference](docs/research/MU1440_STOCK_REFERENCE.md) — exact stock component hashes for the first proven target.
+12. [iOS 27 sender research](docs/research/IOS27_SENDER_LIFECYCLE.md) — exact build/hash authority behind the current lifecycle model.
+13. [Public references](docs/research/PUBLIC_REFERENCES.md) — prior art and external projects worth reading.
+14. [Developer installation](docs/INSTALLATION.md) — guarded install/restore path for the exact MU1440 reference target.
+15. [MU1440 QNX shell compatibility](docs/testing/MU1440_QNX_SHELL_COMPATIBILITY.md) — exact-target command/paste constraints behind the scripts.
+16. [Roadmap](ROADMAP.md) — current priorities and concrete help-wanted areas.
 
 ### Want to help?
 
@@ -293,6 +294,10 @@ Type-111 often remains the same generation
 ```
 
 That is the current engineering bottleneck and the reason the next vehicle work is heavily instrumented rather than another rewrite of the transport path.
+
+In parallel, the firmware corpus has completed its first six-baseline cross-brand pass. The current
+corpus follow-up is the AU37X P5089/P5153 MU1326 same-family comparison. See the
+[MHI2 firmware profile map](docs/research/MHI2_FIRMWARE_PROFILE_MAP_2026-09-28.md).
 
 ---
 
