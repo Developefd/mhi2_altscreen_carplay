@@ -32,13 +32,21 @@ The project does **not** replace the whole stock AirPlay library.
 
 ## Why plain LD_PRELOAD interposition was not enough
 
-Some stock internal calls are locally bound and bypass ordinary symbol interposition.
+On the tested MU1440 runtime, ordinary symbol interposition did not provide the
+required internal lifecycle coverage. This is runtime-derived evidence, not a
+claim that the ELF contains no lifecycle PLT entries.
 
 For the required session lifecycle functions, GEN2 therefore installs a small ARM prologue hook and
 keeps a trampoline to the stock implementation.
 
 If hook installation fails, the implementation disables itself **fail-closed** instead of continuing
 with a partially installed lifecycle.
+
+The [2026-09-28 exact MU1438/MU1440 audit](MU1438_MU1440_OFFLINE_COMPARISON_2026-09-28.md)
+finds GLOBAL/DEFAULT Setup/Start/TearDown definitions and JUMP_SLOT/PLT routes on
+**both** stock libraries. Static PLT/visibility flags alone do not prove QNX
+loader resolution, preload precedence or complete callback coverage. Retain the
+proven MU1440 inline strategy; audit another target's runtime separately.
 
 ## Prologue validation
 

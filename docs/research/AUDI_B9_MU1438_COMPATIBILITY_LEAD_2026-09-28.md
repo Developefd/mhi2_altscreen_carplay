@@ -1,6 +1,6 @@
 # Audi B9 / AUG22 MU1438 compatibility lead — 2026-09-28
 
-Status: **external evidence / read-only compatibility research**  
+Status: **verified offline firmware comparison / no Audi runtime support**
 Reference implementation remains: **Škoda MHI2 / MU1440 + AID10-class**
 
 ## Why this target is interesting
@@ -218,7 +218,10 @@ This is strong evidence for common Harman AirPlay lineage, but **not an ABI pass
 
 The contributor reports that internal call sites found so far reach these functions through PLT stubs rather than direct `bl` instructions.
 
-That is potentially important: MU1440 required inline hooks because Setup/Start/TearDown were locally bound. MU1438 may permit a less invasive ELF-interposition path.
+The verified follow-up now confirms lifecycle PLT/JUMP_SLOT routes on **both**
+MU1438 and MU1440. MU1440's need for inline hooks is runtime-derived; it cannot
+be explained simply by absence of PLT entries. No Audi-only preload advantage
+has been established. See the [offline pair report](MU1438_MU1440_OFFLINE_COMPARISON_2026-09-28.md).
 
 Before choosing the hook strategy, perform an offline relocation/binding audit:
 
@@ -240,11 +243,42 @@ Additional static findings:
 
 This makes the output-device/profile configuration a first-class porting seam for the Audi target.
 
+## Verified local firmware/companion comparison
+
+The exact `MHI2_ER_AUG22_K3346_MU1438` update was located and compared against
+`MHI2_ER_SKG13_P4526_MU1440`: **13 native pairs, 26 Ghidra inputs, zero failed
+function exports**, 16 focused AirPlay target comparisons and the selected Java
+display-owner classes. Both backup/unit JXE hashes match the update stage2/50
+JXEs exactly. This closes source-identity gaps without claiming a runtime ABI pass.
+
+The detailed [pair report](MU1438_MU1440_OFFLINE_COMPARISON_2026-09-28.md) and
+[compatibility/component matrix](../testing/COMPATIBILITY_MATRIX.md#exact-mu1438-versus-mu1440-component-matrix)
+separate stable code, implementation changes and required adaptations.
+
+Important refinements:
+
+- Five app `.text` pairs are identical; the MOST driver differs only in two
+  physical-address header bytes. Low-level similarity does not make MOST the
+  productive Audi VC map transport.
+- The security context/key/IV fields shift +8 bytes, but the existing AES
+  observer consumes function arguments. The stock call returns at +0x38 on
+  both builds, inside the existing +0x100 caller gate. Runtime validation remains open.
+- Audi NvSS startup has no Skoda-style missing-environment guard and uses a
+  different C++ wrapper handle offset. Both use layer 59; that is not cluster context 59.
+- `HMIKombiMapControlActivator` selects terminal0/LVDS for KombiType4,
+  terminal1/LVDS for other targets with SysConst541==2, otherwise terminal1/H264-MOST
+  on the remaining activated path. Static context 72–78 applies to SysConst541==2;
+  this is not a blanket statement about every Audi profile.
+- DMDT command/core code is unchanged in the compared pair. The reported runtime
+  no-output condition needs service/config/ownership diagnosis; its cause is not
+  resolved by this offline comparison.
+
 ## Admission criteria
 
 Audi B9 / AUG22 MU1438 can move from **compatibility lead** to a vehicle-test candidate only after:
 
-- [ ] exact firmware + stock component hashes captured;
+- [x] exact firmware + 13 stock component-pair hashes captured (app50/stage2-50 scope);
+- [x] focused offline native/Java comparison completed and limitations documented;
 - [x] pre-update cluster identity captured (`8W5920790C`, H15, SW 0299); **post-update/current SW still needs confirmation**;
 - [x] OEM transport architecture identified as LVDS for the B9 Virtual Cockpit large map; runtime activity/context validation still pending;
 - [ ] hook/ABI comparison passes;

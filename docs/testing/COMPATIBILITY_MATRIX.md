@@ -13,7 +13,7 @@ For the detailed cross-brand cluster/transport matrix, including panel resolutio
 | SEAT/CUPRA MHI2 + Digital Cockpit | planned | Continental homologation data places several `5F0/5FJ...790` clusters in the same later-FPK lineage as Octavia/T-Roc/Tiguan-D; exact panel/viewport and vehicle behavior remain unvalidated | help wanted |
 | Volkswagen MHI2 + AID10-class | planned | unvalidated | help wanted |
 | Volkswagen 12.3-inch AID / other large AID revisions | separate target | **not assumed equivalent to AID10-class** | needs hardware/transport/layout audit + vehicle test |
-| Audi B9 MHI2 / AUG22 MU1438 + Virtual Cockpit | external compatibility lead | **not supported / not vehicle-tested by this project** | Audi OEM training material identifies **LVDS J794 -> J285** as the large-map/intersection-map path for the B9 Virtual Cockpit; MOST remains present for other cluster content. Exact MU1438 LVDS context/geometry and ABI still need vehicle validation. |
+| Audi B9 MHI2 / AUG22 MU1438 + Virtual Cockpit | `MHI2_ER_AUG22_K3346_MU1438`, app50 + stage2/50 audited | **offline comparison complete; not supported / not vehicle-tested by this project** | 13 native pairs / 26 Ghidra inputs, focused Java and firmware JXE hash checks. Lifecycle prologue gates match; session fields and HMI/transport ownership differ. Audi LVDS presentation, productive context/geometry and runtime ABI remain open. See the [verified pair report](../research/MU1438_MU1440_OFFLINE_COMPARISON_2026-09-28.md). |
 | MHI2Q / Qualcomm | comparator only | not this runtime target | public prior art exists |
 
 Reference MU1440 stock `libairplay.so` SHA-256:
@@ -23,6 +23,48 @@ Reference MU1440 stock `libairplay.so` SHA-256:
 ```
 
 A different hash is a **stop condition**, not permission to assume ABI compatibility. A matching/known MU firmware is also **not sufficient by itself**: cluster hardware/revision is a separate compatibility dimension.
+
+## Exact MU1438 versus MU1440 component matrix
+
+Scope is this **one exact pair**, not all Audi, all MU1438 or app70. These are
+static comparisons, not additional supported targets. Complete sizes/hashes,
+section payload deltas and dynamic-name/dependency differences are in the
+[component CSV](MU1438_MU1440_COMPONENT_MATRIX.csv); exact hook-function extents
+and hashes are in the [hook CSV](MU1438_MU1440_HOOK_MATRIX.csv). The
+[function-difference summary](MU1438_MU1440_FUNCTION_DIFF_SUMMARY.csv) quantifies
+the available common bounded ELF function names, not overall ABI compatibility.
+Missing/zero-sized symbols and aliases limit that denominator; changed operands
+or mnemonic shapes may reflect compiler/layout changes rather than changed logic.
+
+| Component / seam | Verified difference | Porting implication |
+| --- | --- | --- |
+| `libairplay.so` | lifecycle/control bodies differ; same inline-entry prologues; security fields shifted +8 | separate hash-gated profile, preserve stock delegation; full ABI unproven |
+| `dio_manager` | code/interface delta; TearDown dynamic import only on MU1440 | target-specific callback/process review |
+| `smartphone_integrator` | code/interface delta; `libusbdi.so.2` only on MU1438 | preserve Audi USB/launch behavior |
+| `libdsicarplayproxy.so`, `videoovermost`, `libirc_mmx_adapter.so` | same dynamic name sets, different code | name equality is not callback ABI equality |
+| `displaymanager` | different RX load payload; lives in stage2, not app.img | audit native ownership with Audi HMI/config |
+| `libiap2client.so.1`, `libnvss_video.so`, `mm-ipod` | identical `.text` and RX payload; QNX/debug metadata differs | no code delta identified for this pair |
+| `dmdt`, `libdmdt_core.so` | identical `.text`; version/build strings differ | Audi debug-client silence needs service/config diagnosis, not assumed command-code port |
+| `devp-iso-mmx-mib2` | only two ELF program-header physical-address bytes differ | no code/data delta identified; not a proof of Audi map-over-MOST |
+| PLT / LD_PRELOAD | lifecycle PLT/JUMP_SLOT present on **both** builds | QNX runtime resolution/coverage still requires proof |
+| AES argument observer | same successful decrypt-init path and caller return +0x38 | statically promising; does not use shifted session offsets; runtime unproven |
+| NvSS output wrapper | layer 59 shared; handle offset +0x50 vs +4; Audi lacks Skoda NULL guard | explicit output environment; no wrapper-structure reuse |
+| Java/KPL display owner | Audi conditional LVDS/HMI contexts vs MQB MOST stream-sink adapters | distinct LVDS presentation/arbitration/restore work, not a MOST writer copy |
+
+### Target-admission gates
+
+| Gate | MU1440 reference | Audited Audi MU1438 |
+| --- | --- | --- |
+| exact update/native hashes | known | recorded for this app50/stage2-50 pair |
+| Java source equals update JXE | known baseline | backup JXE hash verified against stage2/50 |
+| five entry prologue patterns | vehicle-used | static match only |
+| session/object/CF and descriptor contract | reference implementation tested | partial static comparison; unresolved assumptions |
+| QNX loader/interposition coverage | inline strategy vehicle-derived | untested; PLT presence is not admission |
+| cluster transport and live ownership | MOST Direct-TS vehicle-proven | LVDS candidate topology; productive mapping/geometry untested here |
+| STOCK → project → STOCK recovery | vehicle-proven | no target-specific build/trial yet |
+
+The MU1440 admission/hash gate and runtime binaries are unchanged. Do not load a
+MU1440 build on Audi on the strength of this table.
 
 ## Cluster-family capability summary
 
@@ -65,7 +107,7 @@ This is the short operational view. See the [full cluster/display transport know
 | dynamic ViewArea | RESEARCH / NOT RELEASED | in-session update mechanism identified; runtime preset switching planned |
 | navigation arrows / RGI | FUTURE/SEPARATE | not required for map-video proof |
 | SD-card installer | INTENTIONALLY NOT PROVIDED | SSH/developer phase |
-| cross-brand portability | OPEN | requires exact target evidence |
+| cross-brand portability | PARTIAL STATIC EVIDENCE / RUNTIME OPEN | exact Audi AUG22 MU1438 pair audited; public component/hook matrices available; no Audi support or vehicle admission |
 
 ## What to include when adding a new target
 

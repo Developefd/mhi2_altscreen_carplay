@@ -121,6 +121,25 @@ The next target-specific probes should therefore identify:
 
 ## Panel resolution vs. map viewport
 
+### Exact MU1438/MU1440 offline refinement (2026-09-28)
+
+The [verified firmware-pair comparison](MU1438_MU1440_OFFLINE_COMPARISON_2026-09-28.md)
+now includes both stage2 DisplayManagers, the MOST driver, NvSS/DMDT companions,
+and firmware-hash-verified Java display owners. The MOST driver has identical
+non-header bytes in the pair, and the low-level NvSS library has identical code.
+Those facts do not collapse the two productive presentation architectures.
+
+Audi's static Java controller selects terminal0/LVDS for KombiType4;
+otherwise terminal1/LVDS for SysConst541==2; otherwise terminal1/H264-MOST on
+the remaining activated path. Its 72–78 context table is condition-specific.
+Shared layer59, display ID4 and map displayable33 do not prove common ownership,
+physical transport or a usable AltScreen sink. Camera dimensions in production
+configs are not native panel/CarPlay viewport measurements.
+
+The productive live branch, output geometry and STOCK restore remain separate
+Audi admission gates. The [routing CSV](../testing/MU1438_MU1440_ROUTING_MATRIX.csv)
+records the exact static/config seams without upgrading vehicle support.
+
 This distinction is critical.
 
 ### VW first-generation AID

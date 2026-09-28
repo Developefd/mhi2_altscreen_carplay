@@ -1,0 +1,14 @@
+component,common_bounded_function_names,identical_bytes,different_bytes_same_mnemonic_shape,different_mnemonic_shape
+libairplay.so,1229,232,606,391
+dio_manager,108,30,39,39
+libdsicarplayproxy.so,25,16,5,4
+libiap2client.so.1,52,52,0,0
+libnvss_video.so,6,6,0,0
+videoovermost,35,20,10,5
+smartphone_integrator,100,42,26,32
+mm-ipod,90,90,0,0
+dmdt,0,0,0,0
+libdmdt_core.so,65,65,0,0
+libirc_mmx_adapter.so,300,15,160,125
+displaymanager,43,20,17,6
+devp-iso-mmx-mib2,44,44,0,0

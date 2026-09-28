@@ -22,6 +22,8 @@
 
 - [MU1440 stock component fingerprints](research/MU1440_STOCK_REFERENCE.md)
 - [MU1440 GEN2 AirPlay hook / ABI map](research/MU1440_GEN2_HOOK_MAP.md)
+- [Exact Audi MU1438 vs Skoda MU1440 offline comparison](research/MU1438_MU1440_OFFLINE_COMPARISON_2026-09-28.md)
+- [Audi B9 MU1438 compatibility lead and remaining gates](research/AUDI_B9_MU1438_COMPATIBILITY_LEAD_2026-09-28.md)
 - [ScreenStream / Type-111 protocol](research/STREAM111_PROTOCOL.md)
 - [VC view-state / ViewArea research](research/VC_VIEWAREA_STATE.md)
 - [iOS 27.2 sender lifecycle](research/IOS27_SENDER_LIFECYCLE.md)

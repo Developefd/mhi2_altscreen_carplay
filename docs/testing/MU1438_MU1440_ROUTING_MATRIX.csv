@@ -1,0 +1,24 @@
+dimension,mu1438,mu1440,evidence_level,adaptation
+cluster_display_id,4,4,STATIC_JAVA_AND_CONFIG,shared number does not imply common owner or transport
+2_lvds_main_terminal,Tegra:TFTLCD0 id0,Tegra:TFTLCD0 id0,CONFIG,validate active profile on exact target
+2_lvds_secondary_terminal,Tegra:HDMI0 id4,Tegra:HDMI0 id4,CONFIG,not sufficient to admit an LVDS stream
+2_lvds_secondary_annotation,true,not defined,CONFIG,preserve Audi annotation/composition
+nvss_layer,59,59,STATIC_NATIVE,layer number is not a cluster context
+nvss_output_device,atoi env zero/nonzero with no null guard,atoi env zero/nonzero with null guard,STATIC_NATIVE,set environment explicitly for target profile
+nvss_wrapper_handle_offset,0x50,0x4,STATIC_NATIVE,no C++ wrapper structure reuse
+kombi_controller_type4,terminal0 LVDS,not the Audi owner,STATIC_JAVA,read productive KombiType
+kombi_controller_sysconst541_2,terminal1 LVDS,not the Audi owner,STATIC_JAVA,read productive SysConst 541
+kombi_controller_remaining_activated_path,terminal1 H264_MOST,not the Audi owner,STATIC_JAVA,no blanket all-Audi-LVDS claim
+most_encoder_queue_size,8,18,CONFIG,do not inherit Skoda MOST defaults for Audi
+most_encoder_bytes_per_frame,20000,40960,CONFIG,profile-specific limits
+video_over_most_force_routing,component_control,unset default comment context_switch,CONFIG,owner/arbitration contract differs
+camera_target_geometry,RVC 720x384,top-view 1280x640,CONFIG,not native cluster raster or CarPlay viewport
+context72_sysconst541_2,33,not same owner,STATIC_JAVA,cluster map view
+context73_sysconst541_2,20;102;101,not same owner,STATIC_JAVA,Audi backing images and route guidance
+context74_sysconst541_2,20;102;101;33,not same owner,STATIC_JAVA,Audi composition
+context75_sysconst541_2,empty,not same owner,STATIC_JAVA,validate live switching
+context76_sysconst541_2,58,not same owner,STATIC_JAVA,Google Earth map view
+context77_sysconst541_2,20;102;101;58,not same owner,STATIC_JAVA,Audi composition
+context78_sysconst541_2,main display 16;59,not same owner,STATIC_JAVA,smartphone displayable is not automatically cluster-routed
+type4_extra_contexts,i+79 inserts displayable20,not same owner,STATIC_JAVA,condition-specific contexts
+productive_vehicle_route,not measured in this run,MOST Direct-TS vehicle-proven upstream,UNTESTED_VS_REFERENCE,define Audi LVDS ownership and STOCK restore before vehicle trial
