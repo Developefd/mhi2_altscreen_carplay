@@ -91,7 +91,8 @@ session containing:
   `smartphone_integrator.json` when present.
 
 This standardizes the evidence needed to compare an Audi/VW/SEAT/CUPRA target with the MU1440
-reference before deciding whether any hook/installer path is appropriate.
+reference before deciding whether any hook/installer path is appropriate. The repository Discussion
+template now points contributors with an unvalidated target to this collector first.
 
 ## SD layout
 
