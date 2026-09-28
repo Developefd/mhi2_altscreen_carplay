@@ -10,6 +10,7 @@ The project deliberately separates the **CarPlay AltScreen / Stream-111 video pl
 |---|---|---|---|
 | ✅ | Proven | Stream 111 -> H.264 -> MPEG-TS -> MOST -> Virtual Cockpit | Vehicle-proven on the MU1440 / AID10-class reference target |
 | ✅ | Proven | Same-session keyframe recovery | Manual recovery and the current D2 safety policy are vehicle-proven |
+| ✅ | Proven | Most20 native 20 fps | Stock isoTX2 capture proves real 1010x376 H.264 output changes from 10 fps to 20 fps; now reference-default on MU1440 |
 | ✅ | Proven | Reversible developer deployment / STOCK fallback | Guarded install, status and restore path exists for the exact reference target |
 | ✅ | Resolved baseline | Direct-TS outer geometry | Keep **1010x376** as the canonical coded-frame/map-surface baseline; 1280x480 is the physical panel class, not a proven Direct-TS contract |
 | 🟨 | **Current** | SafeArea calibration | Calibrate ViewArea/SafeArea on the fixed 1010x376 reference canvas |
@@ -62,7 +63,7 @@ The purpose is to identify the minimum Java/HMI seam that can be observed safely
 
 ## P1 — keyframe recovery policy
 
-Same-stream `forceKeyFrame` recovery is already vehicle-proven. The current periodic D2 watchdog is deliberately conservative.
+Same-stream `forceKeyFrame` recovery is already vehicle-proven. The current periodic D2 watchdog is deliberately conservative and is now enabled persistently by default on the MU1440 reference deployment.
 
 Later tuning should:
 
