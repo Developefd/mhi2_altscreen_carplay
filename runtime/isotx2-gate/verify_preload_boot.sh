@@ -1,10 +1,10 @@
 #!/bin/ksh
 set -u
 
-BASE=$(cd "$(dirname "$0")" 2>/dev/null && pwd)
+SELF=$0\ncase "$SELF" in */*) BASE=${SELF%/*} ;; *) BASE=. ;; esac\nBASE=$(cd "$BASE" 2>/dev/null && pwd) || exit 2
 GATE="${MIBR_GATE_CONTROL:-$BASE/gate.sh}"
 CONTROL="${MIBR_PRELOAD_CONTROL:-$BASE/preload_control.sh}"
-HASH="${MIBR_SHA256:-/net/mmx/fs/sda0/apps/sbin/sha256sum}"
+HASH="${MIBR_SHA256:-$BASE/../../payload/sha256sum}"
 TARGET=/mnt/system/etc/boot/startup.sh
 STATS=/tmp/mibr-isotx2-gate.stats
 DISABLE_MARKER=/mnt/app/root/mibr-isotx2-gate-disable
