@@ -19,7 +19,7 @@ The project deliberately separates the **CarPlay AltScreen / Stream-111 video pl
 | ⬜ | Planned | Native navigation arrows / RGI | Feed CarPlay maneuver metadata into the stock cluster navigation UI (arrow, distance, text) |
 | ⬜ | Research | Now Playing / native media metadata | Investigate native cluster media surfaces separately from Stream 111 |
 | ⬜ | Research | AID / firmware compatibility matrix | Detect cluster family and validate other Škoda / VW / SEAT / CUPRA targets |
-| 🧭 | Lead | Audi B9 / AUG22 MU1438 compatibility | Identify the exact Virtual Cockpit generation and prove whether the productive second-display path is MOST, LVDS/HDMI, or a combination before any runtime port |
+| 🧭 | Lead | Audi B9 / AUG22 MU1438 compatibility | OEM topology says B9 Virtual Cockpit map video is LVDS J794 -> J285; identify the exact MU1438 LVDS display/context/geometry and prove ABI before any runtime port |
 
 The strict current vehicle order is:
 
@@ -124,6 +124,8 @@ Keep this work separate from Stream 111 unless runtime evidence proves a shared 
 
 ## P2 — compatibility / AID-family detection
 
+Cross-brand findings are maintained in the [MIB2-era cluster/display transport knowledge base](docs/research/MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md). Keep that document as the long-lived source for panel geometry, map viewport, transport and part-number evidence.
+
 The first vehicle-proven target remains:
 
 - Škoda MHI2 / MU1440;
@@ -139,7 +141,7 @@ Before broader support, collect and correlate:
 
 The larger/older 12.3-inch AID family is a separate compatibility target and must not be assumed equivalent.
 
-An Audi B9 / AUG22 MU1438 contributor lead is now tracked separately. Stock configuration evidence exposes support for both `/dev/mlb/isoTX2` MOST encoding and a `2_lvds` / `Tegra:HDMI0` second-display mode. These may be variant/display-dependent. The decisive question is therefore the **exact cluster generation and the output path actually selected on the vehicle**, not the firmware family name alone.
+An Audi B9 / AUG22 MU1438 contributor lead is now tracked separately. Audi OEM training material establishes that the **B9 Virtual Cockpit receives the large navigation map and detailed intersection map over LVDS from J794 to J285**, while MOST remains in use for other cluster content. The supplied MU1438 configuration is consistent with that split. The remaining target gate is therefore the **exact LVDS display/context/geometry plus binary ABI**, not a MOST-vs-LVDS guess.
 
 ## P2 — developer deployment / tester expansion
 
