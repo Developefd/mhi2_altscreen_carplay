@@ -43,7 +43,7 @@ Include as much of the following as possible:
 - relevant logs;
 - whether the unit recovered to stock behavior.
 
-Remove VINs, addresses, Wi-Fi credentials, personal filenames and other identifying information from logs/screenshots.
+Sanitize logs/screenshots before posting and follow the canonical redaction/privacy rules in [SECURITY.md](SECURITY.md).
 
 ## Evidence levels
 
