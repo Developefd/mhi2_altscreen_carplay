@@ -73,6 +73,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("trace", nargs="?", default="-", help="trace file or - for stdin")
     ap.add_argument("--csv", action="store_true", help="emit CSV")
+    ap.add_argument("--summary", action="store_true", help="summarize unique raw keys and state counts")
     args = ap.parse_args()
 
     rows = []
@@ -93,7 +94,27 @@ def main() -> int:
             }
         )
 
-    if args.csv:
+    if args.summary:
+        grouped: dict[tuple[int, int], dict[int, int]] = {}
+        names: dict[tuple[int, int], tuple[str, str]] = {}
+        for r in rows:
+            k = (r["kbd"], r["key"])
+            grouped.setdefault(k, {})
+            grouped[k][r["kst"]] = grouped[k].get(r["kst"], 0) + 1
+            names[k] = (r["kbd_name"], r["key_name"])
+        for kbd, key in sorted(grouped):
+            kbd_name, key_name = names[(kbd, key)]
+            states = ", ".join(
+                f"{KST.get(state, 'KST_UNKNOWN')}={count}"
+                for state, count in sorted(grouped[(kbd, key)].items())
+            )
+            print(
+                f"KBD={kbd:3d} {kbd_name:<12} "
+                f"KEY={key:3d} {key_name:<24} "
+                f"events={sum(grouped[(kbd, key)].values()):4d} "
+                f"{states}"
+            )
+    elif args.csv:
         w = csv.DictWriter(
             sys.stdout,
             fieldnames=["line", "kbd", "kbd_name", "key", "key_name", "kst", "state_name"],
