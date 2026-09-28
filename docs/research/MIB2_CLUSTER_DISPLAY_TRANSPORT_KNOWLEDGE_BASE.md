@@ -29,11 +29,11 @@ A panel being 1440x540 or 1280x480 does **not** imply that the infotainment unit
 | **Audi Virtual Cockpit Gen1 — A4 B9/8W, A5 F5 and related MIB2 vehicles** | ~2015-2019 pre-MIB3 | 12.3", early VC family commonly 1440x540 | **LVDS from J794 to J285 for the large navigation map and detailed intersection map** | LVDS for map; MOST for list menus/covers and J285 software update; Infotainment CAN for other content | full external map geometry not frozen here | **OEM-confirmed.** This is architecturally different from the MQB MOST-map path. |
 | **Audi "Top" non-VC cluster with navigation** | same generation | analog instruments + center display | J794 -> J285 | **MOST carries navigation data including map**; CAN carries other content | target-specific | **OEM-confirmed.** Important counterexample: Audi MIB2 can use MOST for maps when the fitted cluster is not Virtual Cockpit. |
 | **Audi "Medium" non-VC cluster** | same generation | analog / smaller center display | no external map interface | no LVDS and no MOST interface for map | n/a | **OEM-confirmed.** |
-| **VW AID Gen1 / AD1 — Golf 7, Passat B8, Tiguan, Arteon family** | ~2016-2020 | **12.3", 1440x540** | infotainment navigation map into cluster | **MOST streaming + H.264** on MIB2 coding/retrofit path | **800x480 default renderer window for the older `...791` family in OneB1t**; this is not the panel raster | **OEM panel resolution + community-proven MOST/H.264.** OneB1t supports e.g. 3G0920791, 5NA920791, 5G1920791/794/795/798, 3CG920791. |
-| **VW AID Gen2 / AD2 — Polo/T-Roc and later related MQB cluster family** | introduced ~2017 | **11.7", 1280x480** on VW's published second-generation AID | infotainment navigation map into cluster | MOST-map capable variants use the same MQB MOST path | **1010x376** for several OneB1t-supported later MOST clusters | **OEM panel resolution + community-proven map window.** OneB1t explicitly lists 17A920790 and 5NA920790D as requiring 1010x376. |
-| **Škoda Octavia III 5E Virtual Cockpit — 5E0920790 / 5E0920790A** | late Octavia III / MIB2.5 era | marketed as ~10" / 10.25" VC; exact LCD raster should be kept separate from the map window | infotainment navigation map into cluster | **MOST streaming + H.264**; retrofit requires MOST optical link to 5F | **1010x376** external renderer/map window | **Vehicle-proven in this project + community-proven.** OneB1t explicitly lists 5E0920790A as a 1010x376 MOST cluster. |
-| **Škoda Superb III / Kodiaq / Karoq MIB2-era VC** | ~2018-2021 | typically marketed as 10.25" VC | infotainment navigation map into cluster | retrofit/coding evidence shows **MOST_streaming + H.264** | exact window depends on cluster family; do not infer from diagonal | **Community-proven transport.** More exact part-number/viewport mapping still needed. |
-| **SEAT/CUPRA MIB2-era Digital Cockpit** | similar MQB period | commonly 10.25" class | likely MQB display configuration family | likely MOST/H.264 on compatible MIB2 High targets | not frozen | **Compatibility candidate.** Needs exact part numbers and vehicle traces before promotion. |
+| **VW AID Gen1 / AD1 — Golf 7, Passat B8, Tiguan, Arteon family** | ~2016-2020 | **12.3", 1440x540** | infotainment navigation map into cluster | **MOST streaming + H.264** on MIB2 coding/retrofit path | **800x480** community renderer/window baseline for the older `...791` family | **OEM panel resolution + community-proven MOST/H.264.** Diagnostic family commonly `EV_DashBoardVDDMQBAB`; OneB1t supports e.g. 3G0920791, 5NA920791, 5G1920791/794/795/798, 3CG920791. |
+| **Later Continental FPK Entry / `...790(A)` family — T-Roc, Octavia 5E, Superb 3V, Kodiaq/Karoq 565, Leon 5F, later Tiguan variants** | ~2017-2021 | **1280x480 panel class** is strongly supported across this family; marketed diagonal varies by brand/model | infotainment navigation map into cluster | MOST-map capable variants use the same MQB MOST path | **1010x376** on OneB1t-tested `17A920790`, `5NA920790D`, `5E0920790A`; exact Octavia stock DMDT map plane is also **1010x376** | **Shared Continental FPK Entry lineage.** Diagnostic fingerprint repeatedly `EV_DashBoardVDDMQBA0 001026`, with SW around 1691/1701 on several variants. |
+| **Škoda Octavia III 5E Virtual Cockpit — 5E0920790 / 5E0920790A** | late Octavia III / MIB2.5 era | later-FPK **1280x480-class** panel; exact 5E LCD module identification remains open | infotainment navigation map into cluster | **MOST streaming + H.264**; retrofit requires MOST optical link to 5F | **1010x376 OEM/QNX map plane** on the reference vehicle (`DISPLAYABLE_KOMBI_MAP_VIEW`) | **Vehicle-proven transport and map-plane geometry.** `5E0920790A` HW 508 / SW 1691 / `EV_DashBoardVDDMQBA0 001026` is independently documented. |
+| **Škoda Superb III / Kodiaq / Karoq MIB2-era VC** | ~2018-2021 | later-FPK **1280x480 / 10.25-inch-class** panel family | infotainment navigation map into cluster | retrofit/coding evidence shows **MOST_streaming + H.264** | likely later-FPK map-plane family; exact per-PN geometry still needs direct DMDT/stock capture | `565920790A` is documented as SW 1691 / `EV_DashBoardVDDMQBA0 001026`; Continental homologation groups it with Octavia/T-Roc/Leon/Superb. |
+| **SEAT/CUPRA MIB2-era Digital Cockpit — Leon 5F and related** | similar MQB period | **10.25-inch / 1280x480-class** | MQB later-FPK display family | MOST/H.264 on compatible MIB2 High targets | later-FPK geometry; exact stock map-plane per PN not yet frozen | `5F0920790A` is documented as HW 609 / SW 1701 / `EV_DashBoardVDDMQBA0 001026`; Continental homologation places it in the same later-FPK bundle. |
 | **MIB3 / newer Ethernet/IP cluster generations** | 2019+ depending model | multiple later panels, including Full HD generations | architecture may use IP streaming / MOST_High / other later paths | not the MIB2 baseline | target-specific | **Out of scope for this matrix unless explicitly used as a comparator.** Do not mix Golf 8 / later Audi VC-plus evidence into MHI2 decisions. |
 
 ## The two major MIB2 architectures
@@ -161,6 +161,63 @@ for these later MOST clusters:
 That **1010x376 value is an external map/rendering surface**, not proof that the LCD panel itself is 1010x376.
 
 The same 1010x376 geometry being produced by the current CarPlay Stream-111 path on the MU1440/Octavia reference vehicle is therefore a strong architectural correlation, not merely a convenient arbitrary resolution.
+
+## Direct-TS geometry question: 1010x376 vs 1280x480
+
+The reference Octavia gives us two different but simultaneously valid geometries:
+
+| Layer | Geometry | Evidence |
+| --- | ---: | --- |
+| Later-FPK physical panel class | **1280x480** | cross-brand OEM/community/diagnostic evidence |
+| Stock MU1440 QNX map displayable | **1010x376** | vehicle `dmdt gd`: `DISPLAYABLE_KOMBI_MAP_VIEW` |
+| OneB1t Gen2 VC window | **1010x376** | upstream README/config for 17A/5NA-D/5E0 targets |
+| Current CarPlay Stream-111 baseline | **1010x376** | project vehicle-proven |
+
+The reason the OEM map plane is smaller than the physical panel is **not yet frozen**.
+
+Plausible explanations include:
+
+- the stock compositor deliberately defines a map surface that fits the instrument-cluster layout rather than the complete LCD raster;
+- gauge / warning / branding planes are composited separately over a larger panel;
+- the cluster may internally scale the 1010x376 map plane;
+- bandwidth/encoder constraints may have influenced the chosen map-plane size.
+
+Do **not** currently state that 1010x376 merely omits pixels hidden under the gauges. On the reference vehicle, map content can still be perceived beneath partially transparent gauge overlays, so the composition is more complex than a simple opaque central cut-out.
+
+### Why the direct path deserves a 1280x480 test
+
+OneB1t's path is:
+
+```text
+source framebuffer
+ -> VNC decode
+ -> OpenGL / QNX Displayable
+ -> stock DisplayManager encoder
+ -> MPEG-TS / MOST
+ -> cluster
+```
+
+The current project path is:
+
+```text
+iPhone Stream 111 H.264
+ -> Annex-B / MPEG-TS remux only
+ -> /dev/mlb/isoTX2
+ -> MOST
+ -> cluster decoder
+```
+
+There is **no image decoder, OpenGL renderer or stock NVIDIA re-encoder** in the direct path. Therefore the stock QNX map-window size does not automatically prove that the cluster decoder itself requires a 1010x376 coded frame.
+
+The project now tracks a bounded A/B test:
+
+1. baseline: **1010x376**;
+2. native-panel-class probe: **1280x480**;
+3. no SafeArea during the geometry comparison;
+4. compare edge coverage, gauge-overlay behavior, text/road sharpness and any decoder rejection;
+5. only after outer geometry is chosen, calibrate SafeArea.
+
+A true pixel-grid / one-pixel checker test is preferred over subjective map sharpness when possible.
 
 ## Known MQB cluster part-number anchors
 
@@ -395,6 +452,7 @@ Every new cluster target should eventually have these fields:
 - [ ] collect exact panel/LCD module identifiers for `5G1920791x`, `17A920790`, `5NA920790D`, `5E0920790A`;
 - [ ] compare rear labels / PCB / LCD module numbers inside the Continental `17101001` later-FPK family to determine exactly what is shared beneath the brand-specific housings;
 - [ ] map `resolution_1/2/3` adaptation values to exact encoded pixel dimensions for each family;
+- [ ] run the reference Octavia Direct-TS A/B at 1010x376 vs 1280x480 with SafeArea disabled and a pixel-grid pattern;
 - [ ] capture stock DisplayManager context/display IDs for MQB AID1 vs AID2;
 - [ ] capture Audi B9 MU1438 LVDS display/context and native geometry;
 - [ ] add SEAT/CUPRA exact cluster part numbers;
