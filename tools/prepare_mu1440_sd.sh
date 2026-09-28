@@ -36,6 +36,7 @@ mkdir -p "$OUT/payload" "$OUT/runtime/auto-direct" "$OUT/runtime/isotx2-gate" "$
 cp "$ROOT/deployment/mu1440/install.sh" "$OUT/install.sh"
 cp "$ROOT/deployment/mu1440/uninstall.sh" "$OUT/uninstall.sh"
 cp "$ROOT/deployment/mu1440/status.sh" "$OUT/status.sh"
+cp "$ROOT/deployment/mu1440/compatibility-report.sh" "$OUT/compatibility-report.sh"
 cp "$GEN2" "$OUT/payload/libaltscreen111.so"
 cp "$REMUX" "$OUT/payload/direct-ts-remux"
 cp "$GATE" "$OUT/payload/libmibr_isotx2_gate.so"
