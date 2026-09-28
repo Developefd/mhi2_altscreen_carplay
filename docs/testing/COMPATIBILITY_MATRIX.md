@@ -2,6 +2,8 @@
 
 This table separates **project goal** from **actual evidence**.
 
+For the detailed cross-brand cluster/transport matrix, including panel resolution vs. map viewport and MOST vs. LVDS architecture, see [MIB2-era cluster/display transport knowledge base](../research/MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md).
+
 ## Platform matrix
 
 | Platform | Firmware / baseline | Status | Evidence |
@@ -11,7 +13,7 @@ This table separates **project goal** from **actual evidence**.
 | SEAT/CUPRA MHI2 + 10.25-inch Digital Cockpit | planned | likely related 1280x480 family; unvalidated here | help wanted |
 | Volkswagen MHI2 + AID10-class | planned | unvalidated | help wanted |
 | Volkswagen 12.3-inch AID / other large AID revisions | separate target | **not assumed equivalent to AID10-class** | needs hardware/transport/layout audit + vehicle test |
-| Audi B9 MHI2 / AUG22 MU1438 | external compatibility lead | **not supported / not vehicle-tested by this project** | contributor-supplied stock configs show the classic Harman CarPlay process model and support for both MOST-video and second-LVDS/HDMI output configurations; exact cluster/routing/ABI validation required |
+| Audi B9 MHI2 / AUG22 MU1438 + Virtual Cockpit | external compatibility lead | **not supported / not vehicle-tested by this project** | Audi OEM training material identifies **LVDS J794 -> J285** as the large-map/intersection-map path for the B9 Virtual Cockpit; MOST remains present for other cluster content. Exact MU1438 LVDS context/geometry and ABI still need vehicle validation. |
 | MHI2Q / Qualcomm | comparator only | not this runtime target | public prior art exists |
 
 Reference MU1440 stock `libairplay.so` SHA-256:
@@ -78,7 +80,7 @@ For this project, do not infer compatibility from display size alone. Future tar
 
 1. MHI2 firmware/component identity;
 2. cluster part number / hardware+software identity;
-3. observed display/MOST/DCIVIDEO contract;
+3. observed display transport contract (MOST/DCIVIDEO, LVDS, IP or other);
 4. view geometry / SafeArea behavior;
 5. real STOCK -> DIRECT -> STOCK vehicle validation.
 
