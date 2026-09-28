@@ -6,6 +6,28 @@ case "$SELF" in */*) ROOT=${SELF%/*} ;; *) ROOT=. ;; esac
 ROOT=$(cd "$ROOT" 2>/dev/null && pwd) || exit 2
 
 DST=/mnt/app/root/altscreen-u2
+PAYLOAD=$ROOT/payload
+SESSION_HELPER=$ROOT/runtime/deployment/session.sh
+SESSION_SHA=$PAYLOAD/sha256sum
+SESSION_TEE=$PAYLOAD/tee
+
+[ -r "$SESSION_HELPER" ] || { echo "MIBR_STATUS=FAIL missing_session_helper=$SESSION_HELPER"; exit 20; }
+. "$SESSION_HELPER" || { echo "MIBR_STATUS=FAIL cannot_source_session_helper"; exit 20; }
+
+if [ "${MIBR_LOG_ACTIVE:-0}" != "1" ]; then
+  [ -x "$SESSION_SHA" ] || { echo "MIBR_STATUS=FAIL missing_sha256_helper=$SESSION_SHA"; exit 20; }
+  [ -x "$SESSION_TEE" ] || { echo "MIBR_STATUS=FAIL missing_tee_helper=$SESSION_TEE"; exit 20; }
+  mibr_prepare_session status "$ROOT" "$SESSION_TEE" "$SESSION_SHA" || {
+    echo "MIBR_STATUS=FAIL cannot_create_sd_issue_log rc=$?"
+    exit 20
+  }
+  echo "Logging complete status session to $MIBR_LOG_FILE"
+  mibr_run_logged "$0" "$@"
+  exit $?
+fi
+
+mibr_vehicle_summary || echo "WARN vehicle_summary_failed"
+
 LSD=/mnt/app/eso/hmi/lsd/lsd.sh
 NAVJAR=/mnt/app/eso/hmi/lsd/jars/MIBR-NavIgnore.jar
 EXPECTED_NAVIGNORE=b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34
