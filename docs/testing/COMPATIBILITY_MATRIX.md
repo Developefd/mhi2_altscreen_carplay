@@ -10,7 +10,7 @@ For the detailed cross-brand cluster/transport matrix, including panel resolutio
 | --- | --- | --- | --- |
 | Škoda MHI2 / MU1440 + AID10-class | `MHI2_ER_SKG13_P4526_MU1440` | primary proven target | vehicle-tested on one 10.x-inch MQB Virtual Cockpit |
 | other Škoda MHI2 + AID10-class | unknown | plausible family target, not assumed compatible | needs exact hashes + cluster identity + vehicle test |
-| SEAT/CUPRA MHI2 + 10.25-inch Digital Cockpit | planned | likely related 1280x480 family; unvalidated here | help wanted |
+| SEAT/CUPRA MHI2 + Digital Cockpit | planned | Continental homologation data places several `5F0/5FJ...790` clusters in the same later-FPK lineage as Octavia/T-Roc/Tiguan-D; exact panel/viewport and vehicle behavior remain unvalidated | help wanted |
 | Volkswagen MHI2 + AID10-class | planned | unvalidated | help wanted |
 | Volkswagen 12.3-inch AID / other large AID revisions | separate target | **not assumed equivalent to AID10-class** | needs hardware/transport/layout audit + vehicle test |
 | Audi B9 MHI2 / AUG22 MU1438 + Virtual Cockpit | external compatibility lead | **not supported / not vehicle-tested by this project** | Audi OEM training material identifies **LVDS J794 -> J285** as the large-map/intersection-map path for the B9 Virtual Cockpit; MOST remains present for other cluster content. Exact MU1438 LVDS context/geometry and ABI still need vehicle validation. |
@@ -23,6 +23,18 @@ Reference MU1440 stock `libairplay.so` SHA-256:
 ```
 
 A different hash is a **stop condition**, not permission to assume ABI compatibility. A matching/known MU firmware is also **not sufficient by itself**: cluster hardware/revision is a separate compatibility dimension.
+
+## Cluster-family capability summary
+
+This is the short operational view. See the [full cluster/display transport knowledge base](../research/MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md) for evidence, sources and caveats.
+
+| Family | Example part numbers | Physical panel | External map/video surface | Map transport from infotainment | Project interpretation |
+| --- | --- | --- | --- | --- | --- |
+| MQB AID1 / older Continental FPK | `5G1920791x`, `3G0920791x`, `5NA920791x` | VW OEM: 12.3", 1440x540 | OneB1t old-`791` default: 800x480 renderer window | MOST streaming, H.264 | same broad MQB video architecture, different geometry from current reference target |
+| MQB later Continental FPK / AID2-class | `17A920790`, `5NA920790D`, `5E0920790A`, related `3V0/565/5F0...790` | VW AID2 example: 1280x480; brand/model-specific panel details still being mapped | OneB1t explicitly: **1010x376** on 17A/5NA-D/5E0 targets | MOST streaming, H.264 | closest family to current Škoda reference; strong cross-brand platform evidence |
+| Škoda Octavia III reference | `5E0920790A` family | 10.x-inch VC | **1010x376** | MOST150 / DCIVIDEO / `/dev/mlb/isoTX2` | **vehicle-proven reference target** |
+| Audi B9 MIB2 Virtual Cockpit Gen1 | `8W5...790` VC family | early Audi VC: 12.3", 1440x540 | target LVDS map surface; exact MU1438 geometry not yet captured | **LVDS J794 -> J285 for large map/intersection map**; MOST for other cluster content | separate display-transport port, not an `isoTX2` clone |
+| Audi MIB2 Top non-VC cluster | target-specific | analog + center display | target-specific | **MOST carries navigation including map** | useful Audi counterexample / comparator |
 
 ## Functional validation matrix
 
