@@ -11,8 +11,8 @@ The project deliberately separates the **CarPlay AltScreen / Stream-111 video pl
 | ✅ | Proven | Stream 111 -> H.264 -> MPEG-TS -> MOST -> Virtual Cockpit | Vehicle-proven on the MU1440 / AID10-class reference target |
 | ✅ | Proven | Same-session keyframe recovery | Manual recovery and the current D2 safety policy are vehicle-proven |
 | ✅ | Proven | Reversible developer deployment / STOCK fallback | Guarded install, status and restore path exists for the exact reference target |
-| 🟨 | **Current** | Outer geometry A/B | Compare the OEM 1010x376 map plane with a direct 1280x480 native-panel-class Stream-111 probe; no SafeArea during this comparison |
-| ⏭️ | Next | SafeArea calibration | Freeze SafeArea only after the outer coded-frame geometry is chosen |
+| ✅ | Resolved baseline | Direct-TS outer geometry | Keep **1010x376** as the canonical coded-frame/map-surface baseline; 1280x480 is the physical panel class, not a proven Direct-TS contract |
+| 🟨 | **Current** | SafeArea calibration | Calibrate ViewArea/SafeArea on the fixed 1010x376 reference canvas |
 | ⏭️ | Next | Exact-stock Java isolation | J1/J2 single-class tests only after SafeArea is complete |
 | ⏭️ | Next | D2 keyframe-policy tuning | Replace the conservative 1 s watchdog with event-scoped / bounded recovery |
 | ⬜ | Planned | Steering-wheel VIEW / hardkey mapping | Prove the physical key from stock raw traces before assigning runtime behavior |
@@ -26,22 +26,17 @@ The project deliberately separates the **CarPlay AltScreen / Stream-111 video pl
 The strict current vehicle order is:
 
 ```text
-1010x376 vs 1280x480 geometry A/B -> SafeArea -> exact-stock Java J1/J2 -> D2 tuning
+SafeArea on fixed 1010x376 baseline -> exact-stock Java J1/J2 -> D2 tuning
 ```
 
-Do not mix these three experiments in one run.
+The earlier 1010x376-vs-1280x480 question is resolved **for current project scope**: 1010x376 is the
+OEM/QNX map surface, the OneB1t later-FPK rendering window and the already vehicle-proven Stream-111
+canvas. The 1280x480 value describes the later-FPK physical panel class. Direct decoder acceptance of
+1280x480 has not been disproved, but it is no longer a prerequisite or blocker.
 
-## P0 — outer coded-frame geometry, then SafeArea / ViewArea calibration
+## P0 — SafeArea / ViewArea calibration on the fixed reference canvas
 
-First resolve the outer Direct-TS geometry:
-
-- baseline **1010x376**, matching the stock MU1440 `DISPLAYABLE_KOMBI_MAP_VIEW`;
-- experimental **1280x480**, matching the later Continental FPK native-panel class;
-- disable SafeArea during this A/B so it cannot confound coverage or scaling;
-- compare pixel sharpness, edge coverage, transparent gauge overlays and decoder acceptance;
-- keep the remux/MOST path otherwise unchanged.
-
-After that decision:
+Use **1010x376** as the outer CarPlay secondary-display canvas and:
 
 - keep the selected outer CarPlay secondary-display canvas fixed;
 - calibrate the nested SafeArea against the real AID10-class gauge overlays;
