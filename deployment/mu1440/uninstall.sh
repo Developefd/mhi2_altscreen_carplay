@@ -9,6 +9,26 @@ DST=/mnt/app/root/altscreen-u2
 LSD=/mnt/app/eso/hmi/lsd/lsd.sh
 PAYLOAD=$ROOT/payload
 SHA=${MIBR_SHA256:-$PAYLOAD/sha256sum}
+TEE=${MIBR_TEE:-$PAYLOAD/tee}
+SESSION_HELPER=$ROOT/runtime/deployment/session.sh
+
+[ -r "$SESSION_HELPER" ] || { echo "MIBR_UNINSTALL=FAIL missing_session_helper=$SESSION_HELPER"; exit 20; }
+. "$SESSION_HELPER" || { echo "MIBR_UNINSTALL=FAIL cannot_source_session_helper"; exit 20; }
+
+if [ "${MIBR_LOG_ACTIVE:-0}" != "1" ]; then
+  [ -x "$SHA" ] || { echo "MIBR_UNINSTALL=FAIL missing_sha256_helper=$SHA"; exit 20; }
+  [ -x "$TEE" ] || { echo "MIBR_UNINSTALL=FAIL missing_tee_helper=$TEE"; exit 20; }
+  mibr_prepare_session uninstall "$ROOT" "$TEE" "$SHA" || {
+    echo "MIBR_UNINSTALL=FAIL cannot_create_sd_issue_log rc=$?"
+    exit 20
+  }
+  echo "Logging complete uninstall session to $MIBR_LOG_FILE"
+  mibr_run_logged "$0" "$@"
+  exit $?
+fi
+
+mibr_vehicle_summary || echo "WARN vehicle_summary_failed"
+
 OWNED=/mnt/app/root/mibr-deploy-navignore-owned
 TMP=/tmp/lsd.sh.mibr-deploy-navignore-remove.$$
 
