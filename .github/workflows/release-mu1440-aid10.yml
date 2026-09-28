@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'release/MU1440_AID10_DEV_2026-09-28.md'
+      - 'release/MU1440_AID10_DEV_2026-09-28-R2.md'
 
 permissions:
   contents: write
@@ -14,8 +14,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  TAG: mu1440-aid10-dev-2026-09-28
-  ZIP_NAME: MHI2_AltScreen_MU1440_AID10_DEV_2026-09-28.zip
+  TAG: mu1440-aid10-dev-2026-09-28-r2
+  ZIP_NAME: MHI2_AltScreen_MU1440_AID10_DEV_2026-09-28-R2.zip
 
 jobs:
   release:
@@ -44,9 +44,18 @@ jobs:
           grep -Fq 'EXPECTED_REMUX=b761a8741682e3cbc6e05f5fe1705475c34c4805d1cd1ce09333274a301e735e' deployment/mu1440/install.sh
           grep -Fq 'EXPECTED_GATE=05673010a88c25022145ffb4e75d3715eaf686f4127ac188e91a52f512b9d957' deployment/mu1440/install.sh
           grep -Fq 'EXPECTED_NAVIGNORE=b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34' deployment/mu1440/install.sh
+          grep -Fq 'EXPECTED_LSD_JXE=a55d9cfb69c5756f8202b7f7aa4079d4d5b637ae4c2fd0fe723f1d6816cbeea8' deployment/mu1440/install.sh
           grep -Fq 'fail "navignore_required expected=$EXPECTED_NAVIGNORE"' deployment/mu1440/install.sh
           grep -Fq 'fail "navignore_lsd_insertion_point_missing"' deployment/mu1440/install.sh
           grep -Fq 'navignore_state=PASS_EXACT' deployment/mu1440/status.sh
+          grep -Fq 'mibr_run_logged "$0" "$@"' deployment/mu1440/install.sh
+          grep -Fq 'mibr_run_logged "$0" "$@"' deployment/mu1440/status.sh
+          grep -Fq 'mibr_run_logged "$0" "$@"' deployment/mu1440/uninstall.sh
+          grep -Fq 'mibr_archive_java_state preflight-foreign' deployment/mu1440/install.sh
+          grep -Fq 'JAVA_USER_DECISION=ARCHIVE_AND_CONTINUE' deployment/mu1440/install.sh
+          grep -Fq 'JAVA_USER_DECISION=ABORT' deployment/mu1440/install.sh
+          grep -Fq 'validated_reference_target=MHI2_ER_SKG13_P4526_MU1440' runtime/deployment/session.sh
+          grep -Fq 'VIN, FAZIT and device serial numbers are intentionally not collected.' runtime/deployment/session.sh
 
           grep -Fq 'TEST="$MEDIA_ROOT/.mibr-altscreen-write-test.$$"' deployment/mu1440/install.sh
           grep -Fq 'TEST="$BACKUPFOLDER/.write-test-$$"' runtime/auto-direct/common.sh
@@ -71,6 +80,7 @@ jobs:
           test -x "$PKG/install.sh"
           test -x "$PKG/status.sh"
           test -x "$PKG/uninstall.sh"
+          test -x "$PKG/runtime/deployment/session.sh"
           test -f "$PKG/PAYLOAD.sha256"
           test ! -e "$PKG/MHI2AltScreen"
           test ! -e "$PKG/esd"
@@ -106,8 +116,12 @@ jobs:
             - the exact JAR must already be installed on the target, or
             - place it at payload/MIBR-NavIgnore.jar
 
-          DirectVCPolicy / Most20FPS / legacy combined Java overrides must NOT be active.
-          The installer checks and refuses known conflicting bootclasspath overrides.
+          EXISTING JAVA PATCHES:
+          If a foreign/older Java or bootclasspath state is found, --check archives it on the
+          SD card and reports PREFLIGHT=ATTENTION. During --apply you choose:
+            C = keep the SD recovery archive, normalize the conflicting Java state and continue
+            Q = abort without changing target-side Java state
+          The exact required NavIgnore must be reachable before C is allowed.
 
           SafeArea/ViewArea experimental helpers are intentionally NOT part of this ZIP.
 
@@ -119,6 +133,12 @@ jobs:
             reboot
             ./status.sh
 
+          LOGGING:
+          install.sh, status.sh and uninstall.sh write complete session output plus a sanitized
+          vehicle/firmware summary to mhi2-altscreen-logs/ on the SD card.
+          For public Issues, attach session.log + vehicle-summary.txt.
+          archive/ may contain copied third-party/OEM JAR bytes; review it before sharing.
+
           The DisplayManager gate defaults to STOCK.
           The current D2 keyframe policy remains an explicit developer switch.
           EOF
@@ -128,6 +148,7 @@ jobs:
             echo "source_commit=$GITHUB_SHA"
             echo "target=MHI2_ER_SKG13_P4526_MU1440"
             echo "cluster=AID10-class"
+            echo "deployment_generation=R2_logged_java_recovery"
             echo "gen2_sha256=094e3f1abfbf949f8c11b27e048e8213e5fc71178e62efd3c56deed8ee3bf8d8"
             echo "direct_ts_remux_sha256=b761a8741682e3cbc6e05f5fe1705475c34c4805d1cd1ce09333274a301e735e"
             echo "isotx2_gate_sha256=05673010a88c25022145ffb4e75d3715eaf686f4127ac188e91a52f512b9d957"
@@ -150,14 +171,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euxo pipefail
-          NOTES=release/MU1440_AID10_DEV_2026-09-28.md
+          NOTES=release/MU1440_AID10_DEV_2026-09-28-R2.md
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$ZIP_NAME" "$ZIP_NAME.sha256" --clobber
-            gh release edit "$TAG" --title "MU1440 / AID10 developer test — 2026-09-28" --notes-file "$NOTES" --prerelease
+            gh release edit "$TAG" --title "MU1440 / AID10 developer test R2 — 2026-09-28" --notes-file "$NOTES" --prerelease
           else
             gh release create "$TAG" "$ZIP_NAME" "$ZIP_NAME.sha256" \
               --target "$GITHUB_SHA" \
-              --title "MU1440 / AID10 developer test — 2026-09-28" \
+              --title "MU1440 / AID10 developer test R2 — 2026-09-28" \
               --notes-file "$NOTES" \
               --prerelease
           fi
