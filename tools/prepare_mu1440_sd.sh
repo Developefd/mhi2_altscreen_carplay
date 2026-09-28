@@ -29,8 +29,8 @@ mkdir -p "$OUT"
 # The developer package intentionally lives directly in the SD-card root.
 # Never remove the SD root itself; replace only project-owned deployment paths.
 rm -f "$OUT/install.sh" "$OUT/uninstall.sh" "$OUT/status.sh" "$OUT/PAYLOAD.sha256"
-rm -rf "$OUT/runtime/auto-direct" "$OUT/runtime/isotx2-gate" "$OUT/runtime/diagnostics" "$OUT/runtime/navigation"
-mkdir -p "$OUT/payload" "$OUT/runtime/auto-direct" "$OUT/runtime/isotx2-gate" "$OUT/runtime/diagnostics" "$OUT/runtime/navigation"
+rm -rf "$OUT/runtime/auto-direct" "$OUT/runtime/isotx2-gate" "$OUT/runtime/diagnostics" "$OUT/runtime/navigation" "$OUT/runtime/deployment"
+mkdir -p "$OUT/payload" "$OUT/runtime/auto-direct" "$OUT/runtime/isotx2-gate" "$OUT/runtime/diagnostics" "$OUT/runtime/navigation" "$OUT/runtime/deployment"
 
 cp "$ROOT/deployment/mu1440/install.sh" "$OUT/install.sh"
 cp "$ROOT/deployment/mu1440/uninstall.sh" "$OUT/uninstall.sh"
@@ -49,6 +49,7 @@ cp "$ROOT/runtime/diagnostics/gen2_resync.sh" "$OUT/runtime/diagnostics/"
 cp "$ROOT/runtime/diagnostics/gen2_status.sh" "$OUT/runtime/diagnostics/"
 cp "$ROOT/runtime/diagnostics/keypanel_trace_discovery.sh" "$OUT/runtime/diagnostics/"
 cp "$ROOT/runtime/navigation/gen2_nav_config.sh" "$OUT/runtime/navigation/"
+cp "$ROOT/runtime/deployment/session.sh" "$OUT/runtime/deployment/"
 
 chmod +x "$OUT/"*.sh "$OUT/runtime/"*/*.sh "$OUT/payload/libaltscreen111.so" "$OUT/payload/direct-ts-remux" "$OUT/payload/libmibr_isotx2_gate.so" "$OUT/payload/sha256sum" "$OUT/payload/tee"
 
