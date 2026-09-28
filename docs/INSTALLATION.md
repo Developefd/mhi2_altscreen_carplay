@@ -34,7 +34,9 @@ The prepared developer directory carries its own reproducibly built QNX ARMv7 `p
 
 The current deployment does not require `sed`; the only former runtime use was replaced with stock `awk` because older firmware trains are known not to provide `sed` consistently.
 
-NavIgnore itself is not redistributed because it contains modified OEM-derived classes. The installer fails closed unless the exact required JAR is already installed or is placed at `payload/MIBR-NavIgnore.jar`.\n\n`MIBR_SHA256` remains an expert override for a separately verified compatible helper. Missing or
+NavIgnore itself is not redistributed because it contains modified OEM-derived classes. The installer fails closed unless the exact required JAR is already installed or is placed at `payload/MIBR-NavIgnore.jar`.
+
+`MIBR_SHA256` remains an expert override for a separately verified compatible helper. Missing or
 non-executable hash support is a hard stop; target/payload verification is never skipped.
 
 ## Apply
