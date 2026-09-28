@@ -245,6 +245,22 @@ normalize_java_state(){
 
   chmod 755 "$TMP" 2>/dev/null || true
   mv "$TMP" "$LSD" || fail "java_install_normalized_lsd"
+
+  for P in "$JARDIR/MIBR-DirectVCPolicy.jar" "$JARDIR/MIBR-Most20FPS.jar" "$JARDIR/NavActiveIgnore.jar"; do
+    if [ -e "$P" ]; then
+      echo "Removing archived known conflicting Java artifact: $P"
+      rm -f "$P" "$P.new" 2>/dev/null || fail "java_remove_conflicting_artifact=$P"
+    fi
+  done
+
+  if [ -r "$NAVJAR" ]; then
+    H=$(hashf "$NAVJAR" 2>/dev/null)
+    if [ "$H" != "$EXPECTED_NAVIGNORE" ]; then
+      echo "Removing archived incompatible NavIgnore before exact replacement: hash=$H"
+      rm -f "$NAVJAR" "$NAVJAR.new" 2>/dev/null || fail "java_remove_wrong_navignore"
+    fi
+  fi
+
   app_ro
   echo "JAVA_NORMALIZE=PASS"
 }
@@ -252,7 +268,7 @@ normalize_java_state(){
 handle_java_conflict(){
   echo
   echo "Existing Java patch state differs from the validated NavIgnore-only setup."
-  mibr_archive_java_state foreign-before-install || fail "java_archive_failed"
+  echo "The original state has already been archived in this SD session."
 
   if [ "$JAVA_NEEDS_PAYLOAD" -eq 1 ]; then
     [ -r "$PAYLOAD/MIBR-NavIgnore.jar" ] || {
@@ -307,6 +323,7 @@ preflight(){
   AIR=$(hashf /mnt/app/eso/lib/libairplay.so) || fail "libairplay_hash_failed"
   [ "$AIR" = "$EXPECTED_AIRPLAY" ] || fail "unsupported_libairplay=$AIR"
   echo "PASS libairplay=$AIR"
+  check_hash /mnt/app/eso/hmi/lsd/lsd.jxe "$EXPECTED_LSD_JXE"
 
   check_hash "$PAYLOAD/libaltscreen111.so" "$EXPECTED_GEN2"
   check_hash "$PAYLOAD/direct-ts-remux" "$EXPECTED_REMUX"
@@ -454,6 +471,20 @@ install_required_navignore(){
 
 apply(){
   preflight
+  PRC=$?
+  if [ "$PRC" -eq 30 ]; then
+    handle_java_conflict
+    JRC=$?
+    if [ "$JRC" -ne 0 ]; then
+      echo "MIBR_INSTALL=ABORTED java_state_not_changed"
+      exit "$JRC"
+    fi
+    echo "=== re-run preflight after Java normalization ==="
+    preflight || fail "post_java_preflight_failed_rc_$?"
+  elif [ "$PRC" -ne 0 ]; then
+    exit "$PRC"
+  fi
+
   stage_runtime
 
   echo "=== install DisplayManager isoTX2 gate preload ==="
