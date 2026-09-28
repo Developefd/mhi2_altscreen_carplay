@@ -76,7 +76,7 @@ body:
     id: logs
     attributes:
       label: Logs / evidence
-      description: Attach or paste relevant, redacted evidence.
+      description: Attach session.log and vehicle-summary.txt from the relevant mhi2-altscreen-logs session. Do not upload archive/ blindly; it can contain copied third-party/OEM JAR bytes.
 
   - type: checkboxes
     id: safety
