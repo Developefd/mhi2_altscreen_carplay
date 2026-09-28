@@ -239,12 +239,13 @@ If you want to understand the project without reading the entire repository, use
 8. [Compatibility matrix](docs/testing/COMPATIBILITY_MATRIX.md) — what is actually proven, partial, open or only planned.
 9. [Cluster / display transport KB](docs/research/MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md) — MIB2-era VW/Škoda/Audi cluster families, panel vs. map geometry, MOST/LVDS transport and open-source renderer evidence.
 10. [MHI2 firmware profile map](docs/research/MHI2_FIRMWARE_PROFILE_MAP_2026-09-28.md) — six-baseline cross-brand native/Java/config profile relationships and current corpus run status.
-11. [MU1440 stock reference](docs/research/MU1440_STOCK_REFERENCE.md) — exact stock component hashes for the first proven target.
-12. [iOS 27 sender research](docs/research/IOS27_SENDER_LIFECYCLE.md) — exact build/hash authority behind the current lifecycle model.
-13. [Public references](docs/research/PUBLIC_REFERENCES.md) — prior art and external projects worth reading.
-14. [Developer installation](docs/INSTALLATION.md) — guarded install/restore path for the exact MU1440 reference target.
-15. [MU1440 QNX shell compatibility](docs/testing/MU1440_QNX_SHELL_COMPATIBILITY.md) — exact-target command/paste constraints behind the scripts.
-16. [Roadmap](ROADMAP.md) — current priorities and concrete help-wanted areas.
+11. [MHI2 patch portability estimate](docs/research/MHI2_PATCH_PORTABILITY_ESTIMATE_2026-09-28.md) — what can likely be reused directly, what needs a target profile, and what needs a new transport/patch.
+12. [MU1440 stock reference](docs/research/MU1440_STOCK_REFERENCE.md) — exact stock component hashes for the first proven target.
+13. [iOS 27 sender research](docs/research/IOS27_SENDER_LIFECYCLE.md) — exact build/hash authority behind the current lifecycle model.
+14. [Public references](docs/research/PUBLIC_REFERENCES.md) — prior art and external projects worth reading.
+15. [Developer installation](docs/INSTALLATION.md) — guarded install/restore path for the exact MU1440 reference target.
+16. [MU1440 QNX shell compatibility](docs/testing/MU1440_QNX_SHELL_COMPATIBILITY.md) — exact-target command/paste constraints behind the scripts.
+17. [Roadmap](ROADMAP.md) — current priorities and concrete help-wanted areas.
 
 ### Want to help?
 
