@@ -11,7 +11,7 @@ This table separates **project goal** from **actual evidence**.
 | SEAT/CUPRA MHI2 + 10.25-inch Digital Cockpit | planned | likely related 1280x480 family; unvalidated here | help wanted |
 | Volkswagen MHI2 + AID10-class | planned | unvalidated | help wanted |
 | Volkswagen 12.3-inch AID / other large AID revisions | separate target | **not assumed equivalent to AID10-class** | needs hardware/transport/layout audit + vehicle test |
-| MHI2Q / Qualcomm | comparator only | not this runtime target | public prior art exists |
+| Audi B9 MHI2 / AUG22 MU1438 | external compatibility lead | **not supported / not vehicle-tested by this project** | contributor-supplied stock configs show the classic Harman CarPlay process model plus both MOST-video and second-LVDS/HDMI capabilities; exact cluster/routing/ABI validation required |\n| MHI2Q / Qualcomm | comparator only | not this runtime target | public prior art exists |
 
 Reference MU1440 stock `libairplay.so` SHA-256:
 
