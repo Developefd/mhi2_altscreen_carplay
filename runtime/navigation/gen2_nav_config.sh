@@ -79,7 +79,7 @@ read_value(){
   path=$1
   def=$2
   if [ -r "$path" ]; then
-    v=$(sed -n '1{s/[[:space:]]*$//;p;}' "$path" 2>/dev/null)
+    v=$(awk 'NR==1 { sub(/[[:space:]]+$/, ""); print; exit }' "$path" 2>/dev/null)
     [ -n "$v" ] && { echo "$v"; return; }
   fi
   echo "$def"
