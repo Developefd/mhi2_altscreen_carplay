@@ -19,7 +19,7 @@ For the MQB MIB2-era Škoda/VW/SEAT clusters researched so far:
 - **coding/adaptation access is broad and well documented;**
 - **official cluster firmware flashing is real and publicly evidenced;**
 - the later Škoda `...790A` family has known software progression such as **1691 -> 1703** and field reports of **1711**;
-- **no mature open-source project was found that decompiles and patches the Continental FPK Entry firmware itself** in the way MIB2 High projects patch QNX/Java on the infotainment unit;
+- **no mature open-source project was found that already provides a complete patch/flash workflow for Continental FPK Entry firmware** in the way MIB2 High projects patch QNX/Java; however, active public research now exists around extracting and reflashing cluster firmware;
 - many visually impressive "cluster mods" are therefore **not cluster-firmware hacks** at all;
 - the strongest open CarPlay/cluster projects implement new behavior on the **head unit**, then drive the stock cluster through existing DisplayManager / DSI / BAP / MOST contracts.
 
@@ -100,11 +100,45 @@ In the sources searched so far, there is no strong public evidence of:
 - shell access to `5E0920790A`;
 - a browsable cluster filesystem;
 - an open custom bootloader;
-- a public decompiler project for the complete FPK Entry firmware;
+- a completed public decompiler/patching project for the complete FPK Entry firmware;
 - an open project replacing the cluster HMI executable;
 - a custom signed firmware chain for these `...790A` units.
 
 Absence from public search is not proof that private commercial/Telegram tooling does not exist.
+
+## Active public FPK firmware RE lead
+
+OneB1t's `VcMOSTRenderMqb` Issue #4, **"Instrument Cluster Graphics"** (opened 2025-10-12), is directly relevant.
+
+The author of that issue is investigating:
+
+- flashing an instrument cluster over UDS/CAN;
+- obtaining raw firmware blocks from ODX data inside VAG FRF flash containers;
+- changing cluster graphics such as the startup logo;
+- the `AUDI-AES-128` encrypted / LZSS-compressed payload format reported by the ODX;
+- the cluster security-access path and the UDS RequestDownload mode.
+
+This is **research/proposal evidence, not a proven public FPK flashing solution**. Nevertheless it is the clearest public lead found so far that somebody is actively pursuing custom graphics at the cluster-firmware level on the same MQB VC ecosystem.
+
+Upstream:
+https://github.com/OneB1t/VcMOSTRenderMqb/issues/4
+
+### Reusable VAG FRF / ODX tooling already exists
+
+The outer VAG flash-container problem is well understood publicly:
+
+- VAG FRF container decryptors exist;
+- FRF commonly unwraps into ODX/ODX-F definitions and binary blocks;
+- public tooling exists for parsing address/block metadata;
+- AES/LZSS decompression pipelines are implemented for several other VAG ECU families.
+
+Examples:
+
+- `kolyandex/VAG-FRF-Extractor`;
+- `bri3d/VW_Flash` and related FRF/SA2 work;
+- `dspl1236/vag-tcu-tools` for modern worked examples of FRF -> ODX -> encrypted/compressed binary extraction.
+
+These tools do **not** by themselves supply the correct crypto material, memory map or checksum/signature logic for `EV_DashBoardVDDMQBA0`. They do, however, mean we do not need to reinvent the generic FRF/ODX container layer when a legitimate FPK flash package is available.
 
 ## Coding / adaptation can look like a firmware mod
 
