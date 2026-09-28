@@ -29,7 +29,7 @@ A panel being 1440x540 or 1280x480 does **not** imply that the infotainment unit
 | **Audi Virtual Cockpit Gen1 — A4 B9/8W, A5 F5 and related MIB2 vehicles** | ~2015-2019 pre-MIB3 | 12.3", early VC family commonly 1440x540 | **LVDS from J794 to J285 for the large navigation map and detailed intersection map** | LVDS for map; MOST for list menus/covers and J285 software update; Infotainment CAN for other content | full external map geometry not frozen here | **OEM-confirmed.** This is architecturally different from the MQB MOST-map path. |
 | **Audi "Top" non-VC cluster with navigation** | same generation | analog instruments + center display | J794 -> J285 | **MOST carries navigation data including map**; CAN carries other content | target-specific | **OEM-confirmed.** Important counterexample: Audi MIB2 can use MOST for maps when the fitted cluster is not Virtual Cockpit. |
 | **Audi "Medium" non-VC cluster** | same generation | analog / smaller center display | no external map interface | no LVDS and no MOST interface for map | n/a | **OEM-confirmed.** |
-| **VW AID Gen1 / AD1 — Golf 7, Passat B8, Tiguan, Arteon family** | ~2016-2020 | **12.3", 1440x540** | infotainment navigation map into cluster | **MOST streaming + H.264** on MIB2 coding/retrofit path | target-dependent; do not equate with panel resolution | **OEM panel resolution + community-proven MOST/H.264.** OneB1t supports e.g. 3G0920791, 5NA920791, 5G1920791/794/795/798, 3CG920791. |
+| **VW AID Gen1 / AD1 — Golf 7, Passat B8, Tiguan, Arteon family** | ~2016-2020 | **12.3", 1440x540** | infotainment navigation map into cluster | **MOST streaming + H.264** on MIB2 coding/retrofit path | **800x480 default renderer window for the older `...791` family in OneB1t**; this is not the panel raster | **OEM panel resolution + community-proven MOST/H.264.** OneB1t supports e.g. 3G0920791, 5NA920791, 5G1920791/794/795/798, 3CG920791. |
 | **VW AID Gen2 / AD2 — Polo/T-Roc and later related MQB cluster family** | introduced ~2017 | **11.7", 1280x480** on VW's published second-generation AID | infotainment navigation map into cluster | MOST-map capable variants use the same MQB MOST path | **1010x376** for several OneB1t-supported later MOST clusters | **OEM panel resolution + community-proven map window.** OneB1t explicitly lists 17A920790 and 5NA920790D as requiring 1010x376. |
 | **Škoda Octavia III 5E Virtual Cockpit — 5E0920790 / 5E0920790A** | late Octavia III / MIB2.5 era | marketed as ~10" / 10.25" VC; exact LCD raster should be kept separate from the map window | infotainment navigation map into cluster | **MOST streaming + H.264**; retrofit requires MOST optical link to 5F | **1010x376** external renderer/map window | **Vehicle-proven in this project + community-proven.** OneB1t explicitly lists 5E0920790A as a 1010x376 MOST cluster. |
 | **Škoda Superb III / Kodiaq / Karoq MIB2-era VC** | ~2018-2021 | typically marketed as 10.25" VC | infotainment navigation map into cluster | retrofit/coding evidence shows **MOST_streaming + H.264** | exact window depends on cluster family; do not infer from diagonal | **Community-proven transport.** More exact part-number/viewport mapping still needed. |
@@ -184,6 +184,39 @@ From the open `VcMOSTRenderMqb` compatibility list:
 
 These part numbers are useful **family anchors**, not a universal compatibility whitelist.
 
+## Continental FPK platform-family evidence
+
+A VAG/SEAT regulatory marking document from Continental is unusually useful because it groups customer part numbers by Continental FPK homologation bundles.
+
+One bundle (`17101001`) contains, among others:
+
+- VW T-Roc: `17A 920 790` / `17A 920 790 A`;
+- Škoda Superb: `3V0 920 790` / `3V0 920 790 A`;
+- Škoda Kodiaq/Karoq: `565 920 790 A`;
+- Škoda Octavia: `5E0 920 790` / `5E0 920 790 A` / `5E0 920 790 B`;
+- SEAT Leon / A-SUV: `5F0 920 790` / `5F0 920 790 A`;
+- VW Tiguan: `5NA 920 790 D`.
+
+This is strong evidence that the later VW/Škoda/SEAT `...790` instruments belong to a **shared Continental FPK hardware/platform lineage**.
+
+A separate Continental **FPK Standard / WFS 5a** group contains the older Golf/Passat/Tiguan `...791` families such as:
+
+- Golf `5G1 920 791/A/B`;
+- Passat `3G0 920 791/A/B/C/D`;
+- Tiguan `5NA 920 791/A/B/C`.
+
+That regulatory split independently aligns with the renderer evidence:
+
+```text
+older ...791 family
+  -> OneB1t default "old cluster" renderer window: 800x480
+
+later ...790 family
+  -> selected OneB1t targets require: 1010x376
+```
+
+This does **not** prove that all units inside one homologation bundle use an identical LCD module, PCB revision or housing. It does make the working hypothesis of shared electronics/display architecture substantially stronger and gives us a concrete family boundary to test.
+
 ## Physical interchangeability / "same cluster, different housing"
 
 There is substantial evidence for a **shared Continental/VDO MQB software/transport family** across VW and Škoda:
@@ -197,7 +230,7 @@ That is strong evidence for **software/display-path portability**.
 
 It is **not yet sufficient evidence** that a VW AID and a Škoda VC can literally be cross-plugged as complete assemblies. Housing, bezel, immobilizer/component-protection data, coding, warning-lamp arrangement, fuel inputs and vehicle-specific software remain separate compatibility dimensions.
 
-Current status of the "same LCD/electronics, different housing" idea: **plausible hypothesis worth teardown/label comparison, not frozen fact**.
+Current status of the "same LCD/electronics, different housing" idea: **shared Continental FPK platform lineage is now well supported; identical LCD/PCB and literal cross-brand plug compatibility remain hypotheses requiring teardown/label evidence**.
 
 If someone can supply rear-label photos, PCB/LCD module numbers or teardown images from e.g. `5G1920791x`, `17A920790` and `5E0920790A`, this can be tightened substantially.
 
@@ -339,6 +372,7 @@ Every new cluster target should eventually have these fields:
 - Volkswagen Newsroom — AID Gen1 1440x540 and Gen2 1280x480: https://www.volkswagen-newsroom.com/en/active-info-display-3950
 - Volkswagen Newsroom — T-Roc second-generation AID detail: https://www.volkswagen-newsroom.com/en/the-t-roc-2692/active-info-display-in-detail-2726
 - Škoda Storyboard — MIB2-era 10.25" Virtual Cockpit examples: https://www.skoda-storyboard.com/de/pressemappe/der-neue-skoda-karoq-weltpremiere-pressemappe/konnektivitaet-modernes-infotainment-und-digitale-instrumente/
+- SEAT/Continental cross-brand FPK homologation list (VW/Škoda/SEAT part-number families): https://www.seat.com/datamanual-manual/directiva_RED/ua-ua/All_platforms.pdf
 
 ### Open implementations
 
@@ -359,7 +393,7 @@ Every new cluster target should eventually have these fields:
 ## Research TODO
 
 - [ ] collect exact panel/LCD module identifiers for `5G1920791x`, `17A920790`, `5NA920790D`, `5E0920790A`;
-- [ ] determine whether the later VW/Škoda family shares an actual LCD/electronics module with brand-specific housing;
+- [ ] compare rear labels / PCB / LCD module numbers inside the Continental `17101001` later-FPK family to determine exactly what is shared beneath the brand-specific housings;
 - [ ] map `resolution_1/2/3` adaptation values to exact encoded pixel dimensions for each family;
 - [ ] capture stock DisplayManager context/display IDs for MQB AID1 vs AID2;
 - [ ] capture Audi B9 MU1438 LVDS display/context and native geometry;
