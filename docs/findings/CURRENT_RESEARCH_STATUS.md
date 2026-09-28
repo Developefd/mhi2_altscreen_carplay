@@ -1,6 +1,6 @@
 # Current research status
 
-Last major architecture review: **2026-09-26**
+Last major architecture review: **2026-09-28**
 
 This page separates what is proven from what is implemented, inferred, still under test or explicitly
 deferred.
@@ -115,6 +115,49 @@ See [Direct VC video path](../architecture/DIRECT_VC_VIDEO_PATH.md).
 | Reboot stock fallback | **DESIGN REQUIREMENT / IMPLEMENTED IN POLICY** | No persistent volatile lease |
 | Passive VC view-state probes | **IMPLEMENTED AS SIDE TRACK** | Current compilation validation for latest listener may still be pending |
 | Final AID screenshot composition capture | **OPEN** | DMDT/display-manager screenshot lead exists, final coverage not proven |
+
+---
+
+## Cross-firmware corpus
+
+The first six-baseline MHI2 corpus pass is **complete and verified**.
+
+It covers:
+
+- Audi AUG22 K3346 MU1438;
+- Škoda SKG13 P4526 MU1440;
+- Škoda SKG11 K3343 MU1433;
+- Volkswagen VWG11 K3342 MU1427;
+- SEAT SEG11 P4709 MU1447;
+- Volkswagen VWG13 K4525 MU1367.
+
+Important result: train names do not map one-to-one to implementation profiles.
+
+Examples:
+
+- Audi MU1438 and VWG11 share a byte-identical complete `libairplay.so`;
+- MU1440, SEG11 and VWG13 share another byte-identical AirPlay profile;
+- SKG11 has a distinct AirPlay file but the 16 project target functions match the Audi profile;
+- SKG11 and VWG11 have different JXE containers but exactly the same 25,892 recovered class paths
+  and class bytes;
+- 97 of 98 `de/vw/mib/asl/internal/mostkombi/` classes are byte-identical across the five
+  Škoda/VW/SEAT baselines;
+- profile-forming native services split SKG11/VWG11 toward the MU1438 family and SEG11/VWG13 toward
+  the MU1440 family.
+
+The completed corpus run passed a 74,574-file independent rehash, 12 targeted Ghidra runs with zero
+export failures, and a curated 45-file evidence hash audit.
+
+Current next corpus work is the AU37X same-family/same-MU comparison:
+
+```text
+MHI2_ER_AU37X_P5089_MU1326
+MHI2_ER_AU37X_P5153_MU1326
+```
+
+The canonical AUG22/MU1438 corpus target is `MHI2_ER_AUG22_K3346_MU1438`.
+
+See [MHI2 cross-firmware implementation profile map](../research/MHI2_FIRMWARE_PROFILE_MAP_2026-09-28.md).
 
 ---
 
