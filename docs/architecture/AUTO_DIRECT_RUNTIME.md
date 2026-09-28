@@ -57,9 +57,10 @@ The published reference scripts expect:
 - a compatible navigation-arbitration setup;
 - the MU1440 runtime commands used by the scripts.
 
-The current reference implementation checks for `MIBR-NavIgnore.jar`. See
-[NAVIGNORE.md](NAVIGNORE.md) for why that requirement exists and why that JAR is not redistributed
-here as project-owned source.
+The current reference implementation checks for `MIBR-NavIgnore.jar`. The current developer
+release includes the exact vehicle-tested JAR in `payload/`; provenance, pinned upstream identity,
+split logic and license are documented in [NAVIGNORE.md](NAVIGNORE.md) and
+`THIRD_PARTY/NavIgnore/`.
 
 ## Persistence
 
