@@ -116,6 +116,10 @@ jobs:
           grep -Fq 'deployment_media_root' deployment/mu1440/install.sh
           grep -Fq 'mount -uw "$DEPLOY_MEDIA_ROOT"' runtime/auto-direct/common.sh
           grep -Fq 'fail "navignore_required expected=$EXPECTED_NAVIGNORE"' deployment/mu1440/install.sh
+          grep -Fq 'fail "navignore_lsd_insertion_point_missing"' deployment/mu1440/install.sh
+          grep -Fq 'fail "navignore_duplicate_bootclasspath_refs=$NAVREFS"' deployment/mu1440/install.sh
+          grep -Fq 'navignore_state=PASS_EXACT' deployment/mu1440/status.sh
+          grep -Fq 'navignore_bootclasspath_refs=' deployment/mu1440/status.sh
           grep -Fq 'vehicle-tested-run51/libmibr_isotx2_gate.so' tools/prepare_mu1440_sd.sh
           ! grep -R -n -F '/apps/sbin' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
           ! grep -R -n -F 'config/BASICS' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
