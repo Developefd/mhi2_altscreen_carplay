@@ -214,7 +214,7 @@ stage_runtime(){
   echo "STAGE_RUNTIME=PASS"
 }
 
-install_optional_navignore(){
+install_required_navignore(){
   if [ ! -r "$PAYLOAD/MIBR-NavIgnore.jar" ]; then
     return 0
   fi
@@ -267,7 +267,7 @@ apply(){
   echo "=== prepare persistent CarPlay Stream111 preload ==="
   "$DST/scripts/patch_carplay.sh" || fail "patch_carplay_rc_$?"
 
-  install_optional_navignore
+  install_required_navignore
 
   echo "=== set deployment navigation default ==="
   "$DST/scripts/gen2_nav_config.sh" profile map-rich || fail "map_rich_profile"
