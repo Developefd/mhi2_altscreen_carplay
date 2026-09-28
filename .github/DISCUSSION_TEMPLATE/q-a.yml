@@ -18,7 +18,7 @@ body:
     id: tried
     attributes:
       label: What have you already checked?
-      description: Mention docs, logs, tests or related discussions/issues.
+      description: For an unvalidated vehicle/firmware, run compatibility-report.sh from the current release first and attach vehicle-summary.txt plus compatibility/component-hashes.txt and runtime-observation.txt. Mention other docs, logs, tests or related discussions/issues.
 
   - type: checkboxes
     id: privacy
