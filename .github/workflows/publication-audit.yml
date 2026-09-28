@@ -138,7 +138,7 @@ jobs:
           grep -Fq 'MIBR_FOREIGN_JAVA_ACTION' deployment/mu1440/install.sh
           grep -Fq 'JAVA_USER_DECISION=ARCHIVE_AND_CONTINUE' deployment/mu1440/install.sh
           grep -Fq 'JAVA_USER_DECISION=ABORT' deployment/mu1440/install.sh
-          grep -Fq 'Exact replacement NavIgnore payload verified before Java normalization.' deployment/mu1440/install.sh
+          grep -Fq 'Bundled exact NavIgnore payload verified before Java normalization.' deployment/mu1440/install.sh
           grep -Fq 'TMP=/tmp/lsd.sh.mibr-deploy-normalize.$' deployment/mu1440/install.sh
           grep -Fq 'VIN, FAZIT and device serial numbers are intentionally not collected.' runtime/deployment/session.sh
           ! grep -R -n -F '/apps/sbin' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
@@ -186,7 +186,7 @@ jobs:
           s=Path("deployment/mu1440/install.sh").read_text()
           archive=s.index("mibr_archive_java_state preflight-foreign")
           attention=s.index("PREFLIGHT=ATTENTION java_state_requires_user_decision")
-          guard=s.index("Cannot reach the validated NavIgnore-only state")
+          guard=s.index("Bundled exact NavIgnore payload verified before Java normalization.")
           normalize=s.index("normalize_java_state", s.index("handle_java_conflict(){"))
           stage=s.index("stage_runtime", s.index("apply(){"))
           assert archive < attention
