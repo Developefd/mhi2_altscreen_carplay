@@ -63,7 +63,7 @@ payload/tee
 
 The historical M.I.B. `sed` dependency is intentionally avoided in this deployment; the one required trim operation is implemented with stock `awk`.
 
-The installer uses it by default. An experienced developer may override it with `MIBR_SHA256`, but
+The installer uses the bundled helpers by default. An experienced developer may override `sha256sum` with `MIBR_SHA256`, but
 only after independently verifying the replacement binary.
 
 ## On the unit
