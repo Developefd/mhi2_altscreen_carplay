@@ -25,9 +25,12 @@
 > Keep recoverable backups and understand the changes before running them on a vehicle.
 
 > [!IMPORTANT]
-> The first vehicle-proven target is **Škoda MHI2 / MU1440**. Compatibility with other Škoda,
-> **Volkswagen, SEAT and CUPRA** MHI2 variants must be established from exact firmware/component
-> evidence and real vehicle tests; it should not be assumed from platform names alone.
+> The first vehicle-proven target is **Škoda MHI2 / MU1440 with the 10.x-inch MQB Virtual Cockpit / AID family**
+> (called **AID10-class** in this project). Compatibility with another target must be established for **both**
+> the infotainment firmware/components **and the instrument-cluster hardware/revision**. In particular, the
+> larger/older 12.3-inch AID family is **not vehicle-proven by this project** and must not be assumed equivalent.
+> Cross-brand similarity between Škoda, Volkswagen, SEAT and CUPRA AID10-class clusters is a working hypothesis,
+> not a compatibility claim.
 
 ## Project goals
 
@@ -56,7 +59,8 @@ Initial reference platform:
 - Reference firmware: `MHI2_ER_SKG13_P4526_MU1440`
 - Runtime access: SSH
 - Current engineering access paths: WLAN or USB-LAN
-- Cluster target: MQB Virtual Cockpit / MOST video path
+- Cluster target: 10.x-inch MQB Virtual Cockpit / AID family (**AID10-class** project shorthand) / MOST video path
+- Larger/older 12.3-inch AID family: **not tested; separate compatibility target**
 
 Other Škoda, Volkswagen, SEAT and CUPRA MHI2 variants are intentionally in scope, but should not be assumed compatible until their binaries, Java stack, display routing and vehicle behavior are compared.
 
