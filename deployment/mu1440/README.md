@@ -34,10 +34,9 @@ This writes the deployment directly into the SD-card root:
 There is deliberately no `esd/` or `MHI2AltScreen/` wrapper directory.
 
 The prepared payload uses the exact 2026-09-27 vehicle-tested GEN2 and direct-ts-remux binaries plus
-the byte-reproduced **vehicle-tested run51** isoTX2 gate.
+the byte-reproduced **vehicle-tested** isoTX2 gate.
 
-The project does **not** redistribute the current NavIgnore JAR because it contains modified
-OEM-derived classes. If a developer already has the exact compatible JAR, it may be placed at:
+The prepared package includes the exact vehicle-tested NavIgnore payload:
 
 ```text
 payload/MIBR-NavIgnore.jar
@@ -49,8 +48,8 @@ Expected SHA-256:
 b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34
 ```
 
-NavIgnore is required for the vehicle-proven path. Installation continues only when the exact JAR is
-already active on the target or the exact replacement is present in `payload/`.
+Its upstream/provenance record and license are documented in `THIRD_PARTY/NavIgnore/`.
+No external Java payload is required for the validated MU1440/AID10 test path.
 
 ## Compatibility helpers
 
