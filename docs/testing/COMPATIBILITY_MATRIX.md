@@ -128,8 +128,8 @@ This is the short operational view. See the [full cluster/display transport know
 | Waze end-to-end | PASS in tested sequence | rich lower trip-summary UI exposed a SafeArea issue |
 | `suggestUI` lifecycle interpretation | STRONG RESEARCH EVIDENCE | exact iOS 27.2 + vehicle tracing |
 | navigation composition query controls | PASS / VEHICLE-OBSERVED | ETA/compass/maneuver layout alter real provider composition |
-| Direct 1280x480 geometry probe | PREPARED / NOT YET VEHICLE-VALIDATED | direct path can A/B the OEM 1010x376 map plane against native-panel-class 1280x480 without an image scaler/re-encoder |
-| SafeArea configuration | BUILD-CONFIRMED / NOT YET VEHICLE-VALIDATED | finalize only after the outer 1010x376 vs 1280x480 geometry gate |
+| Direct 1280x480 geometry probe | OPTIONAL RESEARCH / NOT A SUPPORT GATE | physical-panel-class probe remains possible, but 1010x376 is the canonical reference coded-frame/map surface |
+| SafeArea configuration | BUILD-CONFIRMED / CURRENT VEHICLE WORK | calibrate on the fixed 1010x376 reference canvas; no longer blocked by a 1280x480 probe |
 | dynamic ViewArea | RESEARCH / NOT RELEASED | in-session update mechanism identified; runtime preset switching planned |
 | navigation arrows / RGI | FUTURE/SEPARATE | not required for map-video proof |
 | SD-card installer | INTENTIONALLY NOT PROVIDED | SSH/developer phase |
