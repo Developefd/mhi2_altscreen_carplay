@@ -33,10 +33,8 @@ mibr_hash_file(){
   echo "$1"
 }
 
-mibr_e2p_ascii(){
-  ADDR=$1
-  LEN=$2
-  on -f rcc /net/rcc/usr/apps/modifyE2P r "$ADDR" "$LEN" 2>/dev/null | awk '
+mibr_hex_ascii(){
+  awk '
     function hv(c, p) {
       p=index("0123456789abcdef",tolower(c))
       return p ? p-1 : -1
@@ -60,6 +58,12 @@ mibr_e2p_ascii(){
       gsub(/[^A-Za-z0-9_-]/,"",out)
       if (length(out)) print out
     }'
+}
+
+mibr_e2p_ascii(){
+  ADDR=$1
+  LEN=$2
+  on -f rcc /net/rcc/usr/apps/modifyE2P r "$ADDR" "$LEN" 2>/dev/null | mibr_hex_ascii
 }
 
 mibr_prepare_session(){
