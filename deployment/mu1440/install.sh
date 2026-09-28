@@ -115,6 +115,7 @@ preflight(){
   media_rw || fail "deployment_media_not_writable=$MEDIA_ROOT"
   echo "PASS deployment_media_rw=$MEDIA_ROOT"
   [ -r /mnt/app/eso/lib/libairplay.so ] || fail "not_mmx_target"
+  [ -r "$LSD" ] || fail "missing_lsd_startup=$LSD"
   AIR=$(hashf /mnt/app/eso/lib/libairplay.so) || fail "libairplay_hash_failed"
   [ "$AIR" = "$EXPECTED_AIRPLAY" ] || fail "unsupported_libairplay=$AIR"
   echo "PASS libairplay=$AIR"
@@ -144,19 +145,26 @@ preflight(){
   MIBR_GATE_LIB="$PAYLOAD/libmibr_isotx2_gate.so" MIBR_SHA256="$SHA" \
     "$RUNTIME/isotx2-gate/install_preload.sh" --check || fail "gate_preflight_rc_$?"
 
-  if [ -r "$PAYLOAD/MIBR-NavIgnore.jar" ]; then
-    N=$(hashf "$PAYLOAD/MIBR-NavIgnore.jar") || fail "navignore_hash_failed"
-    [ "$N" = "$EXPECTED_NAVIGNORE" ] || fail "navignore_hash_mismatch=$N"
-    echo "INFO navignore_payload=valid"
-  elif grep -Fq 'MIBR-NavIgnore.jar' "$LSD" 2>/dev/null; then
-    NAVJAR=/mnt/app/eso/hmi/lsd/jars/MIBR-NavIgnore.jar
-    [ -r "$NAVJAR" ] || fail "navignore_bootclasspath_without_jar"
-    N=$(hashf "$NAVJAR") || fail "installed_navignore_hash_failed"
-    [ "$N" = "$EXPECTED_NAVIGNORE" ] || fail "installed_navignore_hash_mismatch=$N"
-    echo "INFO navignore=already_installed hash=$N"
-  else
-    fail "navignore_required expected=$EXPECTED_NAVIGNORE"
-  fi
+  NAVREFS=$(awk 'index($0,"MIBR-NavIgnore.jar"){n++} END{print n+0}' "$LSD" 2>/dev/null)
+  case "$NAVREFS" in
+    0)
+      [ -r "$PAYLOAD/MIBR-NavIgnore.jar" ] || fail "navignore_required expected=$EXPECTED_NAVIGNORE"
+      N=$(hashf "$PAYLOAD/MIBR-NavIgnore.jar") || fail "navignore_hash_failed"
+      [ "$N" = "$EXPECTED_NAVIGNORE" ] || fail "navignore_hash_mismatch=$N"
+      grep -q '^\$J9' "$LSD" 2>/dev/null || fail "navignore_lsd_insertion_point_missing"
+      echo "INFO navignore_payload=valid insertion_point=PASS"
+      ;;
+    1)
+      NAVJAR=/mnt/app/eso/hmi/lsd/jars/MIBR-NavIgnore.jar
+      [ -r "$NAVJAR" ] || fail "navignore_bootclasspath_without_jar"
+      N=$(hashf "$NAVJAR") || fail "installed_navignore_hash_failed"
+      [ "$N" = "$EXPECTED_NAVIGNORE" ] || fail "installed_navignore_hash_mismatch=$N"
+      echo "INFO navignore=already_installed hash=$N"
+      ;;
+    *)
+      fail "navignore_duplicate_bootclasspath_refs=$NAVREFS"
+      ;;
+  esac
 
   echo "PREFLIGHT=PASS"
 }
