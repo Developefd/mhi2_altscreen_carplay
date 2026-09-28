@@ -26,6 +26,7 @@ This writes the deployment directly into the SD-card root:
   install.sh
   uninstall.sh
   status.sh
+  compatibility-report.sh
   PAYLOAD.sha256
   payload/
   runtime/
@@ -64,6 +65,34 @@ The historical M.I.B. `sed` dependency is intentionally avoided in this deployme
 
 The installer uses the bundled helpers by default. An experienced developer may override `sha256sum` with `MIBR_SHA256`, but
 only after independently verifying the replacement binary.
+
+## Read-only compatibility report
+
+For an unknown Audi / VW / SEAT / Škoda MHI2 target, **do not start with the installer**. Run:
+
+```sh
+./compatibility-report.sh
+```
+
+This is intentionally read-only with respect to the vehicle filesystems. It only remounts the
+deployment SD/USB medium writable so it can create a report directory. It does not install hooks,
+patch Java, remount `/mnt/app` or `/mnt/system` writable, or require the MU1440 hashes to match.
+
+The report contains the normal `vehicle-summary.txt` plus:
+
+```text
+compatibility/
+  component-hashes.txt
+  runtime-observation.txt
+  README.txt
+  stock-configs/
+    displaymanager.json
+    dio_manager.json
+    smartphone_integrator.json
+```
+
+This is the standardized equivalent of the stock-config bundle that was useful for the first Audi
+MU1438 comparison. Raw stock configs should still be reviewed before posting publicly.
 
 ## On the unit
 
