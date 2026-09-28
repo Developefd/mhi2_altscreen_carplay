@@ -13,6 +13,26 @@ RUNTIME=$ROOT/runtime
 SHA=${MIBR_SHA256:-$PAYLOAD/sha256sum}
 TEE=${MIBR_TEE:-$PAYLOAD/tee}
 MEDIA_ROOT=$ROOT
+SESSION_HELPER=$RUNTIME/deployment/session.sh
+
+[ -r "$SESSION_HELPER" ] || { echo "MIBR_INSTALL=FAIL missing_session_helper=$SESSION_HELPER"; exit 20; }
+. "$SESSION_HELPER" || { echo "MIBR_INSTALL=FAIL cannot_source_session_helper"; exit 20; }
+
+if [ "${MIBR_LOG_ACTIVE:-0}" != "1" ]; then
+  [ -x "$SHA" ] || { echo "MIBR_INSTALL=FAIL missing_sha256_helper=$SHA"; exit 20; }
+  [ -x "$TEE" ] || { echo "MIBR_INSTALL=FAIL missing_tee_helper=$TEE"; exit 20; }
+  mibr_prepare_session install "$MEDIA_ROOT" "$TEE" "$SHA" || {
+    echo "MIBR_INSTALL=FAIL cannot_create_sd_issue_log rc=$?"
+    exit 20
+  }
+  echo "Logging complete install session to $MIBR_LOG_FILE"
+  mibr_run_logged "$0" "$@"
+  exit $?
+fi
+
+mibr_vehicle_summary || echo "WARN vehicle_summary_failed"
+
+MEDIA_ROOT=$ROOT
 MEDIA_RW=0
 DST=/mnt/app/root/altscreen-u2
 LSD=/mnt/app/eso/hmi/lsd/lsd.sh
@@ -58,6 +78,7 @@ EXPECTED_GEN2=094e3f1abfbf949f8c11b27e048e8213e5fc71178e62efd3c56deed8ee3bf8d8
 EXPECTED_REMUX=b761a8741682e3cbc6e05f5fe1705475c34c4805d1cd1ce09333274a301e735e
 EXPECTED_GATE=05673010a88c25022145ffb4e75d3715eaf686f4127ac188e91a52f512b9d957
 EXPECTED_NAVIGNORE=b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34
+EXPECTED_LSD_JXE=a55d9cfb69c5756f8202b7f7aa4079d4d5b637ae4c2fd0fe723f1d6816cbeea8
 
 hashf(){
   set -- $("$SHA" "$1" 2>/dev/null)
