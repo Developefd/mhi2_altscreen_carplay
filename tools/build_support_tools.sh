@@ -16,3 +16,6 @@ mkdir -p "$OUTDIR"
 
 
 "$QCC"   -mfloat-abi=softfp   -O2 -g -std=gnu99 -Wall -Wextra   src/native/sha256sum-compat/sha256sum_compat.c   -o "$OUTDIR/sha256sum"
+
+
+"$QCC"   -mfloat-abi=softfp   -O2 -g -std=gnu99 -Wall -Wextra   src/native/tee-compat/tee_compat.c   -o "$OUTDIR/tee"
