@@ -208,7 +208,7 @@ find_clean_java_backup(){
 normalize_java_state(){
   JARDIR=/mnt/app/eso/hmi/lsd/jars
   NAVJAR=$JARDIR/MIBR-NavIgnore.jar
-  TMP=/tmp/lsd.sh.mibr-deploy-normalize.$
+  TMP=/tmp/lsd.sh.mibr-deploy-normalize.$$
   KEEP_NAV=0
 
   if [ -r "$NAVJAR" ]; then
