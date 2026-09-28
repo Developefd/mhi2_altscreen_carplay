@@ -78,6 +78,7 @@ EXPECTED_GEN2=094e3f1abfbf949f8c11b27e048e8213e5fc71178e62efd3c56deed8ee3bf8d8
 EXPECTED_REMUX=b761a8741682e3cbc6e05f5fe1705475c34c4805d1cd1ce09333274a301e735e
 EXPECTED_GATE=05673010a88c25022145ffb4e75d3715eaf686f4127ac188e91a52f512b9d957
 EXPECTED_NAVIGNORE=b065bab0e1c58f8439a3bdd73d2d4cb6060cbac1c943e5b425425eb453c94b34
+EXPECTED_MOST20=dbd45609fe4ba69948d39e9e649b224484f680f6aa7934b68c261a4d360ea5bb
 EXPECTED_LSD_JXE=a55d9cfb69c5756f8202b7f7aa4079d4d5b637ae4c2fd0fe723f1d6816cbeea8
 
 hashf(){
@@ -131,54 +132,49 @@ check_hash(){
 java_scan_state(){
   JARDIR=/mnt/app/eso/hmi/lsd/jars
   NAVJAR=$JARDIR/MIBR-NavIgnore.jar
+  MOSTJAR=$JARDIR/MIBR-Most20FPS.jar
   JAVA_CONFLICT=0
   JAVA_NEEDS_PAYLOAD=0
   JAVA_OLD_DYNAMIC=0
   JAVA_EXACT_NAV_ACTIVE=0
+  JAVA_EXACT_MOST20_ACTIVE=0
   JAVA_REASON=""
 
   NAVREFS=$(awk 'index($0,"MIBR-NavIgnore.jar"){n++} END{print n+0}' "$LSD" 2>/dev/null)
+  MOSTREFS=$(awk 'index($0,"MIBR-Most20FPS.jar"){n++} END{print n+0}' "$LSD" 2>/dev/null)
   FOREIGNREFS=$(awk '
-    index($0,"-Xbootclasspath/p:") && index($0,"/lsd/jars/") && !index($0,"MIBR-NavIgnore.jar") {n++}
+    index($0,"-Xbootclasspath/p:") && index($0,"/lsd/jars/") &&
+      !index($0,"MIBR-NavIgnore.jar") && !index($0,"MIBR-Most20FPS.jar") {n++}
     END{print n+0}' "$LSD" 2>/dev/null)
 
   grep -Fq 'Find and append jar files' "$LSD" 2>/dev/null && JAVA_OLD_DYNAMIC=1
 
   NAVHASH=""
-  if [ -r "$NAVJAR" ]; then
-    NAVHASH=$(hashf "$NAVJAR" 2>/dev/null)
-  fi
+  MOSTHASH=""
+  [ -r "$NAVJAR" ] && NAVHASH=$(hashf "$NAVJAR" 2>/dev/null)
+  [ -r "$MOSTJAR" ] && MOSTHASH=$(hashf "$MOSTJAR" 2>/dev/null)
 
-  if [ "$NAVREFS" -gt 1 ]; then
-    JAVA_CONFLICT=1
-    JAVA_REASON="$JAVA_REASON duplicate_navignore_ref"
-  fi
-  if [ "$FOREIGNREFS" -gt 0 ]; then
-    JAVA_CONFLICT=1
-    JAVA_REASON="$JAVA_REASON foreign_bootclasspath_ref"
-  fi
-  if [ "$JAVA_OLD_DYNAMIC" -eq 1 ]; then
-    JAVA_CONFLICT=1
-    JAVA_REASON="$JAVA_REASON old_dynamic_jar_loader"
-  fi
+  [ "$NAVREFS" -gt 1 ] && { JAVA_CONFLICT=1; JAVA_REASON="$JAVA_REASON duplicate_navignore_ref"; }
+  [ "$MOSTREFS" -gt 1 ] && { JAVA_CONFLICT=1; JAVA_REASON="$JAVA_REASON duplicate_most20_ref"; }
+  [ "$FOREIGNREFS" -gt 0 ] && { JAVA_CONFLICT=1; JAVA_REASON="$JAVA_REASON foreign_bootclasspath_ref"; }
+  [ "$JAVA_OLD_DYNAMIC" -eq 1 ] && { JAVA_CONFLICT=1; JAVA_REASON="$JAVA_REASON old_dynamic_jar_loader"; }
 
-  if [ "$NAVREFS" -eq 1 ] && [ "$NAVHASH" = "$EXPECTED_NAVIGNORE" ]; then
-    JAVA_EXACT_NAV_ACTIVE=1
-  fi
+  [ "$NAVREFS" -eq 1 ] && [ "$NAVHASH" = "$EXPECTED_NAVIGNORE" ] && JAVA_EXACT_NAV_ACTIVE=1
+  [ "$MOSTREFS" -eq 1 ] && [ "$MOSTHASH" = "$EXPECTED_MOST20" ] && JAVA_EXACT_MOST20_ACTIVE=1
 
-  if [ "$NAVREFS" -gt 0 ]; then
-    if [ "$NAVHASH" != "$EXPECTED_NAVIGNORE" ]; then
-      JAVA_CONFLICT=1
-      JAVA_NEEDS_PAYLOAD=1
-      JAVA_REASON="$JAVA_REASON navignore_hash_or_file_mismatch"
-    fi
+  if [ "$NAVREFS" -gt 0 ] && [ "$NAVHASH" != "$EXPECTED_NAVIGNORE" ]; then
+    JAVA_CONFLICT=1; JAVA_NEEDS_PAYLOAD=1; JAVA_REASON="$JAVA_REASON navignore_hash_or_file_mismatch"
   elif [ -r "$NAVJAR" ] && [ "$NAVHASH" != "$EXPECTED_NAVIGNORE" ]; then
-    JAVA_CONFLICT=1
-    JAVA_NEEDS_PAYLOAD=1
-    JAVA_REASON="$JAVA_REASON unreferenced_wrong_navignore"
+    JAVA_CONFLICT=1; JAVA_NEEDS_PAYLOAD=1; JAVA_REASON="$JAVA_REASON unreferenced_wrong_navignore"
   fi
 
-  for P in "$JARDIR/MIBR-DirectVCPolicy.jar" "$JARDIR/MIBR-Most20FPS.jar" "$JARDIR/NavActiveIgnore.jar"; do
+  if [ "$MOSTREFS" -gt 0 ] && [ "$MOSTHASH" != "$EXPECTED_MOST20" ]; then
+    JAVA_CONFLICT=1; JAVA_NEEDS_PAYLOAD=1; JAVA_REASON="$JAVA_REASON most20_hash_or_file_mismatch"
+  elif [ -r "$MOSTJAR" ] && [ "$MOSTHASH" != "$EXPECTED_MOST20" ]; then
+    JAVA_CONFLICT=1; JAVA_NEEDS_PAYLOAD=1; JAVA_REASON="$JAVA_REASON unreferenced_wrong_most20"
+  fi
+
+  for P in "$JARDIR/MIBR-DirectVCPolicy.jar" "$JARDIR/NavActiveIgnore.jar"; do
     if [ -e "$P" ]; then
       JAVA_CONFLICT=1
       JAVA_REASON="$JAVA_REASON known_patch_artifact"
@@ -186,10 +182,13 @@ java_scan_state(){
   done
 
   echo "java_navignore_refs=$NAVREFS"
+  echo "java_most20_refs=$MOSTREFS"
   echo "java_foreign_bootclasspath_refs=$FOREIGNREFS"
   echo "java_old_dynamic_loader=$JAVA_OLD_DYNAMIC"
   echo "java_navignore_hash=${NAVHASH:-ABSENT}"
+  echo "java_most20_hash=${MOSTHASH:-ABSENT}"
   echo "java_exact_nav_active=$JAVA_EXACT_NAV_ACTIVE"
+  echo "java_exact_most20_active=$JAVA_EXACT_MOST20_ACTIVE"
   if [ "$JAVA_CONFLICT" -eq 1 ]; then
     echo "JAVA_STATE=FOREIGN reason=$JAVA_REASON"
     return 30
