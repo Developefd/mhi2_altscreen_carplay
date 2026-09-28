@@ -30,19 +30,24 @@ before entering DIRECT.
 
 This is a conservative gate based on the vehicle-tested setup.
 
-## Why the JAR is not published here
+## Published payload and provenance
 
-The historical JAR is derived from/upstream-compatible with patched OEM Java classes. The public
-repository does not claim those OEM-derived class files as project-owned GPL source.
+The current developer release **does include** the exact vehicle-tested `MIBR-NavIgnore.jar`.
 
-We therefore publish:
+It is a deterministic NavIgnore-only split from the pinned public upstream
+`jilleb/mib2-toolbox` artifact. The split removes the MOST20FPS
+`ChangeDataRateSequence.class` and retains the remaining NavIgnore entries without recompiling or
+rewriting their bytecode.
 
-- the exact functional role;
-- the runtime prerequisite;
-- the surrounding source/state machine;
-- the resulting vehicle behavior;
+The repository publishes:
 
-but do not relicense or mirror OEM-derived bytecode merely for convenience.
+- the exact JAR used by the validated vehicle path;
+- its SHA-256;
+- the deterministic splitter;
+- the pinned upstream commit/path/hash;
+- the upstream MIT license copy.
+
+See `THIRD_PARTY/NavIgnore/README.md`.
 
 ## Architectural rule
 
