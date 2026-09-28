@@ -71,6 +71,28 @@ If an older or foreign bootclasspath/JAR state is detected:
    - `Q` — abort without changing target-side Java state;
 4. the full preflight runs again after normalization before the normal deployment proceeds.
 
+## Unknown target / compatibility contribution
+
+For a firmware, brand or cluster that is not yet validated, start with:
+
+```sh
+./compatibility-report.sh
+```
+
+Do **not** start with an installation attempt just to discover compatibility.
+
+The collector is read-only with respect to the vehicle filesystems. It creates a timestamped SD
+session containing:
+
+- the normal sanitized `vehicle-summary.txt`;
+- `compatibility/component-hashes.txt`;
+- `compatibility/runtime-observation.txt`;
+- read-only snapshots of `displaymanager.json`, `dio_manager.json`, and
+  `smartphone_integrator.json` when present.
+
+This standardizes the evidence needed to compare an Audi/VW/SEAT/CUPRA target with the MU1440
+reference before deciding whether any hook/installer path is appropriate.
+
 ## SD layout
 
 Extract the ZIP contents **directly to the SD-card root**.
@@ -97,7 +119,7 @@ Then reboot and run:
 
 ## Logs for issues
 
-`install.sh`, `status.sh` and `uninstall.sh` create timestamped sessions under
+`compatibility-report.sh`, `install.sh`, `status.sh` and `uninstall.sh` create timestamped sessions under
 `mhi2-altscreen-logs/` on the SD card.
 
 For a public issue, attach:
