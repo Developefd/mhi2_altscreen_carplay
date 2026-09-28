@@ -112,7 +112,8 @@ jobs:
           ! grep -R -n -F 'M.I.B.-style' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
 
           # Fail before persistent mutation if the exact mandatory runtime command set is absent.
-          grep -Fq 'require_cmds mount cp mv chmod sync mkdir rm touch sleep grep awk sed wc cat pidin on slay /bin/sh /bin/ksh /eso/bin/apps/dmdt' deployment/mu1440/install.sh
+          grep -Fq 'require_cmds mount cp mv chmod sync mkdir rm touch sleep grep awk wc cat pidin on slay /bin/sh /bin/ksh /eso/bin/apps/dmdt' deployment/mu1440/install.sh
+          ! grep -R -n -E '(^|[^A-Za-z0-9_])sed([[:space:]]|$)' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate runtime/navigation
 
           # Auto-Direct must be prepared, not started, before the reboot that loads
           # the DisplayManager gate.
