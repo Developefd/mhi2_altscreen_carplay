@@ -18,6 +18,7 @@
 #include <string.h>
 
 #define BUF_SIZE 4096
+#define MAX_OUT 64
 
 static int copy_stream(FILE **outs, int count)
 {
@@ -28,7 +29,7 @@ static int copy_stream(FILE **outs, int count)
     while ((n = fread(buf, 1, sizeof(buf), stdin)) > 0) {
         if (fwrite(buf, 1, n, stdout) != n) {
             fprintf(stderr, "tee: stdout: write error\n");
-            open_rc = 1;
+            rc = 1;
         }
         for (i = 0; i < count; ++i) {
             if (outs[i] && fwrite(buf, 1, n, outs[i]) != n) {
@@ -52,10 +53,12 @@ static int copy_stream(FILE **outs, int count)
 
 int main(int argc, char **argv)
 {
-    FILE *outs[64];
+    FILE *outs[MAX_OUT];
     int append = 0, ignore_int = 0;
     int first = 1, count = 0, i, rc = 0, open_rc = 0;
     const char *mode;
+
+    for (i = 0; i < MAX_OUT; ++i) outs[i] = NULL;
 
     while (first < argc && argv[first][0] == '-' && argv[first][1] != '\0') {
         const char *p = argv[first] + 1;
@@ -80,20 +83,21 @@ int main(int argc, char **argv)
 
     mode = append ? "ab" : "wb";
     for (i = first; i < argc; ++i) {
-        if (count >= (int)(sizeof(outs) / sizeof(outs[0]))) {
+        if (count >= MAX_OUT) {
             fprintf(stderr, "tee: too many output files\n");
             return 2;
         }
         outs[count] = fopen(argv[i], mode);
         if (!outs[count]) {
             fprintf(stderr, "tee: %s: %s\n", argv[i], strerror(errno));
-            outs[count] = NULL;
-            rc = 1;
+            open_rc = 1;
         }
         ++count;
     }
 
-    rc = copy_stream(outs, count);\n    if (open_rc) rc = 1;
+    rc = copy_stream(outs, count);
+    if (open_rc) rc = 1;
+
     for (i = 0; i < count; ++i)
         if (outs[i] && fclose(outs[i]) != 0) rc = 1;
 
