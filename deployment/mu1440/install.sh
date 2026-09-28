@@ -11,9 +11,27 @@ ROOT=$(cd "$ROOT" 2>/dev/null && pwd) || exit 2
 PAYLOAD=$ROOT/payload
 RUNTIME=$ROOT/runtime
 SHA=${MIBR_SHA256:-$PAYLOAD/sha256sum}
+TEE=${MIBR_TEE:-$PAYLOAD/tee}
+MEDIA_ROOT=$ROOT
+MEDIA_RW=0
 DST=/mnt/app/root/altscreen-u2
 LSD=/mnt/app/eso/hmi/lsd/lsd.sh
 APP_RW=0
+
+media_rw(){
+  [ "$MEDIA_RW" -eq 1 ] && return 0
+  case "$MEDIA_ROOT" in
+    /net/mmx/fs/*)
+      mount -uw "$MEDIA_ROOT" 2>/dev/null || return 1
+      ;;
+  esac
+  TEST="$MEDIA_ROOT/.mibr-altscreen-write-test.$"
+  touch "$TEST" 2>/dev/null || return 1
+  [ -f "$TEST" ] || return 1
+  rm -f "$TEST" 2>/dev/null || return 1
+  MEDIA_RW=1
+  return 0
+}
 
 app_rw(){
   [ "$APP_RW" -eq 1 ] && return 0
@@ -92,7 +110,10 @@ check_hash(){
 preflight(){
   echo "=== MHI2 AltScreen MU1440 developer install preflight ==="
   [ -x "$SHA" ] || fail "missing_sha256_helper=$SHA"
+  [ -x "$TEE" ] || fail "missing_tee_helper=$TEE"
   require_cmds mount cp mv chmod sync mkdir rm touch sleep grep awk wc cat pidin on slay /bin/sh /bin/ksh /eso/bin/apps/dmdt
+  media_rw || fail "deployment_media_not_writable=$MEDIA_ROOT"
+  echo "PASS deployment_media_rw=$MEDIA_ROOT"
   [ -r /mnt/app/eso/lib/libairplay.so ] || fail "not_mmx_target"
   AIR=$(hashf /mnt/app/eso/lib/libairplay.so) || fail "libairplay_hash_failed"
   [ "$AIR" = "$EXPECTED_AIRPLAY" ] || fail "unsupported_libairplay=$AIR"
@@ -153,6 +174,10 @@ stage_runtime(){
   cp "$SHA" "$DST/bin/sha256sum.new" || fail "copy_sha256"
   chmod 755 "$DST/bin/sha256sum.new" 2>/dev/null || true
   mv "$DST/bin/sha256sum.new" "$DST/bin/sha256sum" || fail "install_sha256"
+
+  cp "$TEE" "$DST/bin/tee.new" || fail "copy_tee"
+  chmod 755 "$DST/bin/tee.new" 2>/dev/null || true
+  mv "$DST/bin/tee.new" "$DST/bin/tee" || fail "install_tee"
 
   for F in common.sh patch_carplay.sh restore_stock.sh verify_carplay111_boot.sh direct_ts_auto_enable.sh direct_ts_auto_disable.sh direct_ts_auto_start.sh direct_ts_auto_stop.sh direct_ts_auto_status.sh direct_ts_auto_supervisor.sh direct_ts_auto_watchdog.sh writev_gate.sh; do
     [ -r "$RUNTIME/auto-direct/$F" ] || fail "missing_runtime_$F"
