@@ -38,9 +38,9 @@ Do not assume it exists.
 The guarded public developer package carries its own reproducibly built QNX ARMv7
 `payload/sha256sum` and uses that exact helper by default.
 
-### `tr`
+### `sed` / `tr`
 
-Do not make it a vehicle runtime dependency. Earlier live-monitor work had to remove it.
+Do not make either a vehicle runtime dependency. `sed` is missing on some older firmware trains, so the stable deployment removed its only required use in favor of stock `awk`. Earlier live-monitor work also had to remove `tr`.
 
 ### GNU `date` behavior
 
@@ -113,8 +113,7 @@ The prepared SD package is now independent of an existing M.I.B. card layout:
 - no `/apps/sbin/sha256sum` fallback;
 - no firmware/M.I.B. `tee` dependency; the package carries its own QNX ARMv7 `payload/tee`.
 
-The only project-supplied command-line compatibility binary currently required by the deployment is
-`payload/sha256sum`. The native project payload also contains the feature binaries
+The project-supplied command-line compatibility binaries required by the deployment are `payload/sha256sum` and `payload/tee`. The native project payload also contains the feature binaries
 `libaltscreen111.so`, `direct-ts-remux` and `libmibr_isotx2_gate.so`, but these are functional
 components rather than replacements for missing shell utilities.
 
@@ -134,7 +133,7 @@ Before changing persistent files, `deployment/mu1440/install.sh --check` validat
 - exact published GEN2/remux/gate hashes;
 - required runtime files;
 - the exact command set used by the current install/runtime;
-- absence of known conflicting DirectVC / Most20 / legacy combined Java overrides;
+- inventory/archive of conflicting or foreign Java bootclasspath state before any replacement;
 - DisplayManager gate patchability;
 - exact NavIgnore presence/hash, either from `payload/` or an already-installed target copy.
 
@@ -145,7 +144,8 @@ Unknown state is fail-closed.
 A runtime/deployment shell change should not introduce:
 
 - external `printf`;
-- bare dependency on firmware `sha256sum`;\n- a dependency on M.I.B. `config/BASICS`, `apps/mounts` or `/apps/sbin`;
+- bare dependency on firmware `sha256sum` or `tee`;
+- a dependency on M.I.B. `config/BASICS`, `apps/mounts` or `/apps/sbin`;
 - an interactive multi-line patch procedure as the normal install path;
 - a persistent mutation before tool/hash/target preflight;
 - an assumption that a readable SD or persistent filesystem is writable.
