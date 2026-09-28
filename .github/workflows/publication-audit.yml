@@ -37,6 +37,7 @@ jobs:
           bash -n deployment/mu1440/status.sh
           bash -n runtime/diagnostics/keypanel_trace_discovery.sh
           bash -n runtime/auto-direct/common.sh
+          bash -n runtime/deployment/session.sh
           bash -n runtime/isotx2-gate/install_preload.sh
           bash -n runtime/isotx2-gate/restore_preload.sh
           bash -n runtime/isotx2-gate/verify_preload_boot.sh
@@ -60,6 +61,7 @@ jobs:
             runtime/auto-direct/direct_ts_auto_watchdog.sh \
             runtime/auto-direct/writev_gate.sh \
             runtime/auto-direct/altscreen111.conf \
+            runtime/deployment/session.sh \
             runtime/isotx2-gate/install_preload.sh \
             runtime/isotx2-gate/restore_preload.sh \
             runtime/diagnostics/gen2_keyframes.sh \
@@ -82,6 +84,7 @@ jobs:
           grep -Fq 'EXPECTED_GEN2=094e3f1abfbf949f8c11b27e048e8213e5fc71178e62efd3c56deed8ee3bf8d8' deployment/mu1440/install.sh
           grep -Fq 'EXPECTED_REMUX=b761a8741682e3cbc6e05f5fe1705475c34c4805d1cd1ce09333274a301e735e' deployment/mu1440/install.sh
           grep -Fq 'EXPECTED_GATE=05673010a88c25022145ffb4e75d3715eaf686f4127ac188e91a52f512b9d957' deployment/mu1440/install.sh
+          grep -Fq 'EXPECTED_LSD_JXE=a55d9cfb69c5756f8202b7f7aa4079d4d5b637ae4c2fd0fe723f1d6816cbeea8' deployment/mu1440/install.sh
           grep -Fq 'profile map-rich' deployment/mu1440/install.sh
 
           ! grep -Fq 'printf ' deployment/mu1440/install.sh
@@ -121,14 +124,70 @@ jobs:
           grep -Fq 'navignore_state=PASS_EXACT' deployment/mu1440/status.sh
           grep -Fq 'navignore_bootclasspath_refs=' deployment/mu1440/status.sh
           grep -Fq 'vehicle-tested-run51/libmibr_isotx2_gate.so' tools/prepare_mu1440_sd.sh
+          grep -Fq 'runtime/deployment/session.sh' tools/prepare_mu1440_sd.sh
+          grep -Fq 'mibr_run_logged "$0" "$@"' deployment/mu1440/install.sh
+          grep -Fq 'mibr_run_logged "$0" "$@"' deployment/mu1440/status.sh
+          grep -Fq 'mibr_run_logged "$0" "$@"' deployment/mu1440/uninstall.sh
+          grep -Fq 'mibr_vehicle_summary' deployment/mu1440/install.sh
+          grep -Fq 'mibr_archive_java_state preflight-foreign' deployment/mu1440/install.sh
+          grep -Fq 'MIBR_FOREIGN_JAVA_ACTION' deployment/mu1440/install.sh
+          grep -Fq 'JAVA_USER_DECISION=ARCHIVE_AND_CONTINUE' deployment/mu1440/install.sh
+          grep -Fq 'JAVA_USER_DECISION=ABORT' deployment/mu1440/install.sh
+          grep -Fq 'Exact replacement NavIgnore payload verified before Java normalization.' deployment/mu1440/install.sh
+          grep -Fq 'TMP=/tmp/lsd.sh.mibr-deploy-normalize.$' deployment/mu1440/install.sh
+          grep -Fq 'VIN, FAZIT and device serial numbers are intentionally not collected.' runtime/deployment/session.sh
           ! grep -R -n -F '/apps/sbin' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
           ! grep -R -n -F 'config/BASICS' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
           ! grep -R -n -F 'apps/mounts' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
           ! grep -R -n -F 'M.I.B.-style' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate
 
+          # Reject accidental literal escape/newline or PID-temp regressions introduced by scripted edits.
+          python3 - <<'PY'
+          from pathlib import Path
+          files = [
+              Path("deployment/mu1440/install.sh"),
+              Path("deployment/mu1440/uninstall.sh"),
+              Path("deployment/mu1440/status.sh"),
+              Path("runtime/auto-direct/common.sh"),
+              Path("runtime/deployment/session.sh"),
+              Path("tools/prepare_mu1440_sd.sh"),
+          ]
+          for p in files:
+              s = p.read_text()
+              assert '\\n' not in s, f"literal backslash-n in {p}"
+          install = Path("deployment/mu1440/install.sh").read_text()
+          common = Path("runtime/auto-direct/common.sh").read_text()
+          assert 'mibr-deploy-normalize.$"' not in install
+          assert '.mibr-altscreen-write-test.$"' not in install
+          assert '.write-test-$"' not in common
+          assert 'echo "run-$"' not in common
+          PY
+
           # Fail before persistent mutation if the exact mandatory runtime command set is absent.
           grep -Fq 'require_cmds mount cp mv chmod sync mkdir rm touch sleep grep awk wc cat pidin on slay /bin/sh /bin/ksh /eso/bin/apps/dmdt' deployment/mu1440/install.sh
           ! grep -R -n -E '(^|[^A-Za-z0-9_])sed([[:space:]]|$)' deployment/mu1440 runtime/auto-direct runtime/isotx2-gate runtime/navigation
+
+          # The EEPROM hex decoder used only for issue diagnostics must be deterministic.
+          bash -c '
+            . runtime/deployment/session.sh
+            test "$(echo "0x000003A0 4D 48 49 32 5F 45 52 5F 53 4B 47 31 33 5F 50 34 35 32 36 00" | mibr_hex_ascii)" = "MHI2_ER_SKG13_P4526"
+            test "$(echo "0x000003B9 31 34 34 30" | mibr_hex_ascii)" = "1440"
+          '
+
+          # Java conflict handling must archive first and require a reachable exact
+          # NavIgnore before any target-side normalization.
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("deployment/mu1440/install.sh").read_text()
+          archive=s.index("mibr_archive_java_state preflight-foreign")
+          attention=s.index("PREFLIGHT=ATTENTION java_state_requires_user_decision")
+          guard=s.index("Cannot reach the validated NavIgnore-only state")
+          normalize=s.index("normalize_java_state", s.index("handle_java_conflict(){"))
+          stage=s.index("stage_runtime", s.index("apply(){"))
+          assert archive < attention
+          assert guard < normalize
+          assert normalize < stage
+          PY
 
           # Auto-Direct must be prepared, not started, before the reboot that loads
           # the DisplayManager gate.
@@ -172,6 +231,7 @@ jobs:
           test -x "$PKG/payload/libmibr_isotx2_gate.so"
           test -x "$PKG/payload/sha256sum"
           test -x "$PKG/payload/tee"
+          test -x "$PKG/runtime/deployment/session.sh"
           grep -Fq 'payload/tee' "$PKG/PAYLOAD.sha256"
           test -f "$PKG/PAYLOAD.sha256"
 
