@@ -11,7 +11,7 @@ fi
 
 GEN2="$ROOT/artifacts/mu1440/altscreen111/vehicle-tested-2026-09-27/libaltscreen111.so"
 REMUX="$ROOT/artifacts/mu1440/direct-ts-remux/vehicle-tested-2026-09-27/direct-ts-remux"
-GATE="$ROOT/artifacts/mu1440/isotx2-gate/vehicle-tested-run51/libmibr_isotx2_gate.so"
+GATE="$ROOT/artifacts/mu1440/isotx2-gate/vehicle-tested-2026-09-27/libmibr_isotx2_gate.so"
 SHAHELP="$ROOT/artifacts/mu1440/sha256sum-compat/build-confirmed-current/sha256sum"
 TEEHELP="$ROOT/artifacts/mu1440/tee-compat/build-confirmed-current/tee"
 NAVIGNORE="$ROOT/artifacts/mu1440/navignore/vehicle-tested-2026-09-27/MIBR-NavIgnore.jar"
