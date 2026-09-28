@@ -307,6 +307,7 @@ static const char *g2_diag_keyframe_marker = "/tmp/mibr-alt111-keyframe-only";
 static const char *g2_resync_enable_marker = "/tmp/mibr-alt111-resync.enabled";
 static const char *g2_resync_arm_marker = "/tmp/mibr-alt111-resync-arm";
 static const char *g2_d2_enable_marker = "/tmp/mibr-alt111-keyframe-policy.enabled";
+static const char *g2_d2_persist_marker = "/mnt/app/root/mibr-alt111-keyframe-policy.enabled";
 
 #define G2_D2_EVENT_DELAY_MS 250u
 #define G2_D2_MIN_GAP_MS 1000u
@@ -366,6 +367,12 @@ static uint64_t monotonic_ms(void)
     return (uint64_t)ts.tv_sec * 1000u + (uint64_t)(ts.tv_nsec / 1000000L);
 }
 
+static unsigned gen2_d2_enabled(void)
+{
+    return (access(g2_d2_enable_marker,F_OK)==0 ||
+            access(g2_d2_persist_marker,F_OK)==0) ? 1u : 0u;
+}
+
 static void gen2_d2_schedule(unsigned source, const char *label)
 {
     uint64_t now = monotonic_ms();
@@ -373,7 +380,7 @@ static void gen2_d2_schedule(unsigned source, const char *label)
     uint64_t last_request = 0;
     unsigned active = 0;
     unsigned pending = 0;
-    int enabled = access(g2_d2_enable_marker,F_OK)==0;
+    int enabled = gen2_d2_enabled() ? 1 : 0;
 
     if(!enabled) return;
 
@@ -2362,7 +2369,7 @@ static void gen2_publish_status(void)
     last_dispatched = g2_last_dispatched_request;
     last_completed = g2_last_completed_request;
     last_completion_status = g2_last_completion_status;
-    d2_enabled = access(g2_d2_enable_marker,F_OK)==0 ? 1u : 0u;
+    d2_enabled = gen2_d2_enabled();
     d2_pending_sources = g2_d2_pending_sources;
     d2_pending_due_ms = g2_d2_pending_due_ms;
     d2_last_request_ms = g2_d2_last_request_ms;
@@ -2589,7 +2596,7 @@ static void gen2_resync_poll(void)
     uint64_t epoch = 0, idr_at_arm = 0, source_idrs = 0;
     uint64_t requests = 0, retries = 0, completions = 0, cancels = 0;
     unsigned manual_enabled = access(g2_resync_enable_marker,F_OK)==0 ? 1u : 0u;
-    unsigned d2_enabled = access(g2_d2_enable_marker,F_OK)==0 ? 1u : 0u;
+    unsigned d2_enabled = gen2_d2_enabled();
     unsigned enabled = (manual_enabled || d2_enabled) ? 1u : 0u;
     unsigned arm = access(g2_resync_arm_marker,F_OK)==0 ? 1u : 0u;
     unsigned before_enabled, before_state, before_cancel;
@@ -3495,9 +3502,9 @@ static void altscreen111_init(void)
     logf_u2("GEN2 candidate active: 111=%dx%d@%d physical=%dx%d altPort=%d tee=%d capture=%d URL=%s uuid=%s viewAreas=%d autoShow=%d bit26Mode=%d",
             g_width,g_height,g_fps,g_width_mm,g_height_mm,g_alt_port,g_tee_port,g_capture_port,active_url,g_alt_uuid,
             g_viewareas,g_auto_show,airplay_bit26_mode());
-    logf_u2("GEN2 Candidate-D manual=%s D2_keyframes=%s eventDelayMs=%u watchdogMs=%u minGapMs=%u marker=%s",
+    logf_u2("GEN2 Candidate-D manual=%s D2_keyframes=%s eventDelayMs=%u watchdogMs=%u minGapMs=%u sessionMarker=%s persistentMarker=%s",
             access(g2_resync_enable_marker,F_OK)==0 ? "enabled" : "disabled",
-            access(g2_d2_enable_marker,F_OK)==0 ? "enabled" : "disabled",
+            gen2_d2_enabled() ? "enabled" : "disabled",
             G2_D2_EVENT_DELAY_MS,G2_D2_WATCHDOG_MS,G2_D2_MIN_GAP_MS,
-            g2_d2_enable_marker);
+            g2_d2_enable_marker,g2_d2_persist_marker);
 }
