@@ -140,6 +140,38 @@ Examples:
 
 These tools do **not** by themselves supply the correct crypto material, memory map or checksum/signature logic for `EV_DashBoardVDDMQBA0`. They do, however, mean we do not need to reinvent the generic FRF/ODX container layer when a legitimate FPK flash package is available.
 
+## Exact Octavia 5E hardware-access lead
+
+A public programmer/repair thread names the exact Škoda cluster `5E0920790A` and reports the MCU as:
+
+```text
+Renesas RH850/D1L1
+R7F701401
+```
+
+The attempted read used an RH850/V850 programming cable **soldered to the cluster PCB**. This is consistent with the absence of a user-accessible debug connector on the assembled cluster.
+
+Renesas' own documentation identifies `R7F701401` as RH850/D1L1. The D1L1 family supports debugger/programmer access, including E1-based debug and 1-wire / 2-wire UART programming modes. This should be understood as an MCU programming/debug interface, **not evidence of a stock interactive serial shell**.
+
+Commercial VAG RH850/V850 programmer documentation independently shows the same physical-access pattern for MQB clusters: the unit is opened and the programmer cable is soldered to PCB points; the current Abrites software exposes per-part-number wiring diagrams. It also warns that reading these MCUs is a difficult/risky operation.
+
+Implication for this project:
+
+- a hidden external service connector is not required;
+- PCB pads / MCU programming pins are the likely bench-access route;
+- obtaining a raw MCU read may be possible with suitable supported tooling;
+- a raw MCU dump would be far more useful for RH850 disassembly than the encrypted/compressed SWDL `Data_n.bin` blocks;
+- do not assume that programming UART == runtime console.
+
+Public evidence:
+
+- exact `5E0920790A` / `R7F701401` soldered-read report:
+  https://carmasters.org/topic/60343-multi-prog-xhorse/page/6/
+- Renesas RH850/D1L/D1M datasheet:
+  https://www.renesas.com/en/document/dst/rh850d1ld1m-data-sheet
+- Abrites RH850/V850 programmer manual:
+  https://abrites.it/manual/abrites-rh850-v850-programmer-user-manual.pdf
+
 ## Coding / adaptation can look like a firmware mod
 
 Examples from the same MQB digital-cluster ecosystem include:
