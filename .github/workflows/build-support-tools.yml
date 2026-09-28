@@ -157,6 +157,28 @@ jobs:
 
           sudo chown -R "$(id -u):$(id -g)" build/support-tools
 
+      - name: Reproduce vehicle-tested stripped isoTX2 gate
+        shell: bash
+        run: |
+          set -euxo pipefail
+          docker run --rm --platform=linux/amd64 \
+            -v "$PWD:/src" \
+            -w /src \
+            "$IMAGE" \
+            bash -c '
+              set -euxo pipefail
+              qcc -shared -fPIC -mfloat-abi=softfp -O2 -std=gnu99 -Wall -Wextra \
+                src/native/isotx2-gate/isotx2_gate.c \
+                -Wl,-soname,libmibr_isotx2_gate.so \
+                -o build/support-tools/libmibr_isotx2_gate_vehicle.so
+              arm-unknown-nto-qnx6.5.0eabi-strip -s \
+                build/support-tools/libmibr_isotx2_gate_vehicle.so
+            '
+          sudo chown "$(id -u):$(id -g)" build/support-tools/libmibr_isotx2_gate_vehicle.so
+          ACTUAL="$(sha256sum build/support-tools/libmibr_isotx2_gate_vehicle.so | awk '{print $1}')"
+          echo "vehicle_gate_sha256=$ACTUAL"
+          test "$ACTUAL" = "05673010a88c25022145ffb4e75d3715eaf686f4127ac188e91a52f512b9d957"
+
       - name: Validate ELF, symbols and strict MOST contract
         shell: bash
         run: |
@@ -230,6 +252,23 @@ jobs:
 
           See `docs/architecture/DIRECT_VC_VIDEO_PATH.md` and `runtime/isotx2-gate/`.
           EOF
+          VEHICLEDEST=artifacts/mu1440/isotx2-gate/vehicle-tested-run51
+          mkdir -p "$VEHICLEDEST"
+          cp build/support-tools/libmibr_isotx2_gate_vehicle.so "$VEHICLEDEST/libmibr_isotx2_gate.so"
+          sha256sum "$VEHICLEDEST/libmibr_isotx2_gate.so" | sed 's#  .*/#  #' > "$VEHICLEDEST/libmibr_isotx2_gate.so.sha256"
+          cat > "$VEHICLEDEST/README.md" <<'EOF'
+          # Vehicle-tested MU1440 isoTX2 gate — run51
+
+          Exact stripped QNX ARMv7 build identity recovered from the archived vehicle-test package
+          and reproduced from the public source/toolchain.
+
+          SHA-256:
+
+          `05673010a88c25022145ffb4e75d3715eaf686f4127ac188e91a52f512b9d957`
+
+          This is the gate binary identity used for the vehicle-proven run51/no-open-churn path.
+          EOF
+
           SHADEST=artifacts/mu1440/sha256sum-compat/build-confirmed-current
           mkdir -p "$SHADEST"
           cp build/support-tools/sha256sum "$SHADEST/sha256sum"
@@ -261,7 +300,7 @@ jobs:
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add "$DEST" "$SHADEST" "$TEEDEST"
+          git add "$DEST" "$VEHICLEDEST" "$SHADEST" "$TEEDEST"
           if git diff --cached --quiet; then
             echo "Gate artifact unchanged."
             exit 0
