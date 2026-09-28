@@ -21,9 +21,20 @@ Wanted:
 - Škoda MHI2 testers on other firmware trains;
 - SEAT/CUPRA MHI2 testers;
 - Volkswagen MHI2 testers;
+- same-family AID10-class testers across Škoda / Volkswagen / SEAT / CUPRA;
+- larger/older 12.3-inch AID testers as a deliberately separate hardware target;
 - different Virtual Cockpit/AID revisions.
 
 SSH access is currently expected via WLAN or USB-LAN.
+
+Later compatibility work must identify the cluster independently of the MHI2 firmware. TODO:
+
+- collect cluster part number / HW / SW identity;
+- determine which read-only target-side or diagnostic signal reliably distinguishes AID10-class from 12.3-inch AID families;
+- correlate that identity with native resolution, MOST/DCIVIDEO routing and ViewArea/SafeArea behavior;
+- turn the result into a non-destructive preflight report before broadening installer support.
+
+This is **not** a blocker for the current MU1440/AID10-class vehicle work.
 
 ## P1 — ViewArea / SafeArea / VC layout mapping
 
