@@ -258,6 +258,33 @@ jobs:
             done < <(find . -type f -name '*.sh' -print | sort)
           )
 
+          # The vehicle-test ZIP is self-contained: every project-supplied payload
+          # referenced by shipped shell code must exist, and the payload set is closed.
+          PKG="$PKG" python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          pkg=Path(os.environ["PKG"])
+          expected={
+              "libaltscreen111.so",
+              "direct-ts-remux",
+              "libmibr_isotx2_gate.so",
+              "sha256sum",
+              "tee",
+              "MIBR-NavIgnore.jar",
+          }
+          actual={p.name for p in (pkg/"payload").iterdir() if p.is_file()}
+          assert actual == expected, (actual, expected)
+          manifest=(pkg/"PAYLOAD.sha256").read_text()
+          for name in expected:
+              assert f"payload/{name}" in manifest, name
+          referenced=set()
+          for p in [pkg/"install.sh", pkg/"status.sh", pkg/"uninstall.sh", *pkg.glob("runtime/**/*.sh")]:
+              s=p.read_text()
+              referenced.update(re.findall(r'(?:\$PAYLOAD/|\.\./\.\./payload/)([A-Za-z0-9_.-]+)', s))
+          missing=referenced-actual
+          assert not missing, f"referenced payload missing from package: {sorted(missing)}"
+          PY
+
           cat > "$RUNNER_TEMP/keypanel-sample.log" <<'EOF'
           j9/hmi: HK Received: KBD[4] KEY[50] KST[1]
           j9/hmi: HK Received: KBD[4] KEY[50] KST[0]
