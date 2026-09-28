@@ -13,6 +13,27 @@ RUNTIME=$ROOT/runtime
 SHA=${MIBR_SHA256:-$PAYLOAD/sha256sum}
 DST=/mnt/app/root/altscreen-u2
 LSD=/mnt/app/eso/hmi/lsd/lsd.sh
+APP_RW=0
+
+app_rw(){
+  [ "$APP_RW" -eq 1 ] && return 0
+  mount -uw /mnt/app 2>/dev/null || return 1
+  APP_RW=1
+  return 0
+}
+
+app_ro(){
+  if [ "$APP_RW" -eq 1 ]; then
+    sync 2>/dev/null || true
+    mount -ur /mnt/app 2>/dev/null || true
+    APP_RW=0
+  fi
+}
+
+cleanup(){
+  app_ro
+}
+trap cleanup 0 1 2 15
 
 EXPECTED_AIRPLAY=193a4fd9101ec2aa05e7159cfa307b96500810d379ca74a194f172adc13a46b5
 EXPECTED_GEN2=094e3f1abfbf949f8c11b27e048e8213e5fc71178e62efd3c56deed8ee3bf8d8
@@ -28,6 +49,7 @@ hashf(){
 
 fail(){
   echo "MIBR_INSTALL=FAIL $*"
+  app_ro
   exit 20
 }
 
@@ -117,7 +139,7 @@ preflight(){
 
 stage_runtime(){
   echo "=== stage internal runtime ==="
-  mount -uw /mnt/app 2>/dev/null || fail "mount_app_rw"
+  app_rw || fail "mount_app_rw"
   mkdir -p "$DST/bin" "$DST/scripts" "$DST/config" "$DST/logs" "$DST/backup" || fail "runtime_dirs"
 
   cp "$PAYLOAD/libaltscreen111.so" "$DST/bin/libaltscreen111.so.new" || fail "copy_gen2"
@@ -156,8 +178,7 @@ stage_runtime(){
   chmod 644 "$DST/config/altscreen111.conf.new" 2>/dev/null || true
   mv "$DST/config/altscreen111.conf.new" "$DST/config/altscreen111.conf" || fail "install_config"
 
-  sync
-  mount -ur /mnt/app 2>/dev/null || true
+  app_ro
   echo "STAGE_RUNTIME=PASS"
 }
 
@@ -180,7 +201,7 @@ install_optional_navignore(){
     return 0
   fi
 
-  mount -uw /mnt/app 2>/dev/null || fail "navignore_mount_app_rw"
+  app_rw || fail "navignore_mount_app_rw"
   mkdir -p "$JARDIR" || fail "navignore_jardir"
   cp "$PAYLOAD/MIBR-NavIgnore.jar" "$JAR.new" || fail "navignore_copy"
   chmod 644 "$JAR.new" 2>/dev/null || true
@@ -199,8 +220,7 @@ install_optional_navignore(){
   chmod 755 "$TMP" 2>/dev/null || true
   mv "$TMP" "$LSD" || fail "navignore_install_lsd"
   : > "$OWNED" || fail "navignore_owned_marker"
-  sync
-  mount -ur /mnt/app 2>/dev/null || true
+  app_ro
   echo "NAVIGNORE=INSTALLED"
 }
 
