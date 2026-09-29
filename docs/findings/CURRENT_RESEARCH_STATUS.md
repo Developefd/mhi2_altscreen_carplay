@@ -148,14 +148,23 @@ Examples:
 The completed corpus run passed a 74,574-file independent rehash, 12 targeted Ghidra runs with zero
 export failures, and a curated 45-file evidence hash audit.
 
-Current next corpus work is the AU37X same-family/same-MU comparison:
+AU37X P5089/MU1326 has now been processed as a standalone seventh corpus profile. P5153/MU1326
+was not found locally, so there is still no same-family P5089↔P5153 equivalence result.
 
-```text
-MHI2_ER_AU37X_P5089_MU1326
-MHI2_ER_AU37X_P5153_MU1326
-```
+P5089 adds a distinct AirPlay/native profile and Audi `fwhmi` Java ownership. Its static startup
+still shows the familiar `devp-iso-mmx-mib2 -S188 -P64 -Q18 ... -MisoTX2` low-level MOST
+contract, while `force_kombi_type=lvds` and the fitted-cluster productive route remain separate
+runtime questions.
 
-The canonical AUG22/MU1438 corpus target is `MHI2_ER_AUG22_K3346_MU1438`.
+Before another firmware family is admitted, the remaining P5089 evidence-closure items are:
+
+- independent 89,922-row disk rehash;
+- exact eight-class NavIgnore compatibility matrix;
+- explicit Audi presence/absence gate for Most20FPS / Direct-VC Java classes;
+- small native-evidence Git-blob audit;
+- supporting-native and prior-art reconciliation.
+
+The canonical AUG22/MU1438 corpus target remains `MHI2_ER_AUG22_K3346_MU1438`.
 
 See [MHI2 cross-firmware implementation profile map](../research/MHI2_FIRMWARE_PROFILE_MAP_2026-09-28.md).
 
