@@ -29,11 +29,12 @@ For the practical patch-by-patch reuse estimate, see
 
 ## Corpus baselines
 
-The completed pass covers these exact European MHI2 baselines:
+The corpus currently covers these exact European MHI2 baselines:
 
 | Short name | Exact train | Corpus role |
 | --- | --- | --- |
 | Audi MU1438 | `MHI2_ER_AUG22_K3346_MU1438` | canonical AUG22/MU1438 comparator |
+| AU37X P5089 | `MHI2_ER_AU37X_P5089_MU1326` | processed standalone Audi A3 profile; P5153 source missing |
 | SKG11 MU1433 | `MHI2_ER_SKG11_K3343_MU1433` | Škoda G11 |
 | VWG11 MU1427 | `MHI2_ER_VWG11_K3342_MU1427` | Volkswagen G11 |
 | SEG11 MU1447 | `MHI2_ER_SEG11_P4709_MU1447` | SEAT MHI2 line |
@@ -452,3 +453,42 @@ firmware/component identity
 ```
 
 See the [compatibility matrix](../testing/COMPATIBILITY_MATRIX.md) for actual project support status.
+
+
+---
+
+## AU37X P5089 extension — 2026-09-29
+
+The seventh processed corpus profile is:
+
+```text
+MHI2_ER_AU37X_P5089_MU1326
+```
+
+Key findings:
+
+- P5089 variant 50/70 have identical selected native/config/JXE content;
+- `libairplay.so` is a new executable profile;
+- fixed 16-target AirPlay comparison shows only one byte-identical target versus each previous
+  profile, although 11/16 mnemonic shapes align with the MU1440/SEG11/VWG13 family;
+- the security/session field layout is shifted relative to AUG22 MU1438;
+- P5089 JXE contains 30,553 recovered classes and follows the Audi `de.audi.tghu.fwhmi.*` line;
+- the MQB `mostkombi.streamsink`, `NavigationMapAdapter` and `DisplayManagementAdapter`
+  ownership classes are absent;
+- the exact `devp-iso-mmx-mib2` binary matches SEG11/MU1447;
+- boot startup explicitly configures `isoTX2` with `-S188 -P64 -Q18`;
+- DisplayManager config references MOST/`isoTX2`, but also carries `force_kombi_type=lvds` and
+  Audi-specific geometry.
+
+Interpretation:
+
+```text
+source-side CarPlay/HARMAN reuse: strong
+current MU1440 GEN2 binary:      not drop-in
+low-level MOST transport:        strong static match
+productive AU37X VC map route:   runtime-unproven
+MQB NavIgnore/Most20/DirectVC:   wrong Java ownership architecture
+```
+
+P5153/MU1326 remains unavailable locally, so P5089 is not pair-validated as a canonical AU37X
+representative.
