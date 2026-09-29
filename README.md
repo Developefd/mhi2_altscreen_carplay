@@ -2,6 +2,19 @@
 
 **Open research and engineering for bringing CarPlay secondary-screen navigation to the Virtual Cockpit on Volkswagen Group MHI2 platforms.**
 
+> [!IMPORTANT]
+> ## ✅ SUCCESS — MU1440 VEHICLE PoC PROVEN
+>
+> **Live CarPlay navigation is now running in the factory Škoda Virtual Cockpit on the MU1440 reference vehicle.**
+>
+> **Apple Maps, Google Maps and Waze** have all been demonstrated as **moving Stream-111 navigation video**
+> through the real **CarPlay Auxiliary/ScreenAlt → H.264 → MPEG-TS → MOST150 → Virtual Cockpit** path.
+>
+> 📸🎥 [**See the vehicle PoC photos/videos**](docs/media/mu1440-stream111-poc-2026-09-29/README.md) ·
+> [**Read the PoC finding**](docs/findings/MU1440_CARPLAY_STREAM111_POC_2026-09-29.md)
+>
+> SafeArea/ViewArea tuning, reduced-view layout handling, lifecycle hardening and cadence/jitter analysis are still active work.
+
 [**Roadmap**](ROADMAP.md) · [Cluster / display KB](docs/research/MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md) · [FPK firmware/control](docs/research/FPK_FIRMWARE_AND_CONTROL_ACCESS.md) · [Installation](docs/INSTALLATION.md) · [Contributing](CONTRIBUTING.md) · [Support](SUPPORT.md) · [Security & privacy](SECURITY.md)
 
 > [!CAUTION]
