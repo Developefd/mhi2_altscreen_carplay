@@ -34,6 +34,7 @@ Completed baselines:
 | Firmware | Static corpus result | Vehicle-support status |
 | --- | --- | --- |
 | `MHI2_ER_AUG22_K3346_MU1438` | canonical Audi AUG22/MU1438 comparator | not vehicle-tested by this project |
+| `MHI2_ER_AU37X_P5089_MU1326` | standalone AU37X profile mapped; P5153 source missing | not vehicle-tested by this project |
 | `MHI2_ER_SKG11_K3343_MU1433` | profile-mapped; several native layers MU1438-nearest | not vehicle-tested |
 | `MHI2_ER_VWG11_K3342_MU1427` | profile-mapped; complete AirPlay file equals Audi MU1438 | not vehicle-tested |
 | `MHI2_ER_SEG11_P4709_MU1447` | profile-mapped; several layers MU1440-nearest | not vehicle-tested |
@@ -47,8 +48,14 @@ Patch-by-patch engineering estimates are tracked separately in the
 [Patch-portability estimate](../research/MHI2_PATCH_PORTABILITY_ESTIMATE_2026-09-28.md), including
 GEN2/Stream-111, Direct-TS, the `isoTX2` gate, NavIgnore, Most20FPS and the Java Direct-VC policy.
 
-The next corpus comparison is AU37X P5089/P5153 MU1326. Static corpus similarity never bypasses the
-separate cluster hardware/routing/vehicle-validation gates below.
+AU37X P5089/MU1326 has now been processed as a standalone seventh corpus profile. P5153/MU1326
+remains `SOURCE_MISSING`, so no same-family equivalence claim exists. P5089 uses a distinct
+AirPlay/native profile and Audi `fwhmi` Java ownership; its static boot/config evidence still shows
+the familiar `devp-iso-mmx-mib2 -S188 -P64 -Q18 ... -MisoTX2` low-level MOST contract. Productive
+cluster-map routing remains a vehicle/runtime question.
+
+Static corpus similarity never bypasses the separate cluster hardware/routing/vehicle-validation
+gates below.
 
 ## Exact MU1438 versus MU1440 component matrix
 
