@@ -297,9 +297,11 @@ Type-111 often remains the same generation
 
 That is the current engineering bottleneck and the reason the next vehicle work is heavily instrumented rather than another rewrite of the transport path.
 
-In parallel, the firmware corpus has completed its first six-baseline cross-brand pass. The current
-corpus follow-up is the AU37X P5089/P5153 MU1326 same-family comparison. See the
-[MHI2 firmware profile map](docs/research/MHI2_FIRMWARE_PROFILE_MAP_2026-09-28.md).
+In parallel, the firmware corpus has completed its first six-baseline cross-brand pass and added
+AU37X P5089/MU1326 as a seventh standalone profile. P5153/MU1326 was not available locally, so no
+P5089/P5153 equivalence is claimed. See the
+[MHI2 firmware profile map](docs/research/MHI2_FIRMWARE_PROFILE_MAP_2026-09-28.md) and
+[patch-portability estimate](docs/research/MHI2_PATCH_PORTABILITY_ESTIMATE_2026-09-28.md).
 
 ---
 
