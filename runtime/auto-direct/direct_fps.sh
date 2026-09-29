@@ -21,6 +21,12 @@ show_status(){
   fi
 }
 
+OLD_SOURCE_FPS=$ALTSCREEN111_FPS
+if [ -r "$SOURCE_FILE" ]; then
+  OLD_SOURCE_FPS=$(cat "$SOURCE_FILE" 2>/dev/null)
+fi
+case "$OLD_SOURCE_FPS" in 20|25|30) ;; *) OLD_SOURCE_FPS=$ALTSCREEN111_FPS ;; esac
+
 case "${1:-status}" in
   status)
     show_status
@@ -62,13 +68,18 @@ case "${1:-status}" in
       echo "SOURCE_RATE_NOTE=new /info advertisements request maxFPS=$FPS"
       echo "SOURCE_RATE_NOTE=current CarPlay session keeps its existing negotiation; reconnect CarPlay before judging the matched $FPS-fps test"
     fi
-    P=
-    [ -r "$BRIDGEPID" ] && P=$(cat "$BRIDGEPID" 2>/dev/null)
-    if [ -n "$P" ] && kill -0 "$P" 2>/dev/null; then
-      kill "$P" 2>/dev/null || true
-      echo "bridge_restart_requested=1"
+    if [ "$FPS" != "$OLD_SOURCE_FPS" ]; then
+      echo "CARPLAY_RECONNECT_REQUIRED=YES old_source_fps=$OLD_SOURCE_FPS new_source_fps=$FPS"
+      echo "bridge_restart_requested=deferred_until_source_renegotiation"
     else
-      echo "bridge_restart_requested=0"
+      P=
+      [ -r "$BRIDGEPID" ] && P=$(cat "$BRIDGEPID" 2>/dev/null)
+      if [ -n "$P" ] && kill -0 "$P" 2>/dev/null; then
+        kill "$P" 2>/dev/null || true
+        echo "bridge_restart_requested=1"
+      else
+        echo "bridge_restart_requested=0"
+      fi
     fi
     exit 0
     ;;
@@ -78,13 +89,18 @@ case "${1:-status}" in
     sync
     mount -ur /mnt/app 2>/dev/null || true
     echo "DIRECT_FPS=DEFAULT"
-    P=
-    [ -r "$BRIDGEPID" ] && P=$(cat "$BRIDGEPID" 2>/dev/null)
-    if [ -n "$P" ] && kill -0 "$P" 2>/dev/null; then
-      kill "$P" 2>/dev/null || true
-      echo "bridge_restart_requested=1"
+    if [ "$OLD_SOURCE_FPS" != "$ALTSCREEN111_FPS" ]; then
+      echo "CARPLAY_RECONNECT_REQUIRED=YES old_source_fps=$OLD_SOURCE_FPS new_source_fps=$ALTSCREEN111_FPS"
+      echo "bridge_restart_requested=deferred_until_source_renegotiation"
     else
-      echo "bridge_restart_requested=0"
+      P=
+      [ -r "$BRIDGEPID" ] && P=$(cat "$BRIDGEPID" 2>/dev/null)
+      if [ -n "$P" ] && kill -0 "$P" 2>/dev/null; then
+        kill "$P" 2>/dev/null || true
+        echo "bridge_restart_requested=1"
+      else
+        echo "bridge_restart_requested=0"
+      fi
     fi
     exit 0
     ;;
