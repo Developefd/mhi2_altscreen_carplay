@@ -10,6 +10,18 @@ Last updated: **2026-09-29**
 
 ## Where the project is now
 
+### 2026-09-29 vehicle PoC milestone
+
+The Škoda MU1440 reference vehicle has now shown **live moving CarPlay auxiliary-navigation video**
+in the Virtual Cockpit with all three tested providers: **Apple Maps, Google Maps and Waze**.
+
+The working media path is the real Type-111 H.264 -> direct MPEG-TS -> `isoTX2` -> MOST path.
+Public photos/videos are linked from
+[MU1440 CarPlay Stream-111 vehicle PoC](../findings/MU1440_CARPLAY_STREAM111_POC_2026-09-29.md).
+
+This closes the basic end-to-end visual PoC for the reference target. It does **not** close SafeArea /
+ViewArea geometry, reduced-view composition, lifecycle hardening or the observed real-stream cadence/jitter question.
+
 ### 2026-09-29: end-to-end MU1440 visual PoC confirmed
 
 The Škoda MU1440 reference vehicle now has direct visual proof of the complete experimental path with

@@ -81,6 +81,14 @@ Other Škoda, Volkswagen, SEAT and CUPRA MHI2 variants are intentionally in scop
 
 This repository starts while the implementation is still under active research.
 
+> [!TIP]
+> **Vehicle PoC milestone — 2026-09-29:** the Škoda MU1440 reference vehicle now has live
+> CarPlay Stream-111 navigation video demonstrated in the Virtual Cockpit with **Apple Maps,
+> Google Maps and Waze** through the direct H.264 -> MPEG-TS -> MOST path.
+> See the [vehicle PoC finding](docs/findings/MU1440_CARPLAY_STREAM111_POC_2026-09-29.md)
+> and [photo/video evidence](docs/media/mu1440-stream111-poc-2026-09-29/README.md).
+> SafeArea/ViewArea tuning, reduced-view geometry, lifecycle hardening and cadence analysis remain open.
+
 What is already established:
 
 - a working MHI2 -> Virtual Cockpit video transport path exists;
