@@ -10,7 +10,20 @@
 > **Apple Maps, Google Maps and Waze** have all been demonstrated as **moving Stream-111 navigation video**
 > through the real **CarPlay Auxiliary/ScreenAlt → H.264 → MPEG-TS → MOST150 → Virtual Cockpit** path.
 >
-> 📸🎥 [**See the vehicle PoC photos/videos**](docs/media/mu1440-stream111-poc-2026-09-29/README.md) ·
+<table>
+  <tr>
+    <td align="center"><img src="docs/media/mu1440-stream111-poc-2026-09-29/waze_vc_stream111_photo_public_minblur.jpg" width="300" alt="Waze running in the MU1440 Virtual Cockpit"></td>
+    <td align="center"><img src="docs/media/mu1440-stream111-poc-2026-09-29/google_maps_vc_stream111_photo_public_minblur.jpg" width="300" alt="Google Maps running in the MU1440 Virtual Cockpit"></td>
+    <td align="center"><img src="docs/media/mu1440-stream111-poc-2026-09-29/apple_maps_vc_stream111_photo_public_minblur.jpg" width="300" alt="Apple Maps running in the MU1440 Virtual Cockpit"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Waze</strong></td>
+    <td align="center"><strong>Google Maps</strong></td>
+    <td align="center"><strong>Apple Maps</strong></td>
+  </tr>
+</table>
+
+> 🎥 [**See the vehicle PoC videos and media details**](docs/media/mu1440-stream111-poc-2026-09-29/README.md) ·
 > [**Read the PoC finding**](docs/findings/MU1440_CARPLAY_STREAM111_POC_2026-09-29.md)
 >
 > SafeArea/ViewArea tuning, reduced-view layout handling, lifecycle hardening and cadence/jitter analysis are still active work.
