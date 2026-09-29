@@ -68,6 +68,17 @@ Other Škoda, Volkswagen, SEAT and CUPRA MHI2 variants are intentionally in scop
 
 ## Current state
 
+> [!NOTE]
+> **Škoda MU1440 vehicle PoC confirmed — 2026-09-29.**
+>
+> Live CarPlay auxiliary navigation from **Apple Maps, Google Maps and Waze** has now been rendered
+> as moving video in the reference vehicle's Virtual Cockpit through the project's
+> **Stream-111 -> H.264 -> MPEG-TS -> MOST** path. Public photo/video evidence is available in
+> [the MU1440 vehicle-PoC finding](docs/findings/MU1440_CARPLAY_NAVIGATION_POC_2026-09-29.md).
+>
+> This is an end-to-end proof of concept, **not** a final end-user release. SafeArea/ViewArea geometry,
+> runtime layout switching, lifecycle polish and frame-pacing/jitter analysis remain active work.
+
 This repository starts while the implementation is still under active research.
 
 What is already established:
