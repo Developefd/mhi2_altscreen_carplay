@@ -93,10 +93,11 @@ A train can therefore be compatible with one layer and incompatible with another
 | **SEG11 P4709 MU1447** | **VERY LIKELY DIRECT** | **VERY LIKELY DIRECT** | **LIKELY / VERIFY FIRST** | **LIKELY same MOST family; geometry/profile differs** | **LIKELY / VERIFY FIRST** | **VERY LIKELY DIRECT** | **VERY LIKELY DIRECT** | high reuse; geometry and ownership test required |
 | **SKG11 K3343 MU1433** | **PROFILE ADAPTATION** | **VERY LIKELY DIRECT** | **LIKELY / VERIFY FIRST** | **LIKELY same MOST family; geometry differs** | **LIKELY / VERIFY FIRST** | **VERY LIKELY DIRECT** | **VERY LIKELY DIRECT** | downstream stack mostly reusable; AirPlay target profile required |
 | **VWG11 K3342 MU1427** | **PROFILE ADAPTATION** | **VERY LIKELY DIRECT** | **LIKELY / VERIFY FIRST** | **LIKELY same MOST family; geometry differs** | **LIKELY / VERIFY FIRST** | **VERY LIKELY DIRECT** | **VERY LIKELY DIRECT** | downstream stack mostly reusable; use MU1438-like AirPlay profile, not MU1440 assumptions |
+| **AU37X P5089 MU1326** | **PROFILE ADAPTATION** | **LIKELY / VERIFY FIRST** | **LIKELY / VERIFY FIRST** | **strong low-level MOST/isoTX2 contract; productive VC map route still unproven, LVDS selector present** | **NEW PATCH / PATH** | **NEW PATCH / PATH** | **NEW PATCH / PATH** | new AirPlay profile + Audi fwhmi; verify sink/ownership before live takeover |
 | **Audi AUG22 K3346 MU1438** | **PROFILE ADAPTATION** | **NEW PATCH / PATH as current sink** | **NEW PATCH / PATH** | **known architecture mismatch: Audi B9 large map is LVDS J794 -> J285** | **NEW PATCH / PATH** | **NEW PATCH / PATH** | **NEW PATCH / PATH** | source-side AirPlay work is reusable; complete MU1440 MOST stack is not |
 
-The matrix describes the six completed corpus baselines. AU37X P5089/P5153 will be added after its
-current corpus checkpoint.
+The matrix now includes the six closed Wave-1 baselines plus the processed AU37X P5089/MU1326
+candidate. AU37X P5153/MU1326 remains `SOURCE_MISSING`; no P5089↔P5153 equivalence is inferred.
 
 ---
 
@@ -437,7 +438,118 @@ port plan.
 
 ---
 
-# 12. Recommended first vehicle test by firmware
+# 12. AU37X P5089: native source side is reusable, Java ownership is not
+
+For:
+
+```text
+MHI2_ER_AU37X_P5089_MU1326
+```
+
+the new corpus pass shows a mixed but useful portability picture.
+
+## AirPlay / GEN2
+
+P5089 introduces a new complete `libairplay.so` executable profile.
+
+Against the existing six profiles, the fixed 16 target functions are not byte-compatible as a
+drop-in MU1440 hook set:
+
+- only `AES_CTR_Final` is byte-identical in every pairwise comparison;
+- 11/16 target functions share mnemonic shape with the MU1440/SEG11/VWG13 family;
+- `AirPlayReceiverSessionSetSecurityInfo` has a different function hash;
+- the observed session/security fields are shifted by +8 bytes relative to AUG22 MU1438.
+
+Therefore:
+
+```text
+existing MU1440 GEN2 binary: DO NOT REUSE
+GEN2 architecture/source:   REUSE WITH NEW AU37X TARGET PROFILE
+```
+
+## Low-level video transport
+
+P5089 provides unusually strong static evidence for the same low-level MOST transport contract:
+
+```text
+devp-iso-mmx-mib2:
+  exact full-file match to SEG11/MU1447
+
+startup.sh isoTX2:
+  -T -S188 -i3 -B3 -P64 -Q18 -m/dev/mlb -MisoTX2
+
+displaymanager config:
+  MOST present
+  isoTX2 referenced
+```
+
+That is strong evidence for the same basic 188-byte MPEG-TS / P64 transport substrate used by the
+MQB targets.
+
+However the same configuration also contains:
+
+```text
+force_kombi_type=lvds
+secondary output = Tegra:HDMI0 / display ID 4
+RVC geometry = 528x384 at (0,54)
+topview = 800x480
+```
+
+and the HMI ownership line is Audi `de.audi.tghu.fwhmi.*`.
+
+Therefore keep two questions separate:
+
+```text
+LOW_LEVEL_MOST_CONTRACT
+  -> strong static match
+
+PRODUCTIVE_CLUSTER_MAP_ROUTE
+  -> still needs vehicle/runtime proof
+```
+
+The project-owned `direct-ts-remux` remains a strong reusable component, but its current
+`/dev/mlb/isoTX2` sink must not be assumed productive until stock-safe observation confirms it.
+
+The libc-based `isoTX2` gate is also a promising mechanism because it does not contain a hard-coded
+DisplayManager function offset, but P5089's DisplayManager is a new RX/code profile. First test must
+remain STOCK-only and prove that DisplayManager actually opens/writes the tracked endpoint.
+
+## Java/HMI patches
+
+P5089 and AUG22 MU1438 follow the Audi `fwhmi` ownership line.
+
+P5089 has no:
+
+```text
+de.vw.mib.asl.internal.mostkombi.streamsink
+NavigationMapAdapter
+DisplayManagementAdapter
+```
+
+class architecture used by the current MQB patches.
+
+Therefore:
+
+```text
+Most20FPS:       NEW PATCH / PATH
+Direct-VC Java:  NEW PATCH / PATH
+NavIgnore:       NEW AUDI-SPECIFIC ARBITRATION PATCH
+```
+
+Do not attempt to load the MQB class-replacement JARs on AU37X.
+
+## Independent P5089 prior art
+
+The research corpus already tracks `chefranov/mhi2-au37x-carplay`, whose documented tested target
+is this same P5089/MU1326 family. That work independently validates a HARMAN native/J9 environment
+around `dio_manager`, `mm-ipod` and `libiap2client.so.1` for other CarPlay features.
+
+It is useful corroboration of the source-side platform, but it does **not** prove AltScreen map-video
+routing.
+
+---
+
+# 13. Recommended first vehicle test by firmware
 
 ## VWG13 MU1367
 
@@ -463,6 +575,23 @@ Same sequence, but resolve target cluster geometry before judging rendering qual
 Do the downstream gate/route proof independently, but **do not start live GEN2 with the MU1440
 AirPlay assumptions**. Build/verify the appropriate AirPlay profile first.
 
+## AU37X P5089 MU1326
+
+Start with:
+
+```text
+compatibility-report
+ -> confirm exact P5089 component hashes
+ -> preload isoTX2 gate in STOCK only
+ -> observe open/writev target and block contract
+ -> determine whether isoTX2 is the productive fitted-cluster map route
+ -> build/verify the AU37X AirPlay target profile
+ -> only then attempt bounded Stream-111 + sink takeover
+```
+
+Do not load MQB NavIgnore/Most20FPS/Direct-VC Java JARs: the required MQB class ownership architecture
+is absent.
+
 ## Audi AUG22 MU1438
 
 Do not start with the MU1440 Direct-TS takeover.
@@ -479,7 +608,7 @@ read-only compatibility collection
 
 ---
 
-# 13. How this estimate was produced
+# 14. How this estimate was produced
 
 The ratings are based on the completed six-baseline firmware corpus, not train-name guessing.
 
@@ -564,7 +693,7 @@ Those are vehicle-test gates.
 
 ---
 
-# 14. Practical interpretation
+# 15. Practical interpretation
 
 The current evidence suggests three broad porting classes:
 
@@ -577,7 +706,10 @@ Class 2 — same downstream architecture, AirPlay-profile adaptation
   SKG11
   VWG11
 
-Class 3 — shared source-side concepts, different cluster-output architecture
+Class 3 — Audi HMI ownership, target-specific source/output validation
+  AU37X P5089
+
+Class 4 — shared source-side concepts, known different cluster-output architecture
   Audi AUG22
 ```
 
