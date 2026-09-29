@@ -1,6 +1,6 @@
 # Current development status
 
-Last updated: **2026-09-27**
+Last updated: **2026-09-29**
 
 > The downloadable experimental GEN2 binary is intentionally **not the newest development build**.
 >
@@ -9,6 +9,28 @@ Last updated: **2026-09-27**
 > cases and are not published as the recommended binary yet.
 
 ## Where the project is now
+
+### 2026-09-29: end-to-end MU1440 visual PoC confirmed
+
+The Škoda MU1440 reference vehicle now has direct visual proof of the complete experimental path with
+three independent CarPlay navigation providers:
+
+- **Apple Maps**
+- **Google Maps**
+- **Waze**
+
+All three produce live, moving auxiliary-navigation imagery in the Virtual Cockpit through the current
+Stream-111 -> H.264 -> MPEG-TS -> MOST route. The providers visibly render different cluster-native
+layouts, which is useful evidence that the result is not a static injected bitmap or synthetic test
+pattern.
+
+Public, privacy-reduced photo/video evidence is documented in
+[MU1440_CARPLAY_NAVIGATION_POC_2026-09-29.md](../findings/MU1440_CARPLAY_NAVIGATION_POC_2026-09-29.md).
+
+The remaining work is now predominantly integration and polish: SafeArea/ViewArea behavior, a runtime
+switch between full-map and reduced/tacho layouts, provider/lifecycle edge cases, and frame-pacing
+analysis. The public MP4 files are re-encoded proof derivatives and must not be used for timing or
+frame-rate measurements.
 
 The project has progressed beyond the initial proof-of-concept stages.
 
