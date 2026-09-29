@@ -73,6 +73,11 @@ FORBIDDEN_PATH_PARTS = {
     "__pycache__",
 }
 
+# Curated public vehicle-evidence media. Keep this allowlist deliberately narrow:
+# binary image/video files remain forbidden everywhere else in the repository.
+PUBLIC_MEDIA_ROOT = Path("docs/media/mu1440-stream111-poc-2026-09-29")
+PUBLIC_MEDIA_SUFFIXES = {".jpg", ".jpeg", ".mp4"}
+
 MAX_FILE_SIZE = 5 * 1024 * 1024
 
 SECRET_PATTERNS = [
@@ -138,8 +143,15 @@ def audit_tree(errors: list[str], files: list[Path]) -> None:
         if any(part in FORBIDDEN_PATH_PARTS for part in rel.parts):
             fail(errors, f"temporary/private staging path committed: {rel}")
 
-        if any(low.endswith(suffix) for suffix in FORBIDDEN_SUFFIXES):
-            fail(errors, f"forbidden publication artifact type: {rel}")
+        suffix = path.suffix.lower()
+        is_curated_public_media = (
+            rel.is_relative_to(PUBLIC_MEDIA_ROOT)
+            and suffix in PUBLIC_MEDIA_SUFFIXES
+        )
+
+        if any(low.endswith(blocked) for blocked in FORBIDDEN_SUFFIXES):
+            if not is_curated_public_media:
+                fail(errors, f"forbidden publication artifact type: {rel}")
 
         if "dyld_shared_cache" in low:
             fail(errors, f"dyld cache material must not be committed: {rel}")
