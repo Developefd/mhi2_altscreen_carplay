@@ -245,6 +245,7 @@ static int g_height = 376;
 static int g_width_mm = 200;
 static int g_height_mm = 74;
 static int g_fps = 30;
+static const char *g_fps_override_path = "/mnt/app/root/mibr-carplay111-fps";
 static int g_auto_show = 0;
 static int g_viewareas = 1;
 static const char *g_viewareas_marker = "/mnt/app/root/mibr-carplay111-viewareas.enabled";
@@ -918,6 +919,23 @@ static CFMutableDictionaryRef clone_without_111(CFDictionaryRef request)
  * choose stream 111. The reference replaces enabledFeatures with
  * ["altScreen","viewAreas"] rather than waiting for a 111 request.
  */
+static int current_advertised_fps(void)
+{
+    char b[16];
+    int fd, v;
+    ssize_t n;
+
+    fd=open(g_fps_override_path,O_RDONLY);
+    if(fd<0)return g_fps;
+    n=read(fd,b,sizeof(b)-1);
+    close(fd);
+    if(n<=0)return g_fps;
+    b[n]='\0';
+    v=atoi(b);
+    if(v==20||v==25||v==30)return v;
+    return g_fps;
+}
+
 static void set_reference_enabled_features(CFMutableDictionaryRef response)
 {
     CFStringRef k = NULL, alt = NULL, va = NULL;
@@ -2192,6 +2210,7 @@ CFDictionaryRef AirPlayCopyServerInfo(AirPlayReceiverSessionRef session, CFArray
     CFStringRef kdisplays=NULL;
     CFArrayRef old=NULL;
     CFMutableArrayRef displays=NULL;
+    int advertised_fps=current_advertised_fps();
 
     if(!g_real_serverinfo)g_real_serverinfo=(fn_serverinfo_t)sym_next("AirPlayCopyServerInfo");
     if(!g_real_serverinfo){
@@ -2258,7 +2277,7 @@ CFDictionaryRef AirPlayCopyServerInfo(AirPlayReceiverSessionRef session, CFArray
          * evidence both identify this secondary display explicitly as type 111.
          */
         set_i64(alt,"type",(int64_t)g2_profile.type);
-        set_i64(alt,"maxFPS",(int64_t)g2_profile.max_fps);
+        set_i64(alt,"maxFPS",(int64_t)advertised_fps);
         set_i64(alt,"features",(int64_t)g2_profile.features);
         set_i64(alt,"widthPixels",(int64_t)g2_profile.width);
         set_i64(alt,"heightPixels",(int64_t)g2_profile.height);
@@ -2273,7 +2292,7 @@ CFDictionaryRef AirPlayCopyServerInfo(AirPlayReceiverSessionRef session, CFArray
         p_CFDictionarySetValue(info,kdisplays,displays);
         logf_u2("GEN2 /info ready: root=altScreen%s type=%u maxFPS=%u features=%u input=none geometry=%ux%u physical=%ux%u uuid=%s url=%s",
                 g_viewareas?"+viewAreas":"",
-                g2_profile.type,g2_profile.max_fps,g2_profile.features,
+                g2_profile.type,(unsigned)advertised_fps,g2_profile.features,
                 g2_profile.width,g2_profile.height,g2_profile.width_mm,g2_profile.height_mm,
                 g_alt_uuid,active_url);
     }else{

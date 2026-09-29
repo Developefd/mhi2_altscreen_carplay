@@ -124,11 +124,13 @@ Runtime helper:
 /mnt/app/root/altscreen-u2/scripts/direct_fps.sh default
 ```
 
-The switch is persistent through `/mnt/app/root/mibr-direct-output-fps` and causes the active
-Direct-VC bridge to restart through the existing supervisor. The current source descriptor still
-advertises `ALTSCREEN111_FPS=30`; therefore 25/20 are not yet a matched source/sink test until the
-CarPlay source is re-negotiated at the same rate. Do not interpret backpressure at 25/20 as evidence
-of a smooth lower-rate source.
+The switch persists the same requested rate for both layers:
+`/mnt/app/root/mibr-direct-output-fps` controls the direct remux/pacer and
+`/mnt/app/root/mibr-carplay111-fps` changes the maxFPS advertised by GEN2 on subsequent `/info`
+responses. The active Direct-VC bridge is restarted immediately. A currently connected CarPlay
+session keeps the rate it already negotiated, so after changing 30 -> 25 or 20, reconnect CarPlay
+before judging the matched source/sink result. No compressed H.264 P-frames are discarded to fake a
+lower frame rate.
 
 Useful remux telemetry is published in `/tmp/mibr-direct-remux.status`, including queue depth,
 underflows, late frames, input inter-arrival time, output interval and maximum output jitter.

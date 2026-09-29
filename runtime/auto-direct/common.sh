@@ -49,6 +49,7 @@ fi
 CARPLAY_HOOK=/mnt/app/eso/lib/libmibr_carplay111.so
 CARPLAY_BACKDIR=/mnt/app/root/mibr-carplay111-backup
 DIRECT_FPS_OVERRIDE_FILE=/mnt/app/root/mibr-direct-output-fps
+SOURCE_FPS_OVERRIDE_FILE=/mnt/app/root/mibr-carplay111-fps
 BACKUP=$CARPLAY_BACKDIR/smartphone_integrator.json.stock
 BACKUP_SHA=$CARPLAY_BACKDIR/smartphone_integrator.json.stock.sha256
 
