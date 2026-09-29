@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <fcntl.h>
+#include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,6 +18,7 @@
 #define MOST_BLOCK_PACKETS 64
 #define MOST_BLOCK_BYTES (MOST_BLOCK_PACKETS * TS_SIZE)
 #define REMUX_STATUS_PATH "/tmp/mibr-direct-remux.status"
+#define PACE_QUEUE_CAP 10
 
 typedef struct {
     int fd;
@@ -42,16 +44,207 @@ typedef struct {
     uint64_t rate_prev_most_bytes;
     uint64_t input_bps;
     uint64_t most_bps;
+
+    int pace_enabled;
+    int pace_fps;
+    int pace_buffer_target;
+    int pace_queue_depth;
+    int pace_queue_max;
+    uint64_t pace_underflows;
+    uint64_t pace_late_frames;
+    uint64_t pace_backpressure_waits;
+    int64_t last_input_interval_us;
+    int64_t min_input_interval_us;
+    int64_t max_input_interval_us;
+    int64_t last_emit_interval_us;
+    int64_t max_emit_jitter_us;
+    int64_t last_emit_us;
 } OutCtx;
+
+typedef struct {
+    AVPacket pkt;
+    int64_t arrival_us;
+} PacePacket;
+
+typedef struct {
+    pthread_mutex_t lock;
+    pthread_cond_t cv;
+    AVFormatContext *ic;
+    int video;
+    PacePacket q[PACE_QUEUE_CAP];
+    int head;
+    int count;
+    int max_depth;
+    int stop;
+    int done;
+    int reader_rc;
+    uint64_t input_bytes;
+    uint64_t backpressure_waits;
+    int max_seen_depth;
+    int64_t last_arrival_us;
+    int64_t last_interval_us;
+    int64_t min_interval_us;
+    int64_t max_interval_us;
+} PaceQueue;
 
 static uint64_t g_status_seq;
 static int64_t g_last_status_us;
 static int g_status_error_logged;
 
+static int env_int(const char *name,int defval) {
+    const char *v=getenv(name);
+    char *end=NULL;
+    long n;
+    if(!v||!*v) return defval;
+    n=strtol(v,&end,10);
+    if(end==v||*end!='\0') return defval;
+    return (int)n;
+}
+
+static int64_t abs_i64(int64_t v) {
+    return v<0?-v:v;
+}
+
+static void pace_queue_snapshot_locked(PaceQueue *q,OutCtx *o) {
+    if(!q||!o) return;
+    o->input_h264_bytes=q->input_bytes;
+    o->pace_queue_depth=q->count;
+    o->pace_queue_max=q->max_seen_depth;
+    o->pace_backpressure_waits=q->backpressure_waits;
+    o->last_input_interval_us=q->last_interval_us;
+    o->min_input_interval_us=q->min_interval_us;
+    o->max_input_interval_us=q->max_interval_us;
+}
+
+static void pace_queue_init(PaceQueue *q,AVFormatContext *ic,int video,int max_depth) {
+    int i;
+    memset(q,0,sizeof(*q));
+    pthread_mutex_init(&q->lock,NULL);
+    pthread_cond_init(&q->cv,NULL);
+    q->ic=ic;
+    q->video=video;
+    q->max_depth=max_depth;
+    q->reader_rc=AVERROR_EOF;
+    for(i=0;i<PACE_QUEUE_CAP;i++) memset(&q->q[i].pkt,0,sizeof(q->q[i].pkt));
+}
+
+static void pace_queue_stop(PaceQueue *q) {
+    pthread_mutex_lock(&q->lock);
+    q->stop=1;
+    pthread_cond_broadcast(&q->cv);
+    pthread_mutex_unlock(&q->lock);
+}
+
+static void pace_queue_destroy(PaceQueue *q) {
+    int i;
+    pthread_mutex_lock(&q->lock);
+    for(i=0;i<q->count;i++) {
+        int idx=(q->head+i)%PACE_QUEUE_CAP;
+        av_packet_unref(&q->q[idx].pkt);
+    }
+    q->count=0;
+    pthread_mutex_unlock(&q->lock);
+    pthread_cond_destroy(&q->cv);
+    pthread_mutex_destroy(&q->lock);
+}
+
+static void *pace_reader_main(void *opaque) {
+    PaceQueue *q=(PaceQueue *)opaque;
+    int rc=0;
+
+    for(;;) {
+        AVPacket pkt;
+        int64_t now;
+        memset(&pkt,0,sizeof(pkt));
+        rc=av_read_frame(q->ic,&pkt);
+        if(rc<0) break;
+        if(pkt.stream_index!=q->video) {
+            av_packet_unref(&pkt);
+            continue;
+        }
+
+        now=av_gettime_relative();
+        pthread_mutex_lock(&q->lock);
+        if(q->last_arrival_us>0) {
+            int64_t dt=now-q->last_arrival_us;
+            q->last_interval_us=dt;
+            if(q->min_interval_us==0||dt<q->min_interval_us)q->min_interval_us=dt;
+            if(dt>q->max_interval_us)q->max_interval_us=dt;
+        }
+        q->last_arrival_us=now;
+        q->input_bytes+=(uint64_t)(pkt.size>0?pkt.size:0);
+
+        while(!q->stop && q->count>=q->max_depth) {
+            ++q->backpressure_waits;
+            pthread_cond_wait(&q->cv,&q->lock);
+        }
+        if(q->stop) {
+            pthread_mutex_unlock(&q->lock);
+            av_packet_unref(&pkt);
+            rc=AVERROR_EXIT;
+            break;
+        }
+
+        {
+            int idx=(q->head+q->count)%PACE_QUEUE_CAP;
+            av_packet_move_ref(&q->q[idx].pkt,&pkt);
+            q->q[idx].arrival_us=now;
+            ++q->count;
+            if(q->count>q->max_seen_depth)q->max_seen_depth=q->count;
+        }
+        pthread_cond_broadcast(&q->cv);
+        pthread_mutex_unlock(&q->lock);
+    }
+
+    pthread_mutex_lock(&q->lock);
+    q->reader_rc=rc;
+    q->done=1;
+    pthread_cond_broadcast(&q->cv);
+    pthread_mutex_unlock(&q->lock);
+    return NULL;
+}
+
+static int pace_pop(PaceQueue *q,AVPacket *pkt,int64_t *arrival_us,int *waited,OutCtx *o) {
+    int rc=0;
+    *waited=0;
+    memset(pkt,0,sizeof(*pkt));
+
+    pthread_mutex_lock(&q->lock);
+    while(q->count==0&&!q->done&&!q->stop) {
+        *waited=1;
+        pthread_cond_wait(&q->cv,&q->lock);
+    }
+    if(q->count==0) {
+        rc=q->reader_rc;
+        pace_queue_snapshot_locked(q,o);
+        pthread_mutex_unlock(&q->lock);
+        return rc<0?rc:AVERROR_EOF;
+    }
+
+    av_packet_move_ref(pkt,&q->q[q->head].pkt);
+    *arrival_us=q->q[q->head].arrival_us;
+    q->head=(q->head+1)%PACE_QUEUE_CAP;
+    --q->count;
+    pace_queue_snapshot_locked(q,o);
+    pthread_cond_broadcast(&q->cv);
+    pthread_mutex_unlock(&q->lock);
+    return 0;
+}
+
+static void pace_sleep_until(int64_t due_us) {
+    for(;;) {
+        int64_t now=av_gettime_relative();
+        int64_t left=due_us-now;
+        if(left<=0) return;
+        if(left>200000LL) left=200000LL;
+        usleep((unsigned int)left);
+    }
+}
+
 static void publish_remux_status(OutCtx *o, int64_t frame_no,
                                  int64_t start_us, int64_t last_input_us,
                                  const char *state, int rc, int force) {
-    char buf[1100], tmp[96];
+    char buf[1800], tmp[96];
     int fd, n;
     int64_t now=av_gettime_relative();
     if(!force && g_last_status_us>0 && now-g_last_status_us<1000000LL) return;
@@ -91,6 +284,19 @@ static void publish_remux_status(OutCtx *o, int64_t frame_no,
         "last_input_ms=%lld\n"
         "last_write_ms=%lld\n"
         "pending_bytes=%d\n"
+        "pace_enabled=%d\n"
+        "pace_fps=%d\n"
+        "pace_buffer_target=%d\n"
+        "pace_queue_depth=%d\n"
+        "pace_queue_max=%d\n"
+        "pace_underflows=%llu\n"
+        "pace_late_frames=%llu\n"
+        "pace_backpressure_waits=%llu\n"
+        "last_input_interval_us=%lld\n"
+        "min_input_interval_us=%lld\n"
+        "max_input_interval_us=%lld\n"
+        "last_emit_interval_us=%lld\n"
+        "max_emit_jitter_us=%lld\n"
         "elapsed_ms=%lld\n"
         "rc=%d\n",
         state?state:"unknown",(int)getpid(),
@@ -113,6 +319,19 @@ static void publish_remux_status(OutCtx *o, int64_t frame_no,
         (long long)(last_input_us>0?last_input_us/1000LL:0),
         (long long)(o&&o->last_write_us>0?o->last_write_us/1000LL:0),
         o?o->pending_len:0,
+        o?o->pace_enabled:0,
+        o?o->pace_fps:0,
+        o?o->pace_buffer_target:0,
+        o?o->pace_queue_depth:0,
+        o?o->pace_queue_max:0,
+        (unsigned long long)(o?o->pace_underflows:0),
+        (unsigned long long)(o?o->pace_late_frames:0),
+        (unsigned long long)(o?o->pace_backpressure_waits:0),
+        (long long)(o?o->last_input_interval_us:0),
+        (long long)(o?o->min_input_interval_us:0),
+        (long long)(o?o->max_input_interval_us:0),
+        (long long)(o?o->last_emit_interval_us:0),
+        (long long)(o?o->max_emit_jitter_us:0),
         (long long)(start_us>0?(now-start_us)/1000LL:0),rc);
     if(n<=0) return;
     if((size_t)n>=sizeof(buf)) n=(int)sizeof(buf)-1;
@@ -372,6 +591,7 @@ static int open_out(const char *path,int *device_mode) {
 int main(int argc,char **argv) {
     const char *in_url,*out_path;
     int fps,max_seconds,wait_seconds,pid;
+    int pace_enabled,pace_buffer;
     AVFormatContext *ic=NULL,*oc=NULL;
     AVStream *is=NULL,*os=NULL;
     AVDictionary *mux_opts=NULL;
@@ -394,6 +614,14 @@ int main(int argc,char **argv) {
     fps=atoi(argv[3]); max_seconds=atoi(argv[4]); wait_seconds=atoi(argv[5]);
     pid=(int)strtol(argv[6],NULL,0);
     if(fps<1||fps>60||max_seconds<0||max_seconds>600||wait_seconds<0||wait_seconds>120||pid<1||pid>0x1ffe) return 65;
+
+    pace_enabled=env_int("MIBR_PACE",0)?1:0;
+    pace_buffer=env_int("MIBR_PACE_BUFFER",3);
+    if(pace_buffer<1)pace_buffer=1;
+    if(pace_buffer>6)pace_buffer=6;
+    out.pace_enabled=pace_enabled;
+    out.pace_fps=pace_enabled?fps:0;
+    out.pace_buffer_target=pace_enabled?pace_buffer:0;
 
     avformat_network_init();
     ic=open_h264_retry(in_url,fps,wait_seconds,&deadline);
@@ -432,35 +660,129 @@ int main(int argc,char **argv) {
     av_dict_free(&mux_opts);
     if(rc<0){errstr(rc,ebuf,sizeof(ebuf));fprintf(stderr,"ERROR write header: %s\n",ebuf);goto done;}
 
-    fprintf(stderr,"REMUX_START input=%s output=%s fps=%d max_seconds=%d pid=0x%x device=%d most_block_packets=%d write_size=%d\n",
+    fprintf(stderr,"REMUX_START input=%s output=%s fps=%d max_seconds=%d pid=0x%x device=%d most_block_packets=%d write_size=%d pace=%d pace_buffer=%d\n",
             in_url,out_path,fps,max_seconds,pid,out.device_mode,
             out.device_mode?MOST_BLOCK_PACKETS:0,
-            out.device_mode?MOST_BLOCK_BYTES:0);
+            out.device_mode?MOST_BLOCK_BYTES:0,
+            pace_enabled,pace_enabled?pace_buffer:0);
     start_us=av_gettime_relative();
     deadline=max_seconds>0?start_us+(int64_t)max_seconds*1000000LL:0;
     publish_remux_status(&out,frame_no,start_us,last_input_us,"running",0,1);
     ic->interrupt_callback.opaque=&deadline;
 
-    for(;;) {
-        AVPacket pkt;
-        AVRational frame_tb={1,fps};
-        rc=av_read_frame(ic,&pkt);
-        if(rc<0) break;
-        if(pkt.stream_index!=video){av_packet_unref(&pkt);continue;}
-        last_input_us=av_gettime_relative();
-        out.input_h264_bytes+=(uint64_t)(pkt.size>0?pkt.size:0);
-        pkt.pts=frame_no;
-        pkt.dts=frame_no;
-        pkt.duration=1;
-        av_packet_rescale_ts(&pkt,frame_tb,os->time_base);
-        pkt.stream_index=os->index;
-        pkt.pos=-1;
-        rc=av_interleaved_write_frame(oc,&pkt);
-        av_packet_unref(&pkt);
-        if(rc<0){errstr(rc,ebuf,sizeof(ebuf));fprintf(stderr,"ERROR mux/write frame=%lld %s\n",(long long)frame_no,ebuf);break;}
-        ++frame_no;
-        publish_remux_status(&out,frame_no,start_us,last_input_us,"running",0,0);
-        if(max_seconds>0 && av_gettime_relative()>=deadline){rc=0;break;}
+    if(pace_enabled) {
+        PaceQueue pq;
+        pthread_t reader;
+        int reader_started=0;
+        int max_depth=pace_buffer+3;
+        int64_t pace_epoch_us=0;
+        int64_t frame_period_us=1000000LL/fps;
+
+        if(max_depth>PACE_QUEUE_CAP)max_depth=PACE_QUEUE_CAP;
+        pace_queue_init(&pq,ic,video,max_depth);
+        rc=pthread_create(&reader,NULL,pace_reader_main,&pq);
+        if(rc!=0) {
+            fprintf(stderr,"ERROR pace reader pthread_create rc=%d\n",rc);
+            pace_queue_destroy(&pq);
+            rc=AVERROR(rc);
+        } else {
+            reader_started=1;
+            fprintf(stderr,"PACE_START fps=%d frame_period_us=%lld prebuffer=%d queue_max=%d\n",
+                    fps,(long long)frame_period_us,pace_buffer,max_depth);
+
+            for(;;) {
+                AVPacket pkt;
+                AVRational frame_tb={1,fps};
+                int waited=0;
+                int pr;
+                int64_t arrival_us=0;
+                int64_t due_us,now_us,emit_us;
+
+                pr=pace_pop(&pq,&pkt,&arrival_us,&waited,&out);
+                if(pr<0) { rc=pr; break; }
+                last_input_us=arrival_us;
+
+                if(frame_no==0) {
+                    if(pace_buffer>1)
+                        usleep((unsigned int)(((int64_t)(pace_buffer-1)*1000000LL)/fps));
+                    pace_epoch_us=av_gettime_relative();
+                    due_us=pace_epoch_us;
+                } else {
+                    now_us=av_gettime_relative();
+                    due_us=pace_epoch_us+(frame_no*1000000LL)/fps;
+                    if(waited) {
+                        ++out.pace_underflows;
+                        pace_epoch_us=now_us-(frame_no*1000000LL)/fps;
+                        due_us=now_us;
+                    }
+                    if(now_us<due_us) {
+                        pace_sleep_until(due_us);
+                    } else if(now_us-due_us>1000LL) {
+                        ++out.pace_late_frames;
+                    }
+                }
+
+                pkt.pts=frame_no;
+                pkt.dts=frame_no;
+                pkt.duration=1;
+                av_packet_rescale_ts(&pkt,frame_tb,os->time_base);
+                pkt.stream_index=os->index;
+                pkt.pos=-1;
+                rc=av_interleaved_write_frame(oc,&pkt);
+                av_packet_unref(&pkt);
+                emit_us=av_gettime_relative();
+                if(out.last_emit_us>0) {
+                    int64_t jitter;
+                    out.last_emit_interval_us=emit_us-out.last_emit_us;
+                    jitter=abs_i64(out.last_emit_interval_us-frame_period_us);
+                    if(jitter>out.max_emit_jitter_us)out.max_emit_jitter_us=jitter;
+                }
+                out.last_emit_us=emit_us;
+
+                if(rc<0) {
+                    errstr(rc,ebuf,sizeof(ebuf));
+                    fprintf(stderr,"ERROR mux/write frame=%lld %s\n",(long long)frame_no,ebuf);
+                    break;
+                }
+                ++frame_no;
+                publish_remux_status(&out,frame_no,start_us,last_input_us,"running",0,0);
+                if(max_seconds>0 && av_gettime_relative()>=deadline){rc=0;break;}
+            }
+
+            /*
+             * Stop a blocked TCP read if the output side failed before the
+             * normal deadline. The FFmpeg interrupt callback observes this.
+             */
+            if(rc<0 && rc!=AVERROR_EOF) deadline=av_gettime_relative();
+            pace_queue_stop(&pq);
+            if(reader_started)pthread_join(reader,NULL);
+            pthread_mutex_lock(&pq.lock);
+            pace_queue_snapshot_locked(&pq,&out);
+            pthread_mutex_unlock(&pq.lock);
+            pace_queue_destroy(&pq);
+        }
+    } else {
+        for(;;) {
+            AVPacket pkt;
+            AVRational frame_tb={1,fps};
+            rc=av_read_frame(ic,&pkt);
+            if(rc<0) break;
+            if(pkt.stream_index!=video){av_packet_unref(&pkt);continue;}
+            last_input_us=av_gettime_relative();
+            out.input_h264_bytes+=(uint64_t)(pkt.size>0?pkt.size:0);
+            pkt.pts=frame_no;
+            pkt.dts=frame_no;
+            pkt.duration=1;
+            av_packet_rescale_ts(&pkt,frame_tb,os->time_base);
+            pkt.stream_index=os->index;
+            pkt.pos=-1;
+            rc=av_interleaved_write_frame(oc,&pkt);
+            av_packet_unref(&pkt);
+            if(rc<0){errstr(rc,ebuf,sizeof(ebuf));fprintf(stderr,"ERROR mux/write frame=%lld %s\n",(long long)frame_no,ebuf);break;}
+            ++frame_no;
+            publish_remux_status(&out,frame_no,start_us,last_input_us,"running",0,0);
+            if(max_seconds>0 && av_gettime_relative()>=deadline){rc=0;break;}
+        }
     }
     /* A finite raw-H264 file ends with AVERROR_EOF after all frames were read.
      * Treat that as successful completion when at least one frame was muxed. */
@@ -487,7 +809,7 @@ int main(int argc,char **argv) {
     publish_remux_status(&out,frame_no,start_us,last_input_us,"done",rc,1);
 
     fprintf(stderr,
-            "REMUX_DONE frames=%lld ts_packets_out=%llu most_blocks=%llu pad_null_packets=%llu write_size=%d input_h264_bytes=%llu write_attempts=%llu write_eagain=%llu write_timeouts=%llu write_errors=%llu short_writes=%llu over20ms_blocks=%llu max_block_wait_us=%lld elapsed_ms=%lld rc=%d pending=%d\n",
+            "REMUX_DONE frames=%lld ts_packets_out=%llu most_blocks=%llu pad_null_packets=%llu write_size=%d input_h264_bytes=%llu write_attempts=%llu write_eagain=%llu write_timeouts=%llu write_errors=%llu short_writes=%llu over20ms_blocks=%llu max_block_wait_us=%lld pace=%d pace_fps=%d pace_underflows=%llu pace_late_frames=%llu pace_backpressure_waits=%llu max_emit_jitter_us=%lld elapsed_ms=%lld rc=%d pending=%d\n",
             (long long)frame_no,
             (unsigned long long)out.packets,
             (unsigned long long)out.blocks,
@@ -501,6 +823,11 @@ int main(int argc,char **argv) {
             (unsigned long long)out.short_writes,
             (unsigned long long)out.over20ms_blocks,
             (long long)out.max_block_wait_us,
+            out.pace_enabled,out.pace_fps,
+            (unsigned long long)out.pace_underflows,
+            (unsigned long long)out.pace_late_frames,
+            (unsigned long long)out.pace_backpressure_waits,
+            (long long)out.max_emit_jitter_us,
             (long long)((av_gettime_relative()-start_us)/1000LL),rc,out.pending_len);
 
 done:

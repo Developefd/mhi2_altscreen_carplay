@@ -144,8 +144,18 @@ while [ -e "$ENABLED" ]; do
   publish_auto_state "direct_starting"
   auto_log "session=$SESSION DIRECT entered displaymanager_pid=$DM_BEFORE heartbeat_before=$HB_BEFORE"
 
+  # Reload the runtime FPS override for every DIRECT session. The source-side
+  # descriptor remains independent; this rate owns remux timestamps and pacing.
+  load_altscreen_config || {
+    auto_log "FAIL invalid direct FPS/pacing configuration"
+    gate_stock
+    publish_auto_state "config_failed"
+    sleep 2
+    continue
+  }
+  MIBR_PACE="$DIRECT_PACE" MIBR_PACE_BUFFER="$DIRECT_PACE_BUFFER" \
   "$BRIDGE" "tcp://127.0.0.1:$ALTSCREEN111_TEE_PORT" /dev/mlb/isoTX2 \
-      "$ALTSCREEN111_FPS" 0 0 0x11 > "$BRIDGELOG" 2>&1 &
+      "$DIRECT_OUTPUT_FPS" 0 0 0x11 > "$BRIDGELOG" 2>&1 &
   BRIDGE_PID=$!
   echo "$BRIDGE_PID" > "$BRIDGEPID" 2>/dev/null || true
   publish_auto_state "direct_starting"
@@ -248,7 +258,10 @@ while [ -e "$ENABLED" ]; do
     echo "stop_reason=$STOP_REASON"
     echo "input=tcp://127.0.0.1:$ALTSCREEN111_TEE_PORT"
     echo "output=/dev/mlb/isoTX2"
-    echo "fps=$ALTSCREEN111_FPS"
+    echo "source_max_fps=$ALTSCREEN111_FPS"
+    echo "direct_output_fps=$DIRECT_OUTPUT_FPS"
+    echo "direct_pace=$DIRECT_PACE"
+    echo "direct_pace_buffer=$DIRECT_PACE_BUFFER"
     echo "most_blocks=$BLOCKS"
     echo "most_write_size=$WRITE_SIZE"
     echo "displaymanager_pid_before=$DM_BEFORE"

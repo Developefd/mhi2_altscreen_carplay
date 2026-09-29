@@ -100,6 +100,39 @@ runtime/navigation/gen2_safearea.sh full
 
 Custom SafeArea values remain layout/target specific until vehicle-calibrated.
 
+## Direct Stream-111 frame pacing
+
+The direct remuxer has an optional low-cost packet-level pacer. It does **not** decode or re-encode
+H.264. A small reader queue absorbs short arrival-time jitter and the mux/write side releases access
+units on a monotonic output clock.
+
+Reference settings:
+
+```text
+DIRECT_OUTPUT_FPS=30
+DIRECT_PACE=1
+DIRECT_PACE_BUFFER=3
+```
+
+Runtime helper:
+
+```sh
+/mnt/app/root/altscreen-u2/scripts/direct_fps.sh status
+/mnt/app/root/altscreen-u2/scripts/direct_fps.sh 30
+/mnt/app/root/altscreen-u2/scripts/direct_fps.sh 25
+/mnt/app/root/altscreen-u2/scripts/direct_fps.sh 20
+/mnt/app/root/altscreen-u2/scripts/direct_fps.sh default
+```
+
+The switch is persistent through `/mnt/app/root/mibr-direct-output-fps` and causes the active
+Direct-VC bridge to restart through the existing supervisor. The current source descriptor still
+advertises `ALTSCREEN111_FPS=30`; therefore 25/20 are not yet a matched source/sink test until the
+CarPlay source is re-negotiated at the same rate. Do not interpret backpressure at 25/20 as evidence
+of a smooth lower-rate source.
+
+Useful remux telemetry is published in `/tmp/mibr-direct-remux.status`, including queue depth,
+underflows, late frames, input inter-arrival time, output interval and maximum output jitter.
+
 ## Most20FPS
 
 The standalone one-class Java patch is now a reference default for the exact MU1440/AID10-class target.

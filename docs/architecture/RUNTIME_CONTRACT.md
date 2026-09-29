@@ -14,6 +14,9 @@ ALTSCREEN111_TEE_PORT=19820
 ALTSCREEN111_WIDTH=1010
 ALTSCREEN111_HEIGHT=376
 ALTSCREEN111_FPS=30
+DIRECT_OUTPUT_FPS=30
+DIRECT_PACE=1
+DIRECT_PACE_BUFFER=3
 ALTSCREEN111_AUTO_SHOW=0
 ALTSCREEN111_URL=maps:/car/instrumentcluster
 ```
@@ -120,6 +123,12 @@ The direct remux path uses MPEG-TS video PID:
 ```text
 0x11
 ```
+
+
+Frame pacing is deliberately downstream of the CarPlay H.264 source. The reference direct output is
+30 fps with a three-frame jitter buffer. `direct_fps.sh` can persist 30/25/20 output targets; lower
+rates should be judged only after matching source-side negotiation because the remuxer never drops
+compressed inter-frame H.264 pictures to fake a lower frame rate.
 
 ## Recovery invariant
 

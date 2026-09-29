@@ -24,6 +24,21 @@ for X in supervisor:$SUPPID watchdog:$WDPID bridge:$BRIDGEPID; do
   fi
 done
 
+load_altscreen_config >/dev/null 2>&1 || true
+
+echo
+echo "=== FRAME PACING ==="
+echo "source_max_fps=${ALTSCREEN111_FPS:-UNKNOWN}"
+echo "direct_output_fps=${DIRECT_OUTPUT_FPS:-UNKNOWN}"
+echo "direct_pace=${DIRECT_PACE:-UNKNOWN}"
+echo "direct_pace_buffer=${DIRECT_PACE_BUFFER:-UNKNOWN}"
+[ -r "$DIRECT_FPS_OVERRIDE_FILE" ] && echo "direct_fps_override=$(cat "$DIRECT_FPS_OVERRIDE_FILE" 2>/dev/null)" || echo "direct_fps_override=none"
+if [ -r /tmp/mibr-direct-remux.status ]; then
+  grep -E '^(pace_|last_input_interval_us|min_input_interval_us|max_input_interval_us|last_emit_interval_us|max_emit_jitter_us)=' /tmp/mibr-direct-remux.status 2>/dev/null || true
+else
+  echo "remux_pace_status=missing"
+fi
+
 echo
 echo "=== SOURCE ==="
 if [ -r /tmp/mibr-carplay111.state ]; then

@@ -48,6 +48,7 @@ fi
 
 CARPLAY_HOOK=/mnt/app/eso/lib/libmibr_carplay111.so
 CARPLAY_BACKDIR=/mnt/app/root/mibr-carplay111-backup
+DIRECT_FPS_OVERRIDE_FILE=/mnt/app/root/mibr-direct-output-fps
 BACKUP=$CARPLAY_BACKDIR/smartphone_integrator.json.stock
 BACKUP_SHA=$CARPLAY_BACKDIR/smartphone_integrator.json.stock.sha256
 
@@ -307,12 +308,34 @@ load_altscreen_config(){
   : ${ALTSCREEN111_WIDTH:=1010}
   : ${ALTSCREEN111_HEIGHT:=376}
   : ${ALTSCREEN111_FPS:=30}
+  : ${DIRECT_OUTPUT_FPS:=30}
+  : ${DIRECT_PACE:=1}
+  : ${DIRECT_PACE_BUFFER:=3}
   : ${ALTSCREEN111_AUTO_SHOW:=1}
   : ${ALTSCREEN111_URL:=maps:/car/instrumentcluster/map}
 
-  case "$ALTSCREEN111_PORT:$ALTSCREEN111_TEE_PORT:$ALTSCREEN111_WIDTH:$ALTSCREEN111_HEIGHT:$ALTSCREEN111_FPS:$ALTSCREEN111_AUTO_SHOW" in
-    *[!0-9:]*|'') log "ERROR invalid numeric AltScreen source config"; return 1 ;;
+  case "$ALTSCREEN111_PORT:$ALTSCREEN111_TEE_PORT:$ALTSCREEN111_WIDTH:$ALTSCREEN111_HEIGHT:$ALTSCREEN111_FPS:$ALTSCREEN111_AUTO_SHOW:$DIRECT_OUTPUT_FPS:$DIRECT_PACE:$DIRECT_PACE_BUFFER" in
+    *[!0-9:]*|'') log "ERROR invalid numeric AltScreen/direct output config"; return 1 ;;
   esac
+  case "$DIRECT_OUTPUT_FPS" in
+    20|25|30) ;;
+    *) log "ERROR DIRECT_OUTPUT_FPS must be 20, 25 or 30"; return 1 ;;
+  esac
+  case "$DIRECT_PACE" in
+    0|1) ;;
+    *) log "ERROR DIRECT_PACE must be 0 or 1"; return 1 ;;
+  esac
+  case "$DIRECT_PACE_BUFFER" in
+    1|2|3|4|5|6) ;;
+    *) log "ERROR DIRECT_PACE_BUFFER must be 1..6"; return 1 ;;
+  esac
+  if [ -r "$DIRECT_FPS_OVERRIDE_FILE" ]; then
+    FPS_OVERRIDE=$(cat "$DIRECT_FPS_OVERRIDE_FILE" 2>/dev/null)
+    case "$FPS_OVERRIDE" in
+      20|25|30) DIRECT_OUTPUT_FPS=$FPS_OVERRIDE ;;
+      *) log "WARN ignoring invalid direct FPS override: $FPS_OVERRIDE" ;;
+    esac
+  fi
   case "$ALTSCREEN111_URL" in
     *\"*|*\\*) log "ERROR invalid ALTSCREEN111_URL"; return 1 ;;
   esac

@@ -63,6 +63,7 @@ jobs:
             runtime/auto-direct/direct_ts_auto_start.sh \
             runtime/auto-direct/direct_ts_auto_stop.sh \
             runtime/auto-direct/direct_ts_auto_status.sh \
+            runtime/auto-direct/direct_fps.sh \
             runtime/auto-direct/direct_ts_auto_supervisor.sh \
             runtime/auto-direct/direct_ts_auto_watchdog.sh \
             runtime/auto-direct/writev_gate.sh \
@@ -134,6 +135,9 @@ jobs:
           grep -Fq 'echo "run-$$"' runtime/auto-direct/common.sh
           grep -Fq 'deployment_media_root' deployment/mu1440/install.sh
           grep -Fq 'mount -uw "$DEPLOY_MEDIA_ROOT"' runtime/auto-direct/common.sh
+          grep -Fq 'DIRECT_FPS_OVERRIDE_FILE=/mnt/app/root/mibr-direct-output-fps' runtime/auto-direct/common.sh
+          grep -Fq 'MIBR_PACE="$DIRECT_PACE" MIBR_PACE_BUFFER="$DIRECT_PACE_BUFFER"' runtime/auto-direct/direct_ts_auto_supervisor.sh
+          grep -Fq 'DIRECT_FPS=SET fps=$FPS' runtime/auto-direct/direct_fps.sh
           grep -Fq 'for SPEC in "NavIgnore:MIBR-NavIgnore.jar:$EXPECTED_NAVIGNORE" "Most20:MIBR-Most20FPS.jar:$EXPECTED_MOST20"; do' deployment/mu1440/install.sh
           grep -Fq 'fail "${NAME}_required expected=$EXPECT"' deployment/mu1440/install.sh
           grep -Fq 'fail "${NAME}_lsd_insertion_point_missing"' deployment/mu1440/install.sh
