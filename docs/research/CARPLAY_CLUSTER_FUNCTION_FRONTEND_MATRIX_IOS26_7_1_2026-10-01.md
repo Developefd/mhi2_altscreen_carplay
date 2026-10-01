@@ -69,53 +69,126 @@ Evidence:
 
 ## 2. Frontend-effect matrix
 
-| Function / parameter | Plane | View / URL / scope | Visible frontend effect | Evidence | Legacy MHI2 |
-| --- | --- | --- | --- | --- | --- |
-| `maps:/car/instrumentcluster` | classic cluster URL | base instrument-cluster URL | Generic / AnyContent navigation cluster presentation. Template host selects the navigation controller rather than map-only or turn-card-only content. | **P** | **test now** |
-| `.../map` | classic cluster URL | `maps:/car/instrumentcluster/map` | Map presentation. Template host removes the generic navigation/turn-card child and adds the map/ETA view. | **O+P** | **test now** |
-| `.../instructioncard` | classic cluster URL | `maps:/car/instrumentcluster/instructioncard` | Maneuver / guidance-card presentation instead of the map view. | **O+P** | **test now** |
-| `showETA=yes/no/user` | classic URL setting | base/map cluster URL | Controls ETA content. Template host directly calls `setShowETA:` on map ETA tray and navigation controller when setting resolves to “yes”. | **O+P** | **test now** |
-| `showSpeedLimit=yes/no/user` | classic URL setting | base/map cluster URL | Controls speed-limit sign/indicator visibility in the navigation cluster UI. Maps consumes the resulting `showsSpeedLimit` scene setting. | **O+P** | **test now** |
-| `showCompass=yes/no/user` | classic URL setting | base/map cluster URL | Controls compass/heading indicator visibility. Maps consumes `showsCompass`; hybrid navigation controller exposes heading-indicator state. | **O+P** | **test now** |
-| `maneuverLayout=topAligned/leftAligned/rightAligned` | classic + hosted URL setting | navigation / map-hosted views | Repositions/justifies maneuver/guidance content. Template host maps values to `layoutOverride`; Maps also turns this into hybrid-cluster alignment/map inset decisions. | **P** | **test now** |
-| `itemType` | Apple cluster scene setting | derived from classic URL or hosted `mapsPresentation` | Switches among map (1), instruction card (2) and generic/AnyContent navigation (3). Causes actual child-view-controller replacement. | **P** | indirect via URL |
-| `changeMapZoomLevel` | AirPlay `/command` | cluster display UUID; map content | Zooms the **map camera/detail level only** on the cluster. Official Apple says vehicles with cluster map-zoom controls should add CarPlay map zoom. Wire direction values in the public receiver path: **0=in, 1=out**. | **O+W** | **highest-priority test** |
-| `CRSUIClusterZoomAction` | Apple Scene Action | hosted instrument-cluster scene | Internal semantic zoom event delivered to the hosted cluster app. Apple-internal enum is **1=in, 2=out**, deliberately different from the AirPlay wire enum. | **P** | do not emit as wire command |
-| `showUI` | AirPlay UI control | display UUID + optional approved cluster URL | Foregrounds/presents the selected cluster content on the named display. Public receiver research matches Apple cluster-picker behavior. | **W** | **test now** |
-| `stopUI` | AirPlay UI control | display UUID | Hides/stops the current UI on the named display. Established stop shape is UUID-only; do not rely on a URL argument. | **W** | **test now** |
-| `suggestUI` | AirPlay UI suggestion | candidate URL set | Soft/candidate presentation signal rather than a transport teardown. iOS sender research shows candidate withdrawal can be `suggestUI([])`. | **P+W** | log first |
-| `requestUI` | AirPlay UI request | session/UI context | Requests the other side to bring UI forward. It is **not** a Home-button synonym and is distinct from `showUI`. Exact caller direction is path-dependent. | **W** | bounded experiment |
-| `requestViewArea` | AirPlay ViewArea control | screen/display UUID + declared ViewArea index | Requests transition to another predeclared display region/layout without creating a new screen stream. | **P+W+D** | **high-priority test** |
-| `updateViewArea` | AirPlay ViewArea control | same existing display; declared ViewArea index | Applies the requested layout. Wire includes `uuid`, `viewAreaIndex`, `animationDurationMillis`, `adjacentViewAreas`; geometry comes from predeclared `viewAreas[]`. Independent hardware work shows coded video can remain constant while the visible region moves/animates. | **W+D** | **high-priority test** |
-| `viewAreas[]` / `safeArea` | display advertisement | Stream-111 display | Defines allowable rendered regions and protected content rectangle. Changes composition/cropping/insets, not the semantic map camera. | **O+W+D** | **test with two areas** |
-| `initialViewArea` / `adjacentViewAreas` | display advertisement | Stream-111 display | Chooses starting layout and which ViewArea transitions are exposed/allowed. | **W+D** | **test with ViewArea** |
-| `updateDisplayPanels` | modern AirPlay display control | display-panel topology | Live panel reconfiguration: geometry, pixel/physical dimensions, UUID, input model, maxFPS, initial URL/ViewArea, streams, appearance and zoom/display properties. Broader and riskier than a legacy ViewArea switch. | **P+W** | later A/B |
-| `uiAppearanceUpdate` | AirPlay appearance | named display | Changes CarPlay UI/chrome appearance (light/dark/tint-style state) on an enabled display. | **P+W** | later, capability-gated |
-| `mapAppearanceUpdate` | AirPlay appearance | map display | Changes map-specific appearance independently of general UI appearance. | **P+W** | later, capability-gated |
-| `setNightMode` | AirPlay session/display state | global/advisory | Day/night switch that can influence UI and map styling. It is not the same as per-display map appearance. | **W** | available |
-| `mapStyle` | Apple Scene setting | CarPlay scene | Internal resolved map-style state consumed by CarPlay scenes. Frontend result is map style/theme; do not conflate it with the accessory command name. | **P** | observe rather than inject |
-| `forceKeyFrame` | AirPlay screen control | existing screen stream | No intentional layout change; forces a fresh H.264 keyframe/bitstream refresh. Frontend effect is recovery from stale/frozen video, not a new presentation mode. | **P+W** | **test/recovery primitive** |
-| `maxFPS` | display advertisement | individual display/Stream 111 | Advertises the receiver/display frame-rate ceiling. It can limit source cadence but does not itself describe per-frame timing. | **W** | test independently |
-| `frameRateLimit` | Apple Scene setting | instrument-cluster scene | Limits/schedules Apple-side scene rendering; tied to scene-diff and thermal policy. Exists since at least iOS 17.6.1. No classic accessory setter is proven. | **P** | observe only |
-| `CRSUIClusterPressAction` | Apple Scene Action | hosted Apple cluster apps | Semantic select/button action delivered to hosted cluster apps. iOS 18.2 explicitly gates press types against Apple CarTrip/CarTirePressure bundle IDs. Not a proven AirPlay `pressType` command. | **P** | do not invent wire packet |
-| Knob / D-Pad HID | HID / AirPlay report | display-bound HID device | Physical selection/rotation/nudge/Home/Back input where declared. Useful for classic cluster interaction, but separate from `CRSUIClusterPressAction`. | **W** | only after correct HID advertisement |
-| `nextGenHostedContent:` | Apple private hosted URL | hosted/gauge-cluster scene | Entry point for next-generation hosted content. Parser exists, but classic `isURLSupported:` continues to validate `maps:/car/instrumentcluster...`; therefore this is not automatically a legacy `showUI` URL. | **P** | gate unresolved |
-| `mapsPresentation=map` | hosted URL setting | `nextGenHostedContent:/maps/...` | Hosted Maps content is map-centric. Resolves to Maps presentation/item type 1. | **P** | next-gen gate unresolved |
-| `mapsPresentation=instructionCard` | hosted URL setting | hosted Maps | Hosted maneuver/guidance-card content. Resolves to item type 2. | **P** | next-gen gate unresolved |
-| `mapsPresentation=anyContent` | hosted URL setting | hosted Maps | Generic hosted navigation content. Resolves to item type 3. | **P** | next-gen gate unresolved |
-| `altScreenPresentation=dcaCarousel` | next-gen hosted | cluster DCA carousel | Real carousel presentation. CarPlayAssetUI has an active DCA carousel item and rotation model; Trip supports `clusterDCA`. Maps has DCA-specific guidance-card sizing. Exact expansion of “DCA” is not established here. | **P** | **not classic-111 proven** |
-| `altScreenPresentation=mapsMediaCarousel` | next-gen hosted | cluster Maps+Media carousel | **Joint Maps + Media cluster mode.** Maps returns `isRenderedInMediaCarousel=YES` for presentation type 2; Media sets `isClusterMapsAndMedia = (type == 2)` and logs “Radio cluster maps and media”. Exact spatial arrangement remains asset/OEM dependent. | **P, very strong** | **not classic-111 proven** |
-| `altScreenPresentation=popover` | next-gen hosted | cluster popover | Dedicated cluster-popover presentation. Trip recognizes `clusterPopover`; CarPlayAssetUI contains `PopoverModel` / `PopoverView` and transition coordination. Visible behavior is a transient/floating cluster content surface, but precise geometry is asset/OEM dependent. | **P + I geometry** | **not classic-111 proven** |
-| `altScreenPresentation=passengerDisplay` | next-gen hosted | passenger-display scene | Routes content to a **separate passenger display**, not simply another cluster card. Media explicitly creates/stores a passenger scene/window for type 4. | **P** | not our VC target |
-| `altScreenPresentation=deck` | next-gen hosted (26.2+) | generic hosted content | Generic deck/card/carousel composition. 26.2 adds `deck`, `DeckActivity`, carousel direction/model data, left/right carousel swipe handlers and widget-host migration. Exact final OEM presentation and enum value are not pinned from the 26.1 parser. | **P existence + I exact UI** | not legacy proven |
-| `displayLocation` | Apple Scene setting | hosted scene topology | Chooses where the hosted scene belongs. iOS 26.1 logging resolves values including **Center Console**, **Passenger Display** and **Secondary Cluster**. This is topology, not a map style. | **P** | not classic wire |
-| Smart Display Zoom / `displayScaleMode` | CarKit + CarPlay Settings | whole CarPlay display | **Scales the entire CarPlay UI**, allowing a denser/smaller or larger UI depending on supported screen configuration. Apple says apps are automatically resized to the new display scale. This is not map zoom. | **O+P** | main/display-scaling research, not map-zoom command |
-| display `ZoomFactor` / `zoomFactor` | display configuration / CarKit | display-scale computation | Numeric input to CarKit display scaling. iOS 26.1 reads `ZoomFactor`; scaling logs use roughly `preferred-to-original scale ratio / ZoomFactor`. Later 26.x propagates zoom factor deeper into session-host configuration. Not a semantic map zoom. | **P** | investigate separately |
-| `enablesViewAreas` | capability gate | display/session | Enables ViewArea negotiation/switching. Without the gate, declaring rectangles alone is not sufficient on modern stacks. | **W+D** | required for modern behavior |
-| `enablesMapAppearance` | capability gate | display/session | Arms map appearance control. | **W** | later |
-| `enablesUIAppearance` | capability gate | display/session | Arms UI appearance control. | **W** | later |
-| `enablesFocusTransfer` / `viewAreaSupportsFocusTransfer` | capability/input focus | multi-surface UI | Allows focus movement between CarPlay and native surfaces. Independent receiver evidence shows this is **orthogonal to ViewArea acceptance**. | **W+D** | defer |
-| `changeUIContext` / UI-context URL sets | AirPlay context | multi-surface UI | Transfers logical UI context among eligible surfaces/URLs. Distinct from simple show/stop and largely irrelevant until the richer UI-context feature is advertised. | **W** | defer |
+The original single table became too wide to be useful on GitHub. It is now split by functional layer.
+Public visual references are attached **directly to the relevant rows/sections** instead of living only
+in a separate reference appendix.
+
+### 2.1 Classic cluster navigation and controls
+
+| Function | View / scope | Visible frontend effect | Evidence / visual reference |
+| --- | --- | --- | --- |
+| `maps:/car/instrumentcluster` | classic cluster base | Generic / AnyContent navigation presentation rather than map-only or turn-card-only content. **MU1440: test now.** | **P** · [Apple CarPlay docs](https://developer.apple.com/documentation/carplay) |
+| `.../map` | `maps:/car/instrumentcluster/map` | Map-centric cluster presentation. **MU1440: test now.** | **O+P** · [WWDC19 second-screen examples](https://developer.apple.com/videos/play/wwdc2019/252/) |
+| `.../instructioncard` | `maps:/car/instrumentcluster/instructioncard` | Maneuver / guidance-card presentation instead of the map view. **MU1440: test now.** | **O+P** · [WWDC19](https://developer.apple.com/videos/play/wwdc2019/252/) |
+| `showETA=yes/no/user` | classic navigation UI | Shows/hides ETA content; TemplateUIHost drives the ETA tray/controller. **MU1440: test now.** | **O+P** · [WWDC23](https://developer.apple.com/videos/play/wwdc2023/10150/) |
+| `showSpeedLimit=yes/no/user` | classic navigation UI | Shows/hides the speed-limit sign/indicator. **MU1440: test now.** | **O+P** · [WWDC23](https://developer.apple.com/videos/play/wwdc2023/10150/) |
+| `showCompass=yes/no/user` | classic navigation UI | Shows/hides compass / heading indication. **MU1440: test now.** | **O+P** · [WWDC23](https://developer.apple.com/videos/play/wwdc2023/10150/) |
+| `maneuverLayout=topAligned/leftAligned/rightAligned` | classic + hosted navigation | Repositions/justifies maneuver/guidance content and changes map insets/layout. **MU1440: test now.** | **P** |
+| `itemType` | derived scene setting | Selects map (1), instruction card (2), or generic/AnyContent (3); causes a real child-controller change. | **P** |
+| `changeMapZoomLevel` | cluster display UUID + map | Semantic map-camera zoom, completely separate from touch emulation. Wire values: **0=in, 1=out**. **MU1440: highest-priority test.** | **O+W** · [WWDC23 — Apple explicitly calls out cluster map zoom](https://developer.apple.com/videos/play/wwdc2023/10150/) |
+| `CRSUIClusterZoomAction` | Apple hosted Scene Action | Internal semantic zoom event. Different enum: **1=in, 2=out**. Do not emit as an AirPlay command. | **P** |
+| `showUI` / `stopUI` | display UUID + approved URL | Presents or removes the chosen cluster UI without redefining the video transport. **MU1440: test now.** | **W** |
+| `suggestUI` | candidate URL set | Soft presentation suggestion; withdrawing candidates does not imply Stream-111 teardown. | **P+W** |
+| `requestUI` | UI/session context | Requests UI presentation; semantically separate from `showUI` and from a Home-button action. | **W** |
+
+Apple's 2023 session explicitly groups **ETA, speed-limit signs, compass and instrument-cluster map zoom**
+as vehicle-system integration features:
+
+[WWDC23 — Optimize CarPlay for vehicle systems](https://developer.apple.com/videos/play/wwdc2023/10150/)
+
+![Apple WWDC23 CarPlay visual-integration session artwork](https://devimages-cdn.apple.com/wwdc-services/images/D35E0E85-CCB6-41A1-B227-7995ECD83ED5/8207/8207_wide_900x506_2x.jpg)
+
+---
+
+### 2.2 View Areas, Safe Areas and live geometry
+
+| Function | View / scope | Visible frontend effect | Evidence / visual reference |
+| --- | --- | --- | --- |
+| `viewAreas[]` | display geometry | A list of predefined rectangles where CarPlay may draw. Each entry uses pixel coordinates: `originXPixels`, `originYPixels`, `widthPixels`, `heightPixels`. Multiple areas represent alternate layouts. | **O+W+D** · [WWDC19](https://developer.apple.com/videos/play/wwdc2019/252/) · [WWDC23](https://developer.apple.com/videos/play/wwdc2023/10150/) |
+| nested `safeArea` | inside one View Area | Rectangle inside the View Area where important/interactable UI must remain visible. It is **not** the video crop: imagery may fill the View Area while controls/route guidance remain inside Safe Area. | **O+W+D** · [WWDC19](https://developer.apple.com/videos/play/wwdc2019/252/) |
+| `initialViewArea` | display state | Selects the initial View Area by array index. | **W+D** |
+| `adjacentViewAreas[]` | display state | Declares which other View Area indices are reachable from the current state. | **W+D** |
+| `requestViewArea` | iPhone → accessory | Requests transition to a previously declared View Area index. No new rectangle and no new screen stream are created by the command itself. | **P+W+D** · [WWDC19 dynamic resizing](https://developer.apple.com/videos/play/wwdc2019/252/) |
+| `updateViewArea` | accessory → iPhone | Confirms/applies the selected index and carries `animationDurationMillis` plus the new adjacent-index set. **MU1440: high-value probe.** | **W+D** · [WWDC19](https://developer.apple.com/videos/play/wwdc2019/252/) |
+| `viewAreaTransitionControl` | per-area modern metadata | Marks participation in controlled/animated resizing. Some current SDK emission paths gate this metadata to type 110, so its exact type-111 applicability must be vehicle-tested. | **P/W** |
+| `viewAreaStatusBarEdge` | per-area modern metadata | Tells CarPlay which edge should own the status-bar relationship for that layout. | **P/W** |
+| `drawUIOutsideSafeArea` | per-area modern metadata | Controls whether non-critical UI may draw outside the Safe Area. | **P/W** |
+| `updateDisplayPanels` | modern display topology | Much broader live reconfiguration of panel geometry, dimensions, UUIDs, streams, initial URL/ViewArea, appearance and scaling. Keep separate from a simple ViewArea switch. | **P+W** · [WWDC24 architecture](https://developer.apple.com/videos/play/wwdc2024/10111/) |
+
+Apple's WWDC19 example is almost exactly the scenario relevant to a configurable Virtual Cockpit:
+the **View Area extends between/behind virtual gauges**, while a smaller Safe Area keeps important
+content visible. Apple then demonstrates **two View Areas for the same instrument cluster** and a timed
+transition as the native tachometers move.
+
+<p>
+  <img src="https://pics.computerbase.de/8/8/1/0/6/7-1080.eabb9d44.jpg" alt="Apple WWDC19 instrument-cluster View Area and Safe Area example, mirrored by ComputerBase" width="48%">
+  <img src="https://pics.computerbase.de/8/8/1/0/6/10-1080.f2c5681b.jpg" alt="Apple WWDC19 alternate View Areas / dynamic screen sizing example, mirrored by ComputerBase" width="48%">
+</p>
+
+*WWDC19 Apple presentation material, externally mirrored by ComputerBase for still-image convenience.
+Primary source: [Apple WWDC19 — Advances in CarPlay Systems](https://developer.apple.com/videos/play/wwdc2019/252/).*
+
+> **Important legacy caveat:** Apple publicly demonstrates dynamic resizing on an instrument cluster,
+> but newer SDK reconstruction shows that several auxiliary ViewArea metadata flags are emitted only on
+> certain screen types. For legacy type-111 MHI2, **multiple selectable View Areas are therefore a test
+> target, not yet a guaranteed capability**.
+
+---
+
+### 2.3 Next-generation hosted / dynamic cluster content
+
+| Function | View / scope | Visible frontend effect | Evidence / visual reference |
+| --- | --- | --- | --- |
+| `nextGenHostedContent:` | private hosted/gauge-cluster scene | Entry point for Apple's newer hosted-content family. The classic URL validator still separately recognizes `maps:/car/instrumentcluster...`, so this is not automatically a legacy `showUI` target. | **P** · context: [WWDC24 design system](https://developer.apple.com/videos/play/wwdc2024/10112/) |
+| `mapsPresentation=map` | hosted Maps | Map-centric hosted content; resolves to item type 1. | **P** |
+| `mapsPresentation=instructionCard` | hosted Maps | Hosted maneuver/guidance-card content; item type 2. | **P** |
+| `mapsPresentation=anyContent` | hosted Maps | Generic hosted navigation content; item type 3. | **P** |
+| `altScreenPresentation=dcaCarousel` | hosted cluster carousel | Real carousel presentation with active-item/rotation machinery and DCA-specific Maps sizing. Exact expansion of “DCA” remains unresolved. | **P** · visual context: [WWDC24 dynamic content](https://developer.apple.com/videos/play/wwdc2024/10112/?time=878) |
+| `altScreenPresentation=mapsMediaCarousel` | hosted Maps + Media | **Joint Maps/Media cluster mode.** Maps reports `isRenderedInMediaCarousel`; Media independently sets `isClusterMapsAndMedia = (type == 2)`. Exact OEM geometry remains asset/layout dependent. | **P, very strong** · [WWDC24 — Maps + Now Playing are shown as dynamic-content choices](https://developer.apple.com/videos/play/wwdc2024/10112/?time=878) · [Now Playing docs](https://developer.apple.com/documentation/NowPlaying) |
+| `altScreenPresentation=popover` | hosted cluster | Dedicated transient/floating cluster content surface. Trip/TirePressure and CarPlayAssetUI all have matching popover concepts. | **P + I geometry** · [WWDC24 — dynamic-content area also hosts notifications/pop-ups](https://developer.apple.com/videos/play/wwdc2024/10112/?time=878) |
+| `altScreenPresentation=passengerDisplay` | passenger-display scene | Routes content to a separate passenger scene/window rather than merely changing a cluster card. | **P** · [WWDC24 architecture](https://developer.apple.com/videos/play/wwdc2024/10111/) |
+| `altScreenPresentation=deck` | hosted content, 26.2+ | Generic deck/card/carousel composition. 26.2 introduces `deck`, `DeckActivity`, carousel direction/model and swipe handling. Exact OEM presentation remains unresolved. | **P existence + I exact UI** |
+| `displayLocation` | hosted scene topology | Places hosted content on locations such as Center Console, Passenger Display or Secondary Cluster. | **P** · [WWDC24 architecture](https://developer.apple.com/videos/play/wwdc2024/10111/) |
+
+The WWDC24 **Dynamic content** chapter is the closest public visual analogue to the hosted-content
+family found in current iOS binaries: Apple shows a large map paired with compact instrumentation,
+steering-wheel cycling through content, **Maps and Now Playing**, vehicle trip/tire-pressure/ADAS
+content, and notifications/pop-ups in the same dynamic-content region.
+
+[WWDC24 — Say hello to the next generation of CarPlay design system, Dynamic content @ 14:38](https://developer.apple.com/videos/play/wwdc2024/10112/?time=878)
+
+![Illustrative Apple next-generation CarPlay cluster with map between gauges](https://cdn.mos.cms.futurecdn.net/v2/t%3A0%2Cl%3A631%2Ccw%3A1612%2Cch%3A1612%2Cq%3A80%2Cw%3A1612/dZewdpYMLnLC3gy2gwXNgJ.png)
+
+*Apple promotional next-generation CarPlay imagery, externally mirrored by Tom's Guide. It is useful
+for visual orientation only and is **not** proof that this exact layout equals the private
+`mapsMediaCarousel` enum.*
+
+---
+
+### 2.4 Appearance, scaling, timing and input
+
+| Function | View / scope | Visible frontend effect | Evidence / visual reference |
+| --- | --- | --- | --- |
+| `uiAppearanceUpdate` | named display | Changes general CarPlay UI/chrome appearance per display. | **P+W** · [WWDC23](https://developer.apple.com/videos/play/wwdc2023/10150/) |
+| `mapAppearanceUpdate` | map display | Changes map appearance independently of general UI appearance. | **O+P+W** · [WWDC23](https://developer.apple.com/videos/play/wwdc2023/10150/) |
+| `setNightMode` | global/advisory | Day/night state that can trigger dark appearance; separate from per-display map appearance. | **W** · [WWDC23](https://developer.apple.com/videos/play/wwdc2023/10150/) |
+| `mapStyle` | Apple Scene setting | Internal resolved map-style state consumed by CarPlay scenes. | **P** |
+| Smart Display Zoom / `displayScaleMode` | whole CarPlay display | Rescales the **entire CarPlay UI** to a different display scale. Not map zoom and not ViewArea switching. | **O+P** · [WWDC25 — Smart Display Zoom](https://developer.apple.com/videos/play/wwdc2025/216/) |
+| display `ZoomFactor` / `zoomFactor` | display-scale computation | Numeric input to CarKit's scale/canvas calculation. Later 26.x propagates it deeper into session-host configuration. | **P** |
+| `forceKeyFrame` | existing video stream | No deliberate layout change; requests a fresh H.264 keyframe for stale/frozen-video recovery. | **P+W** |
+| `maxFPS` | display advertisement | Receiver/display frame-rate ceiling; does not define source AU timing. | **W** |
+| `frameRateLimit` | Apple cluster scene | Apple-side render scheduling/limit; exists since at least iOS 17.6.1 and is not a proven classic accessory setter. | **P** |
+| `CRSUIClusterPressAction` | Apple hosted Scene Action | Semantic select/button action to hosted Apple cluster apps. Not a proven AirPlay `pressType` command. | **P** |
+| Knob / D-Pad HID | display-bound HID | Physical rotation/select/nudge/Home/Back input when the matching HID capabilities are declared. | **W** |
+| `enablesViewAreas` | capability gate | Arms ViewArea negotiation/switching on stacks that require the feature gate. | **W+D** |
+| `enablesMapAppearance` / `enablesUIAppearance` | capability gates | Arms the corresponding runtime appearance controls. | **W** |
+| `enablesFocusTransfer` / `viewAreaSupportsFocusTransfer` | multi-surface focus | Allows focus movement between CarPlay and native surfaces; orthogonal to ViewArea geometry. | **W+D** |
+| `changeUIContext` / UI-context URL sets | multi-surface UI | Transfers logical UI context among eligible surfaces/URLs. | **W** |
+
+Apple's iOS 26 **Smart Display Zoom** is a useful visual reminder that display scaling is a completely
+different mechanism from semantic map zoom:
+
+[WWDC25 — Turbocharge your app for CarPlay](https://developer.apple.com/videos/play/wwdc2025/216/)
 
 ---
 
