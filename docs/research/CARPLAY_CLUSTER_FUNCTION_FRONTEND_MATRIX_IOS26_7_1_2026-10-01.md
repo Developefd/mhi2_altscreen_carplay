@@ -121,8 +121,9 @@ content visible. Apple then demonstrates **two View Areas for the same instrumen
 transition as the native tachometers move.
 
 <p>
-  <img src="https://pics.computerbase.de/8/8/1/0/6/7-1080.eabb9d44.jpg" alt="Apple WWDC19 instrument-cluster View Area and Safe Area example, mirrored by ComputerBase" width="48%">
-  <img src="https://pics.computerbase.de/8/8/1/0/6/10-1080.f2c5681b.jpg" alt="Apple WWDC19 alternate View Areas / dynamic screen sizing example, mirrored by ComputerBase" width="48%">
+  <img src="https://pics.computerbase.de/8/8/1/0/6/7-1080.eabb9d44.jpg" alt="Apple WWDC19 instrument-cluster View Area and Safe Area example, mirrored by ComputerBase" width="32%">
+  <img src="https://pics.computerbase.de/8/8/1/0/6/10-1080.f2c5681b.jpg" alt="Apple WWDC19 alternate View Areas / dynamic screen sizing example, mirrored by ComputerBase" width="32%">
+  <img src="https://pics.computerbase.de/8/8/1/0/6/3-1080.11f8968f.jpg" alt="Apple WWDC19 irregular-display View Area and Safe Area example, mirrored by ComputerBase" width="32%">
 </p>
 
 *WWDC19 Apple presentation material, externally mirrored by ComputerBase for still-image convenience.
@@ -534,101 +535,19 @@ classic AirPlay commands from being merged into one misleading “CarPlay parame
 
 ---
 
-## 11. Visual references / Apple examples
+## 11. Reference layout
 
-The links below are intentionally kept as external references rather than mirrored media. They are useful
-for correlating the protocol/control names in this document with what Apple actually shows on screen.
+Public Apple references and visual examples are now linked **inline next to the function they support**
+in sections 2.1–2.4. This keeps the evidence close to the corresponding control and avoids a second,
+duplicated link catalogue at the end of the document.
 
-### View Areas, Safe Areas and dynamic resizing
+Primary public talks used throughout the matrix:
 
-Apple WWDC19 — **Advances in CarPlay Systems**
+- [WWDC19 — Advances in CarPlay Systems](https://developer.apple.com/videos/play/wwdc2019/252/)
+- [WWDC23 — Optimize CarPlay for vehicle systems](https://developer.apple.com/videos/play/wwdc2023/10150/)
+- [WWDC24 — Say hello to the next generation of CarPlay design system](https://developer.apple.com/videos/play/wwdc2024/10112/)
+- [WWDC24 — Meet the next generation of CarPlay architecture](https://developer.apple.com/videos/play/wwdc2024/10111/)
+- [WWDC25 — Turbocharge your app for CarPlay](https://developer.apple.com/videos/play/wwdc2025/216/)
 
-https://developer.apple.com/videos/play/wwdc2019/252/?time=174
-
-Relevant visual examples in this session include:
-
-- a rectangular **View Area** extending behind virtual gauges with a narrower **Safe Area** between them;
-- a circular instrument example where the bounding rectangle is the View Area and the inscribed
-  rectangle is the Safe Area;
-- **dynamic screen resizing** with two predefined View Areas for the same display;
-- an instrument-cluster example where virtual tachometers move between two positions and CarPlay
-  resizes in sync with the vehicle UI.
-
-Apple explicitly describes the View Area as the rectangle in which CarPlay draws, while the Safe Area
-is the subset in which important/interactable content must remain visible.
-
-Slide/PDF mirror useful for still-image reference:
-
-https://docs.huihoo.com/apple/wwdc/2019/252_advances_in_carplay_systems.pdf
-
-### Classic cluster map controls and configurable navigation UI
-
-Apple WWDC23 — **Optimize CarPlay for vehicle systems**
-
-https://developer.apple.com/videos/play/wwdc2023/10150/
-
-Useful visual/function examples:
-
-- separate appearance for main display vs instrument cluster;
-- independent map appearance;
-- navigation UI stream with ETA, speed-limit sign and compass;
-- explicit instrument-cluster **CarPlay map zoom** support;
-- View Area / Safe Area handling for vehicle layouts.
-
-### Dynamic cluster content: Maps, Now Playing, trip, tire pressure, ADAS
-
-Apple WWDC24 — **Say hello to the next generation of CarPlay design system**
-
-https://developer.apple.com/videos/play/wwdc2024/10112/?time=878
-
-The **Dynamic content** chapter starts at 14:38 and visually demonstrates:
-
-- a large Maps content component paired with compact instrumentation;
-- content stacked behind non-critical gauge elements;
-- steering-wheel cycling through dynamic-content choices;
-- Maps and **Now Playing** as driver-selectable cluster content;
-- trip computer, tire pressure and ADAS content;
-- notifications and popovers using the same dynamic-content region;
-- layouts optimized to maximize Maps, ADAS or media.
-
-These visuals are useful context for the reverse-engineered `mapsMediaCarousel`, `dcaCarousel` and
-`popover` presentation names, but should not be treated as proof that those private enum names map
-1:1 onto every WWDC24 layout.
-
-### Multi-display / Remote UI architecture
-
-Apple WWDC24 — **Meet the next generation of CarPlay architecture**
-
-https://developer.apple.com/videos/play/wwdc2024/10111/
-
-Useful visual examples:
-
-- Remote UI, Local UI, Overlay UI and Punch-through UI layers;
-- one iPhone video stream for each vehicle display;
-- instrument-cluster-specific UI and vehicle-state paths;
-- content extending to center, secondary and passenger displays;
-- display-level synchronization and transitions.
-
-### iOS 26 Smart Display Zoom
-
-Apple WWDC25 — **Turbocharge your app for CarPlay**
-
-https://developer.apple.com/videos/play/wwdc2025/216/?time=622
-
-Apple demonstrates **Smart Display Zoom** as a whole-CarPlay display-scale feature. This is visually and
-architecturally separate from instrument-cluster map zoom and from View Area switching.
-
-### Additional still-image references
-
-The following third-party-hosted images are useful visual mirrors of Apple presentation material. They
-are linked only; they are not copied into this repository.
-
-- Instrument-cluster / View Area + Safe Area example:
-  https://pics.computerbase.de/8/8/1/0/6/7-1080.eabb9d44.jpg
-- Dynamic screen sizes / alternate View Area example:
-  https://pics.computerbase.de/8/8/1/0/6/10-1080.f2c5681b.jpg
-- Irregular display / View Area vs Safe Area example:
-  https://pics.computerbase.de/8/8/1/0/6/3-1080.11f8968f.jpg
-
-For research conclusions, prefer the Apple video/transcript evidence above. The still-image mirrors are
-included for quick visual orientation only.
+Still images embedded above are external mirrors or public Apple CDN assets and are included only for
+visual orientation; the linked Apple talks remain the primary public evidence.
