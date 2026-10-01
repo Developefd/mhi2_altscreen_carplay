@@ -27,6 +27,7 @@
 - [MHI2 patch portability estimate](research/MHI2_PATCH_PORTABILITY_ESTIMATE_2026-09-28.md) — per-firmware estimates for GEN2, Direct-TS, gate, NavIgnore and Java policy reuse
 - [Audi B9 MU1438 compatibility lead and remaining gates](research/AUDI_B9_MU1438_COMPATIBILITY_LEAD_2026-09-28.md)
 - [ScreenStream / Type-111 protocol](research/STREAM111_PROTOCOL.md)
+- [CarPlay cluster / AltScreen configuration index (iOS 26.7.1)](research/CARPLAY_CLUSTER_CONFIGURATION_INDEX_IOS26_7_1_2026-10-01.md)
 - [VC view-state / ViewArea research](research/VC_VIEWAREA_STATE.md)
 - [iOS 27.2 sender lifecycle](research/IOS27_SENDER_LIFECYCLE.md)
 - [PlatformControl flight recorder](research/PLATFORMCONTROL_FLIGHT_RECORDER.md)
