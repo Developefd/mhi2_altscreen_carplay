@@ -119,6 +119,26 @@ Evidence:
 
 ---
 
+## 2a. Non-visual gates that determine whether the rows above work
+
+These do not normally create a visible frontend effect by themselves, but omitting them can make a
+valid command or URL appear to be unsupported.
+
+| Gate / advertisement | Role | Practical consequence |
+| --- | --- | --- |
+| `altScreenURLs` | Declares the cluster URLs supported by the auxiliary display/session. | A classic cluster `showUI` target must be represented in the negotiated URL surface. |
+| `approvedClusterURLs` | Accessory/config allow-list for cluster UI URLs. | A syntactically valid Maps cluster URL can still be rejected if it is outside the approved set. |
+| `altScreenSuggestUIURLs` | Declares URLs eligible for the softer `suggestUI` mechanism. | Controls the candidate set that iOS may suggest for the cluster; it is not the same as `altScreenURLs`. |
+| `initialURL` | Seeds the auxiliary video stream with its first content role. | Common cluster value is `maps:/car/instrumentcluster/map`; this affects initial presentation but is not a runtime command. |
+| `showsInstruments` | Marks a display panel as an instrument/cluster role. | Helps iOS classify the surface as cluster content rather than an ordinary display. |
+| `supportsAltScreen` / negotiated `altScreen` feature | Enables the auxiliary-screen feature at session level. | Without successful feature negotiation, the type-111 display description alone is insufficient. |
+| display `uuid` / HID `displayUUID` consistency | Binds commands and input devices to the correct screen. | `showUI`, map zoom, ViewArea and HID operations can silently target the wrong/nonexistent surface if UUID ownership is inconsistent. |
+
+These gates are one reason an Apple-internal `nextGenHostedContent:` URL cannot be assumed to work
+merely because its parser exists.
+
+---
+
 ## 3. Why `changeMapZoomLevel` was easy to miss
 
 It sits between the layers previously searched:
