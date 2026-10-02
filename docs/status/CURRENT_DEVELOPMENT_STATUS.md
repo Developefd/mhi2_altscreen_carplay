@@ -53,6 +53,21 @@ new ViewHandler JXE at all. Its approach keeps stock view JXEs unchanged and ove
 global `WidgetFactoryImpl` through a prepended boot JAR. Selected widget types are instantiated as
 project subclasses which add their UI inside an existing stock view.
 
+##### Exact MU1440 compile checkpoint
+
+The externally reported App-Connect guard has now been recovered exactly from the MU1440
+`Ssm_5458.jxe`: `SMI_SETUP_MAIN` contains the main content Container with target ID
+`81171177`.
+
+The relevant retained MU1440 factory/tree/pooling sources are byte-identical to the readable donor,
+and a private compile-only two-class PoC now builds successfully against the exact retained MU1440
+classpath with the target IBM J9 toolchain (classfile major 46).
+
+No HMI vehicle patch has been run yet. The remaining static gate is ownership/lifecycle for any
+programmatically added Button/TextArea/list children; the stock tree builder normally allocates and
+releases widget, controller and UI as separate objects.
+
+
 That path now has priority for the first MU1440 HMI experiment.
 
 The key safety requirement is that the factory seam is global and pooled, so any custom widget
