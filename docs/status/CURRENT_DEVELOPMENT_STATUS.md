@@ -1,6 +1,6 @@
 # Current development status
 
-Last updated: **2026-09-29**
+Last updated: **2026-10-02**
 
 > The downloadable experimental GEN2 binary is intentionally **not the newest development build**.
 >
@@ -9,6 +9,42 @@ Last updated: **2026-09-29**
 > cases and are not published as the recommended binary yet.
 
 ## Where the project is now
+
+
+### 2026-10-02 HMI / settings architecture
+
+The MU1440 menu and ViewHandler architecture has now been mapped far enough to define a low-coupling
+settings integration path.
+
+Key result:
+
+```text
+top-level main menu
+    = dynamic CIO / GridMenu system
+
+application-local settings
+    = generated state machine
+      -> showView()
+      -> LocalViewHandlerFactory
+      -> JXE/ViewHandler
+```
+
+The preferred AltScreen UI direction is therefore **not** a new top-level application and not a
+replacement of the large stock `Cmc` ViewHandler. The current design is a dedicated sibling settings
+view entered from the existing FPK / Virtual Cockpit area.
+
+The remaining HMI gate is additive loading, not menu discovery:
+
+- verify exact MU1440 J9/XIP loader behavior;
+- test the hypothesis that a new generated-package ViewHandler may be supplied through bootclasspath
+  without first generating a new JXE;
+- fall back to a small custom XIP/JXE overlay only if the bootclasspath path is not valid.
+
+No vehicle HMI patch has been deployed yet. The first future HMI test is intentionally UI-only with a
+dummy backend.
+
+See [MU1440 HMI menu and ViewHandler architecture](../architecture/MU1440_HMI_MENU_AND_VIEWHANDLER_ARCHITECTURE.md).
+
 
 ### 2026-09-29 vehicle PoC milestone
 
