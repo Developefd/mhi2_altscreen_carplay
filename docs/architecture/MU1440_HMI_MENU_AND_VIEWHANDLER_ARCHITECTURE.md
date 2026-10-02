@@ -1438,3 +1438,44 @@ P4  full stock-style settings controls              later
 
 The intent of P1 is to prove the bootclasspath/factory mechanism on the vehicle before changing the
 stock child tree.
+
+
+---
+
+# 39. Minimal first vehicle proof
+
+The first future HMI vehicle proof has been reduced further.
+
+It does **not** substitute `Container` and does not add any new child widgets.
+
+The minimal candidate changes only the stock widget factory's type-49 allocation:
+
+```text
+TextArea -> project TextArea subclass
+```
+
+and that subclass remains inert unless the exact stock host matches:
+
+```text
+view       = SMI_SETUP_MAIN
+targetId   = 92192369
+widgetName = TextArea
+```
+
+This target is the existing TextArea inside the stock CarPlay information row.
+
+The only proof effect is a visible test string. No CarPlay or AltScreen runtime state is changed.
+
+The candidate build additionally verifies its generated `WidgetFactoryImpl` against the retained
+exact MU1440 source and rejects any factory delta beyond the intended TextArea substitution.
+
+Therefore the staged order is now:
+
+```text
+P1  one existing stock TextArea subclass only
+P2  guarded Container + project-owned child widgets
+P3  semantic runtime action
+P4  complete stock-style settings UI
+```
+
+This keeps the first runtime experiment independent of the more invasive pooled-Container path.
