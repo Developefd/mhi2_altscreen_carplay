@@ -88,7 +88,10 @@ cleanup(){
   echo "session=$SESSION"
   echo "log=$LOG"
 }
-trap cleanup 0 1 2 15
+trap cleanup 0
+trap 'exit 129' 1
+trap 'exit 130' 2
+trap 'exit 143' 15
 
 mkdir -p "$SESSION" || {
   echo "ERROR cannot create session directory: $SESSION"

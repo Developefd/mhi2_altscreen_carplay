@@ -24,14 +24,18 @@ DSIKeyPanelListener.updateKey2(...)
 The high-level ASL API does not contain a named `KEY_VIEW`, and several raw MFW keys are not
 translated into distinct ASL IDs. A high-level listener can therefore lose the identity we need.
 
-The exact stock keypanel handler already logs raw events before that translation:
+The stock keypanel handler path is `AslTargetSystemKeyPanelHandling.processKeyEvent(...)`. In the
+decompiled MHI2 family implementation, it logs the raw tuple **before** forwarding the event through
+`SystemKeyUtil`:
 
 ```text
 HK Received: KBD[<kbd>] KEY[<raw-key>] KST[<state>]
 ```
 
 The first vehicle mapping attempt should use that existing log path rather than patching an OEM Java
-class merely to discover button IDs.
+class merely to discover button IDs. If the exact MU1440 trace sink cannot expose this line live,
+`AslTargetSystemKeyPanelHandling` is the precise fallback observation seam to revisit; even then the
+preferred change is additive/passive logging, not key consumption or remapping.
 
 ## Exact MU1440 raw MFW constants
 
