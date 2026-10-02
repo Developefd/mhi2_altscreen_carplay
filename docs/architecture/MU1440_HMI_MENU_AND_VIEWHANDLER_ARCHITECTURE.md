@@ -995,3 +995,170 @@ existing AltScreen runtime contract
 The architecture question is now substantially resolved.
 
 The remaining problem is not how the MU1440 menu is structured, but how to materialize and load one new target-compatible ViewHandler as cleanly and reversibly as possible.
+
+
+---
+
+# 32. Additive-loader follow-up
+
+The menu architecture itself is no longer the primary unknown. The remaining question is how to provide one new project-owned ViewHandler with the smallest possible firmware-specific surface.
+
+## 32.1 Bootclasspath-only ViewHandler hypothesis
+
+Readable MIB2 J9/XIP framework code suggests two relevant behaviors:
+
+1. a missing per-view JXE load can be caught before the loader continues to qualified-class resolution;
+2. the XIP class loader attempts ordinary parent/super class loading before falling back to classes from loaded JXE containers.
+
+That creates a potentially simpler first prototype:
+
+```text
+showView("MibrAltScreenSettings")
+        |
+        v
+generated.de.vw.mib.car.view.internal.MibrAltScreenSettings
+        |
+        +--> MibrAltScreenSettings.jxe lookup fails
+        |    [potentially non-fatal]
+        |
+        v
+normal class resolution
+        |
+        v
+project class supplied through bootclasspath
+```
+
+If the exact MU1440 implementation behaves the same way, a new JXE may not be required for the first sibling-view PoC.
+
+Current classification:
+
+`BOOTCLASSPATH_ONLY_NEW_VIEWHANDLER = STRONG HYPOTHESIS / NOT VEHICLE-PROVEN`
+
+This must be verified against the exact MU1440 `JxeSkinClassLoader` / Microdoc J9 classes before deployment.
+
+## 32.2 Thin compatibility-shim design
+
+A separate VW MIB2 implementation has independently reported a similar portability pattern:
+
+```text
+small firmware-specific loader / adapter
+        |
+        +--> native hooks via LD_PRELOAD where needed
+        |
+        +--> Java hooks via bootclasspath where needed
+        |
+        v
+largely project-owned feature libraries
+```
+
+That report is useful corroboration, but it is not source-verified evidence for this project.
+
+The design principle is nevertheless consistent with the project's own firmware corpus:
+
+> keep target-specific ABI knowledge in a small compatibility layer rather than spreading firmware-specific assumptions through the AltScreen feature implementation.
+
+## 32.3 MU1440 vs VWG13 K4525 MU1367
+
+A useful nearby VW baseline is `MHI2_ER_VWG13_K4525_MU1367`.
+
+| Component | MU1440 | VWG13 K4525 MU1367 | Relation |
+| --- | --- | --- | --- |
+| `lsd.jxe` | 55,840,933 B · `a55d9cfb69c5...` | 55,840,541 B · `09167f1d0ae5...` | whole file differs |
+| `dio_manager` | 686,552 B · `4d6867bdd4c9...` | 684,305 B · `ead570d45071...` | binary differs |
+| `smartphone_integrator` | 806,539 B · `14b8458144c2...` | 806,540 B · `a566f3bebfd7...` | binary differs |
+| `libairplay.so` | 703,688 B · `193a4fd9101e...` | 703,688 B · `193a4fd9101e...` | byte-identical |
+
+The important interpretation is:
+
+```text
+same/near platform family
+    !=
+all loader-facing binaries byte-identical
+```
+
+At the same time, whole-`lsd.jxe` inequality does **not** imply all relevant Java classes differ. The existing compatibility work already shows exact stock-class matches for multiple Direct-VC Java seams between these profiles.
+
+The exact VWG13 `gal` hash is not yet included in the curated comparison used for this section and should be retrieved from the already admitted corpus before making an equality claim.
+
+---
+
+# 33. Minimal future HMI vehicle PoC
+
+The first HMI vehicle test should prove only the additive UI mechanism.
+
+Suggested page:
+
+```text
+CarPlay AltScreen
+
+Enabled     [On / Off]
+Alignment   [Auto / Left / Right]
+
+Back
+```
+
+The backend should initially be in-memory only.
+
+The first test should not:
+
+- change CarPlay transport state;
+- write productive DSI values;
+- edit persistent runtime markers;
+- replace `Cmc.jxe`, `Ssm_5458.jxe` or `Cm_0409.jxe`;
+- replace the stock `viewhandler.zip`.
+
+Required result:
+
+1. stock HMI starts normally;
+2. the existing FPK parent remains usable;
+3. the new sibling opens;
+4. input works;
+5. Back works;
+6. re-entry works;
+7. unrelated stock views remain unaffected;
+8. disabling/removing the project addition restores stock behavior deterministically.
+
+Only after this UI-only proof should real AltScreen settings be connected.
+
+---
+
+# 34. Static work before vehicle testing
+
+The following can be completed without another vehicle session:
+
+1. compare the exact MU1440 `JxeSkinClassLoader`, `XIPClassLoader`, `FileSPI`, `Archive` and `JxeClassLoader` implementations with the readable framework source;
+2. determine whether missing-`MibrAltScreenSettings.jxe` is operationally non-fatal on the exact target;
+3. prove or reject parent/bootclasspath resolution for a new generated-package ViewHandler class;
+4. map the minimal ViewHandler ABI: superclass, interfaces, constructor, post-construction lifecycle, widget initialization, event/listener lifecycle and Back handling;
+5. build a compile-only normal-JAR prototype before considering JXE generation;
+6. retrieve and compare the VWG13 `gal` artifact from the already admitted corpus;
+7. define exact deployment/rollback files and keep stock behavior as the default gate.
+
+Decision tree:
+
+```text
+missing per-view JXE non-fatal?
+        |
+   no --+--> custom JXE / XIP overlay path
+        |
+       yes
+        |
+        v
+bootclasspath class visible to loader?
+        |
+   no --+--> custom JXE / XIP overlay path
+        |
+       yes
+        |
+        v
+normal JAR class satisfies ViewHandler ABI?
+        |
+   no --+--> target JXE generation / loader patch
+        |
+       yes
+        |
+        v
+minimal bootclasspath-only sibling-view PoC
+```
+
+This is now the preferred order of work.
