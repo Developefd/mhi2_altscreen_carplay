@@ -245,7 +245,7 @@ existing Type 111
 
 not as evidence of a new Type-111 connection.
 
-## 8. ViewArea can be requested on an existing screen
+## 8. ViewArea is a same-screen preset transition
 
 Exact CarKit contains:
 
@@ -253,13 +253,53 @@ Exact CarKit contains:
 -[CARSession requestAdjacentViewAreaForScreenID:]
 ```
 
-and the matching endpoint action ultimately maps to an existing screen/display ID plus ViewArea
-index.
+and the matching endpoint action maps to an existing screen/display ID plus a **previously declared
+ViewArea index**.
 
-This is strong evidence that dynamic cluster geometry should first be explored as an **in-session
-presentation transition**, not as "create another Type-111 stream".
+The classic receiver-side transition has the shape:
 
-## 9. Current implementation consequence
+```text
+type = updateViewArea
+params.uuid                    = <display UUID>
+params.viewAreaIndex           = <declared index>
+params.animationDurationMillis = <duration>
+params.adjacentViewAreas       = [ ... ]
+```
+
+The command selects a negotiated ViewArea. It does not carry a replacement rectangle and does not
+inherently require a new Type-111 SETUP.
+
+SafeArea belongs to the declared ViewArea metadata. Therefore a live SafeArea change should be
+modeled as switching between predeclared ViewArea/SafeArea presets, not as mutating the active
+SafeArea rectangle in place.
+
+This is separate from `modesChanged`: ownership/app/audio/turn state can change independently from
+the ViewArea selection.
+
+### LIVI is not evidence for live geometry mutation
+
+LIVI exposes independent main/cluster `viewArea` and `safeArea` settings, but its
+`applyDisplayConfig()` only merges local configuration. The LIVI settings layer marks the
+`clusterViewArea*` and `clusterSafeArea*` fields as restart-required while projection is active.
+The changed values are therefore applied through a new negotiation/`/info` cycle.
+
+Use LIVI as evidence for descriptor structure, not for the live ViewArea transition mechanism.
+
+## 9. Classic cluster URL family closure
+
+For the classic instrument-cluster path, the exact current iOS evidence remains the three roles:
+
+```text
+maps:/car/instrumentcluster
+maps:/car/instrumentcluster/map
+maps:/car/instrumentcluster/instructioncard
+```
+
+No fourth classic `maps:/car/instrumentcluster/...` role was established in this pass. Modern
+private families such as `nextGenHostedContent:` belong to a separate hosted/next-generation
+presentation system and are not assumed to be valid classic `showUI` targets.
+
+## 10. Current implementation consequence
 
 For MU1440:
 
@@ -270,7 +310,13 @@ For MU1440:
 - use `showUI` / `stopUI` / `forceKeyFrame` as bounded same-session recovery experiments;
 - rebuild only on an actual transport/session generation boundary.
 
-## 10. Why Apple binaries are absent here
+## 11. Research closeout
+
+The LIVI / classic-cluster / current-iOS follow-up is consolidated in
+[CARPLAY_CLUSTER_ULTRA_CLOSEOUT_2026-10-03.md](CARPLAY_CLUSTER_ULTRA_CLOSEOUT_2026-10-03.md).
+That note also preserves the intentionally deferred Ultra-like local-compositor side track.
+
+## 12. Why Apple binaries are absent here
 
 The extracted system binaries are not redistributed.
 

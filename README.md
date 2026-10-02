@@ -288,11 +288,12 @@ If you want to understand the project without reading the entire repository, use
 12. [MHI2 patch portability estimate](docs/research/MHI2_PATCH_PORTABILITY_ESTIMATE_2026-09-28.md) — what can likely be reused directly, what needs a target profile, and what needs a new transport/patch.
 13. [MU1440 stock reference](docs/research/MU1440_STOCK_REFERENCE.md) — exact stock component hashes for the first proven target.
 14. [iOS 27 sender research](docs/research/IOS27_SENDER_LIFECYCLE.md) — exact build/hash authority behind the current lifecycle model.
-15. [Public references](docs/research/PUBLIC_REFERENCES.md) — prior art and external projects worth reading.
-16. [Developer installation](docs/INSTALLATION.md) — guarded install/restore path for the exact MU1440 reference target.
-17. [Advanced runtime switches](docs/architecture/ADVANCED_RUNTIME_SWITCHES.md) — persistent defaults, hidden feature flags and diagnostic markers.
-18. [MU1440 QNX shell compatibility](docs/testing/MU1440_QNX_SHELL_COMPATIBILITY.md) — exact-target command/paste constraints behind the scripts.
-19. [Roadmap](ROADMAP.md) — current priorities and concrete help-wanted areas.
+15. [CarPlay cluster / Ultra research closeout](docs/research/CARPLAY_CLUSTER_ULTRA_CLOSEOUT_2026-10-03.md) — closes the LIVI/ViewArea/classic-URL research thread and parks the local-compositor side track.
+16. [Public references](docs/research/PUBLIC_REFERENCES.md) — prior art and external projects worth reading.
+17. [Developer installation](docs/INSTALLATION.md) — guarded install/restore path for the exact MU1440 reference target.
+18. [Advanced runtime switches](docs/architecture/ADVANCED_RUNTIME_SWITCHES.md) — persistent defaults, hidden feature flags and diagnostic markers.
+19. [MU1440 QNX shell compatibility](docs/testing/MU1440_QNX_SHELL_COMPATIBILITY.md) — exact-target command/paste constraints behind the scripts.
+20. [Roadmap](ROADMAP.md) — current priorities and concrete help-wanted areas.
 
 ### Want to help?
 

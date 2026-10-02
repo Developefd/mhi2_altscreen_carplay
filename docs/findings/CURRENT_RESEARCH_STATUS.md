@@ -1,6 +1,6 @@
 # Current research status
 
-Last major architecture review: **2026-09-28**
+Last major architecture review: **2026-10-03**
 
 This page separates what is proven from what is implemented, inferred, still under test or explicitly
 deferred.
@@ -69,6 +69,7 @@ See [Direct VC video path](../architecture/DIRECT_VC_VIDEO_PATH.md).
 | Base instrument-cluster URL | **BINARY-CONFIRMED** | Generic/root context |
 | `/map` URL | **BINARY-CONFIRMED** | Persistent map-oriented context |
 | `/instructioncard` URL | **BINARY-CONFIRMED** | Transient maneuver/instruction-card context |
+| Fourth classic `maps:/car/instrumentcluster/...` role found | **NO** | Current exact iOS 27.2 pass closes the classic family at base + map + instructioncard |
 | Three URLs mean three streams | **FALSE / NOT SUPPORTED** | They are UI roles |
 | `suggestUI([])` used on normal trip finish/cancel | **BINARY-CONFIRMED** | UI withdrawal |
 | `suggestUI` automatically triggers `showUI` | **NOT SUPPORTED** | Distinct control operations |
@@ -86,7 +87,8 @@ See [Direct VC video path](../architecture/DIRECT_VC_VIDEO_PATH.md).
 | Correct receiver-side behavior across every provider handover | **OPEN** | Current primary research target |
 | Need to synthesize 111 teardown on provider switch | **NO CURRENT EVIDENCE** | Explicitly avoided |
 | HID/Knob required on MU1440 | **OPEN / DEFERRED** | Current profile intentionally no-HID |
-| Multi-ViewArea behavior | **OPEN / DEFERRED** | Single-view target first |
+| Multi-ViewArea protocol behavior | **BINARY-CONFIRMED / IMPLEMENTED SCAFFOLD / VEHICLE-OPEN** | Same-screen preset selection is understood; current GEN2 advertises only one ViewArea |
+| Arbitrary live SafeArea rectangle mutation | **NOT SUPPORTED BY CURRENT EVIDENCE** | SafeArea is negotiated per ViewArea; live change means selecting a predeclared ViewArea |
 
 ---
 
@@ -251,3 +253,16 @@ vehicle-proven
 
 That distinction is intentional: the goal is to make future work start from a known evidence state
 instead of repeating earlier speculation.
+
+
+---
+
+## 2026-10-03 cluster research closeout
+
+The LIVI/current-iOS/CarPlay-Ultra follow-up is consolidated in
+[CARPLAY_CLUSTER_ULTRA_CLOSEOUT_2026-10-03.md](../research/CARPLAY_CLUSTER_ULTRA_CLOSEOUT_2026-10-03.md).
+
+For the current milestone, the static-research questions around classic cluster URL roles,
+ViewArea/SafeArea semantics and LIVI's restart behavior are closed. The optional local
+CP111-plus-instruments compositor is preserved there as **DEFERRED**, not as a current implementation
+requirement.

@@ -60,19 +60,41 @@ The first calibration target is a top/bottom inset while leaving the full left/r
 
 ## Apply model
 
-The initial low-risk implementation applies changed geometry on the next AltScreen display-info
-handshake. A CarPlay reconnect is therefore the first apply mechanism; a complete MU reboot should
-not be required as the first step.
+There are two distinct mechanisms.
 
-## Later live switching
+### Changing the definition
 
-The control plane already contains `updateViewArea(viewAreaIndex)`.
+Changing the rectangle/SafeArea definition itself requires a new display-info negotiation. LIVI does
+the same in practice: its `applyDisplayConfig()` only updates local configuration and its
+`clusterViewArea*` / `clusterSafeArea*` settings are marked restart-required while projection is
+active.
 
-The intended runtime design is:
+### Selecting an already-declared ViewArea
+
+CarPlay also supports a real in-session ViewArea transition. The receiver first advertises multiple
+ViewAreas, each with its own geometry and nested SafeArea, and then selects among them by index:
+
+```text
+type = updateViewArea
+params.uuid                    = <display UUID>
+params.viewAreaIndex           = <declared index>
+params.animationDurationMillis = <duration>
+params.adjacentViewAreas       = [ ... ]
+```
+
+The command does **not** redefine a rectangle. It selects a preset that was negotiated earlier.
+
+Therefore the intended runtime design is:
 
 1. advertise several calibrated ViewArea/SafeArea presets during initial negotiation;
-2. select the appropriate preset in-session through `updateViewArea`;
-3. later bind that index to the physical VC layout once a reliable layout-state signal is identified.
+2. provide valid adjacency metadata;
+3. select the appropriate preset in-session through `updateViewArea`;
+4. later bind that index to the physical VC layout once a reliable layout-state signal is identified.
 
-This avoids mutating an already-advertised rectangle in place and follows the existing protocol
-mechanism.
+The current GEN2 implementation contains an `updateViewArea` command scaffold, but currently
+advertises only one ViewArea and does not yet serialize the full adjacency list. Multi-ViewArea
+switching is therefore protocol-understood but not yet vehicle-proven on MU1440.
+
+See
+[CarPlay cluster / Ultra research closeout](../research/CARPLAY_CLUSTER_ULTRA_CLOSEOUT_2026-10-03.md)
+for the final research status.
