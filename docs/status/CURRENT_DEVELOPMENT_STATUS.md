@@ -74,6 +74,14 @@ P2 owned Button/TextArea subtree          next
 P3 semantic AltScreen action              later
 ```
 
+
+P1 is now minimized to one existing stock TextArea substitution only. The previously researched
+Container subclass is **not** part of the first vehicle candidate. CI verifies that the candidate
+factory differs from the normalized exact MU1440 stock factory only by
+`TextArea -> MibrTextArea`, guarded to `SMI_SETUP_MAIN / targetId 92192369`.
+
+No HMI vehicle test has been performed yet.
+
 P1 uses a guarded stock TextArea subclass in the existing CarPlay row and changes only its visible
 label. It does not change CarPlay transport or AltScreen state.
 
