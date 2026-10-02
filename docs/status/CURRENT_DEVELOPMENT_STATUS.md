@@ -63,9 +63,19 @@ The relevant retained MU1440 factory/tree/pooling sources are byte-identical to 
 and a private compile-only two-class PoC now builds successfully against the exact retained MU1440
 classpath with the target IBM J9 toolchain (classfile major 46).
 
-No HMI vehicle patch has been run yet. The remaining static gate is ownership/lifecycle for any
-programmatically added Button/TextArea/list children; the stock tree builder normally allocates and
-releases widget, controller and UI as separate objects.
+No HMI vehicle patch has been run yet. Exact lifecycle analysis now shows that directly allocated project widgets can be owned by the guarded host Container when their controller/UI links and init/deInit sequence are handled explicitly.
+
+A lower-risk staged vehicle proof is prepared before any child-tree mutation:
+
+```text
+P0 factory/guard compile                 complete
+P1 existing-widget visible marker        built; not vehicle-run
+P2 owned Button/TextArea subtree          next
+P3 semantic AltScreen action              later
+```
+
+P1 uses a guarded stock TextArea subclass in the existing CarPlay row and changes only its visible
+label. It does not change CarPlay transport or AltScreen state.
 
 
 That path now has priority for the first MU1440 HMI experiment.
