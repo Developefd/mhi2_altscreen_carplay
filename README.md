@@ -280,7 +280,7 @@ If you want to understand the project without reading the entire repository, use
 4. [Auto-Direct runtime](docs/architecture/AUTO_DIRECT_RUNTIME.md) — the current supervisor/watchdog/gate state machine rather than a future installer abstraction.
 5. [Runtime contract](docs/architecture/RUNTIME_CONTRACT.md) — ports, state files, markers and component boundaries.
 6. [MU1440 HMI menu and ViewHandler architecture](docs/architecture/MU1440_HMI_MENU_AND_VIEWHANDLER_ARCHITECTURE.md) — how the stock CIO-driven main menu, application-local settings navigation and JXE ViewHandler loading fit together, including the proposed additive AltScreen settings path.
-8. [Current development status](docs/status/CURRENT_DEVELOPMENT_STATUS.md) — where the implementation has already moved beyond the published binary checkpoint.
+7. [Current development status](docs/status/CURRENT_DEVELOPMENT_STATUS.md) — where the implementation has already moved beyond the published binary checkpoint.
 8. [Known issues](docs/findings/KNOWN_ISSUES.md) — the exact lifecycle/provider-switch problems still being worked.
 9. [Compatibility matrix](docs/testing/COMPATIBILITY_MATRIX.md) — what is actually proven, partial, open or only planned.
 10. [Cluster / display transport KB](docs/research/MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md) — MIB2-era VW/Škoda/Audi cluster families, panel vs. map geometry, MOST/LVDS transport and open-source renderer evidence.
