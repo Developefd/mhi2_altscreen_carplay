@@ -65,7 +65,7 @@ KST = {
     8: "KST_MOVED",
 }
 
-NOTE_RX = re.compile(r"(?:^|\\s)NOTE\\s+(.*)$")
+NOTE_RX = re.compile(r"(?:^|\s)NOTE\s+(.*)$")
 
 
 def lines_for(path: str | None):
