@@ -46,6 +46,23 @@ dummy backend.
 See [MU1440 HMI menu and ViewHandler architecture](../architecture/MU1440_HMI_MENU_AND_VIEWHANDLER_ARCHITECTURE.md).
 
 
+#### HMI integration path update: WidgetFactory seam
+
+A compatible VW implementation has clarified that a new HMI feature does not necessarily require a
+new ViewHandler JXE at all. Its approach keeps stock view JXEs unchanged and overrides the generated
+global `WidgetFactoryImpl` through a prepended boot JAR. Selected widget types are instantiated as
+project subclasses which add their UI inside an existing stock view.
+
+That path now has priority for the first MU1440 HMI experiment.
+
+The key safety requirement is that the factory seam is global and pooled, so any custom widget
+subclass must behave exactly like stock everywhere except one strictly identified host
+(view + target/widget identity).
+
+The first planned HMI vehicle PoC is therefore one guarded, UI-only injected control in an existing
+stock settings view, with no CarPlay/runtime mutation and no new JXE.
+
+
 ### 2026-09-29 vehicle PoC milestone
 
 The Škoda MU1440 reference vehicle has now shown **live moving CarPlay auxiliary-navigation video**
