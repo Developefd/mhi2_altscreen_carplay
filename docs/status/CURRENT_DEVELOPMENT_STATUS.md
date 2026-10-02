@@ -381,3 +381,18 @@ This changes the leading diagnosis from "provider switch may require stream rebu
 The current D2 watchdog deliberately forces an IDR after one second without a newer source IDR.
 That behavior is functionally useful but too aggressive for a final policy: the next tuning step is
 to make watchdog activity event-scoped rather than permanently periodic.
+
+
+### 2026-10-03: Omonob 790/791 artifact-path audit
+
+A fresh function-level audit of the public Omonob/QCDWJ 790 and 791 producers shows that their hot media paths are effectively shared: AVCC/AES handling, CPRG ring publication, periodic/recovery keyframe logic and the downstream MOST bridge are not separate 791 implementations.
+
+Both public profiles request a forced keyframe every 20 video frames. At a 40-fps source ceiling that is roughly a 0.5-second request cadence.
+
+The most important static transport finding is in the shared `altscreen-most-bridge`: its low-latency recovery flushes a queue of individual TS packets when backlog exceeds roughly 1024 packets. That flush is not explicitly aligned to a PES/access-unit boundary, while the MOST writer independently drains 64-packet blocks. A recovery event can therefore theoretically discard the queued tail of a PES whose prefix has already moved toward the cluster.
+
+This is a concrete mechanism for `corrupted/blocky picture -> fresh IDR -> clean picture`, but it is not yet proven to be the cause of any specific vehicle report.
+
+Recommended discriminators are: disable permanent every-20-frame IDRs first, then test the same 791 geometry at 20 fps, and correlate visible artifacts with bridge `idr_max`, `queue_hi`, `latency-reset`, write-latency and `latency-resume-idr` telemetry.
+
+See [Omonob/QCDWJ 790 vs 791 artifact-path audit](../research/OMONOB_790_791_ARTIFACT_AUDIT_2026-10-03.md).
