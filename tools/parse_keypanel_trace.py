@@ -58,7 +58,12 @@ KST = {
     3: "KST_LONGPRESSED",
     4: "KST_LONGPRESSED2",
     5: "KST_LONGPRESSED3",
+    6: "KST_APPROACHED",
+    7: "KST_ABANDONED",
+    8: "KST_MOVED",
 }
+
+NOTE_RX = re.compile(r"(?:^|\\s)NOTE\\s+(.*)$")
 
 
 def lines_for(path: str | None):
@@ -74,25 +79,89 @@ def main() -> int:
     ap.add_argument("trace", nargs="?", default="-", help="trace file or - for stdin")
     ap.add_argument("--csv", action="store_true", help="emit CSV")
     ap.add_argument("--summary", action="store_true", help="summarize unique raw keys and state counts")
+    ap.add_argument(
+        "--gestures",
+        action="store_true",
+        help="reconstruct PRESS/SHORT/DOUBLE/LONG stages and preserve NOTE markers",
+    )
     args = ap.parse_args()
 
     rows = []
+    items = []
     for line_no, line in enumerate(lines_for(args.trace), 1):
+        note = NOTE_RX.search(line)
+        if note:
+            items.append({"type": "note", "line": line_no, "text": note.group(1).strip()})
+            continue
         m = RX.search(line)
         if not m:
             continue
         kbd, key, kst = map(int, m.groups())
-        rows.append(
-            {
-                "line": line_no,
-                "kbd": kbd,
-                "kbd_name": KBD.get(kbd, "KBD_UNKNOWN"),
-                "key": key,
-                "key_name": KEY.get(key, "KEY_UNKNOWN"),
-                "kst": kst,
-                "state_name": KST.get(kst, "KST_UNKNOWN"),
-            }
-        )
+        row = {
+            "line": line_no,
+            "kbd": kbd,
+            "kbd_name": KBD.get(kbd, "KBD_UNKNOWN"),
+            "key": key,
+            "key_name": KEY.get(key, "KEY_UNKNOWN"),
+            "kst": kst,
+            "state_name": KST.get(kst, "KST_UNKNOWN"),
+        }
+        rows.append(row)
+        items.append({"type": "event", **row})
+
+    if args.gestures:
+        active: dict[tuple[int, int], dict[str, bool]] = {}
+        emitted = 0
+        for item in items:
+            if item["type"] == "note":
+                print(f"{item['line']:6d} NOTE {item['text']}")
+                emitted += 1
+                continue
+
+            k = (item["kbd"], item["key"])
+            kst = item["kst"]
+            gesture = None
+
+            if kst == 1:
+                active[k] = {"long": False, "double": False}
+                gesture = "PRESS"
+            elif kst == 2:
+                active.setdefault(k, {"long": False, "double": False})["double"] = True
+                gesture = "DOUBLE"
+            elif kst in (3, 4, 5):
+                active.setdefault(k, {"long": False, "double": False})["long"] = True
+                gesture = {3: "LONG", 4: "LONG2", 5: "LONG3"}[kst]
+            elif kst == 0:
+                state = active.pop(k, None)
+                if state is None:
+                    gesture = "RELEASE"
+                elif state["long"]:
+                    gesture = "LONG_RELEASE"
+                elif state["double"]:
+                    gesture = "DOUBLE_RELEASE"
+                else:
+                    gesture = "SHORT"
+            elif kst == 6:
+                gesture = "APPROACHED"
+            elif kst == 7:
+                gesture = "ABANDONED"
+            elif kst == 8:
+                gesture = "MOVED"
+            else:
+                gesture = item["state_name"]
+
+            print(
+                f"{item['line']:6d} GESTURE={gesture:<14} "
+                f"KBD={item['kbd']:3d} {item['kbd_name']:<12} "
+                f"KEY={item['key']:3d} {item['key_name']:<24} "
+                f"KST={item['kst']:2d} {item['state_name']}"
+            )
+            emitted += 1
+
+        if not emitted:
+            print("No keypanel events or NOTE markers found.", file=sys.stderr)
+            return 1
+        return 0
 
     if args.summary:
         grouped: dict[tuple[int, int], dict[int, int]] = {}

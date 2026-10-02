@@ -53,6 +53,8 @@ cp "$ROOT/runtime/diagnostics/gen2_keyframes.sh" "$OUT/runtime/diagnostics/"
 cp "$ROOT/runtime/diagnostics/gen2_resync.sh" "$OUT/runtime/diagnostics/"
 cp "$ROOT/runtime/diagnostics/gen2_status.sh" "$OUT/runtime/diagnostics/"
 cp "$ROOT/runtime/diagnostics/keypanel_trace_discovery.sh" "$OUT/runtime/diagnostics/"
+cp "$ROOT/runtime/diagnostics/keypanel_capture.sh" "$OUT/runtime/diagnostics/"
+cp "$ROOT/runtime/diagnostics/keypanel_note.sh" "$OUT/runtime/diagnostics/"
 cp "$ROOT/runtime/navigation/gen2_nav_config.sh" "$OUT/runtime/navigation/"
 cp "$ROOT/runtime/deployment/session.sh" "$OUT/runtime/deployment/"
 

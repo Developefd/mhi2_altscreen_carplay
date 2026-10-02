@@ -193,10 +193,58 @@ reader/sink available on the target before collecting the built-in raw key lines
 HK Received: KBD[n] KEY[n] KST[n]
 ```
 
-Once a trace file has been captured, parse it off-unit with:
+### Live two-SSH key mapping
+
+The prepared directory also carries:
 
 ```text
+runtime/diagnostics/keypanel_capture.sh
+runtime/diagnostics/keypanel_note.sh
+```
+
+Preferred first attempt, SSH session 1:
+
+```sh
+ksh runtime/diagnostics/keypanel_capture.sh --auto
+```
+
+The auto mode uses stock `sloginfo -w` only when that reader is actually present. If the exact
+firmware exposes the key trace through another reader, first run
+`keypanel_trace_discovery.sh`, then pipe the proven reader into the capture filter:
+
+```sh
+<proven-stock-reader-command> | ksh runtime/diagnostics/keypanel_capture.sh --stdin
+```
+
+SSH session 2:
+
+```sh
+ksh runtime/diagnostics/keypanel_note.sh
+```
+
+Type a description **before** performing each physical action, for example:
+
+```text
+VIEW kurz
+VIEW lang bis OEM-Menue
+VIEW sehr lang
+Assistenz kurz
+rechtes Rad +1
+rechtes Rad Druck
+```
+
+Both NOTE markers and stock `HK Received` lines are appended in order to the same session log under
+`/tmp/mibr-keypanel-<pid>/keypanel.log` by default. The scripts do not patch Java, remap keys or
+change logger configuration.
+
+After capture, copy that log off-unit and decode it with:
+
+```text
+python3 tools/parse_keypanel_trace.py --gestures keypanel.log
 python3 tools/parse_keypanel_trace.py --summary keypanel.log
 ```
+
+`--gestures` preserves your NOTE markers and reconstructs `SHORT`, `DOUBLE`, `LONG`,
+`LONG2`, `LONG3` and the corresponding release state from the OEM DSI sequence.
 
 Do not guess the physical VIEW button from constant names; map it from vehicle evidence.

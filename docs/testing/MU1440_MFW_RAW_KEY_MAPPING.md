@@ -78,6 +78,14 @@ Raw states:
 | 3 | KST_LONGPRESSED |
 | 4 | KST_LONGPRESSED2 |
 | 5 | KST_LONGPRESSED3 |
+| 6 | KST_APPROACHED |
+| 7 | KST_ABANDONED |
+| 8 | KST_MOVED |
+
+The three distinct OEM long-press stages are intentionally preserved. For mapping work, hold a
+candidate control long enough to see whether the hardware/firmware emits only `LONGPRESSED` or also
+`LONGPRESSED2` / `LONGPRESSED3`; this may expose additional stock semantics without inventing a
+project-side timer.
 
 ## Useful exact ASL translations
 
@@ -154,10 +162,28 @@ J  remaining right-side controls
 
 Repeat VIEW short/hold at least twice and record both the raw tuple and the visible OEM result.
 
+For the preferred live test use two SSH sessions.
+
+Session 1:
+
+```sh
+ksh runtime/diagnostics/keypanel_capture.sh --auto
+```
+
+Session 2:
+
+```sh
+ksh runtime/diagnostics/keypanel_note.sh
+```
+
+Enter a label before each action. Both the label and the next stock key events are written into one
+ordered log. If `--auto` cannot use a proven stock reader, run the discovery helper and pipe the
+confirmed reader into `keypanel_capture.sh --stdin`.
+
 Use the off-unit parser:
 
 ```bash
-python3 tools/parse_keypanel_trace.py keypanel.log
+python3 tools/parse_keypanel_trace.py --gestures keypanel.log
 python3 tools/parse_keypanel_trace.py --summary keypanel.log
 python3 tools/parse_keypanel_trace.py --csv keypanel.log > keypanel.csv
 ```

@@ -39,6 +39,8 @@ jobs:
           bash -n deployment/mu1440/status.sh
           bash -n deployment/mu1440/compatibility-report.sh
           bash -n runtime/diagnostics/keypanel_trace_discovery.sh
+          bash -n runtime/diagnostics/keypanel_capture.sh
+          bash -n runtime/diagnostics/keypanel_note.sh
           grep -Fq '/mnt/app/root/mibr-alt111-keyframe-policy.enabled' runtime/diagnostics/gen2_keyframes.sh
           bash -n runtime/auto-direct/common.sh
           bash -n runtime/deployment/session.sh
@@ -76,6 +78,8 @@ jobs:
             runtime/diagnostics/gen2_resync.sh \
             runtime/diagnostics/gen2_status.sh \
             runtime/diagnostics/keypanel_trace_discovery.sh \
+            runtime/diagnostics/keypanel_capture.sh \
+            runtime/diagnostics/keypanel_note.sh \
             runtime/navigation/gen2_nav_config.sh \
             runtime/navigation/gen2_safearea.sh
           do
@@ -271,6 +275,8 @@ jobs:
           test -f "$PKG/payload/MIBR-Most20FPS.jar"
           test "$(sha256sum "$PKG/payload/MIBR-Most20FPS.jar" | awk '{print $1}')" = "dbd45609fe4ba69948d39e9e649b224484f680f6aa7934b68c261a4d360ea5bb"
           test -x "$PKG/runtime/deployment/session.sh"
+          test -x "$PKG/runtime/diagnostics/keypanel_capture.sh"
+          test -x "$PKG/runtime/diagnostics/keypanel_note.sh"
           grep -Fq 'payload/tee' "$PKG/PAYLOAD.sha256"
           grep -Fq 'payload/MIBR-NavIgnore.jar' "$PKG/PAYLOAD.sha256"
           grep -Fq 'payload/MIBR-Most20FPS.jar' "$PKG/PAYLOAD.sha256"
@@ -321,11 +327,23 @@ jobs:
           PY
 
           cat > "$RUNNER_TEMP/keypanel-sample.log" <<'EOF'
+          2026-10-03T01:00:00 NOTE voice short
           j9/hmi: HK Received: KBD[4] KEY[50] KST[1]
           j9/hmi: HK Received: KBD[4] KEY[50] KST[0]
+          2026-10-03T01:00:02 NOTE candidate long
+          j9/hmi: HK Received: KBD[4] KEY[58] KST[1]
+          j9/hmi: HK Received: KBD[4] KEY[58] KST[3]
+          j9/hmi: HK Received: KBD[4] KEY[58] KST[4]
+          j9/hmi: HK Received: KBD[4] KEY[58] KST[0]
           EOF
           python3 tools/parse_keypanel_trace.py "$RUNNER_TEMP/keypanel-sample.log" |
             grep -Fq 'KEY_MFW_PTT_ON'
+          python3 tools/parse_keypanel_trace.py --gestures "$RUNNER_TEMP/keypanel-sample.log" |
+            grep -Fq 'GESTURE=SHORT'
+          python3 tools/parse_keypanel_trace.py --gestures "$RUNNER_TEMP/keypanel-sample.log" |
+            grep -Fq 'GESTURE=LONG2'
+          python3 tools/parse_keypanel_trace.py --gestures "$RUNNER_TEMP/keypanel-sample.log" |
+            grep -Fq 'NOTE candidate long'
 
 
       - name: Keypanel discovery stays read-only
