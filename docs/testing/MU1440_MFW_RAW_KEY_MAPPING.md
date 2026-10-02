@@ -100,6 +100,41 @@ The exact MU1440 `SystemKeyUtil` translates, among others:
 Raw 35–41 and 58/59 do not receive their own distinct ASL `KeyListener` IDs in the exact
 translation switch. This is one reason the physical VC VIEW key must be mapped at the raw layer.
 
+## Physical Octavia 5E Virtual Cockpit controls
+
+The 2019 Octavia 5E owner-manual behavior and matching VC steering-wheel layout give us the
+**physical function layer**, which must remain separate from the raw DSI-ID layer.
+
+| Physical control | OEM function | Raw-ID status on MU1440 |
+| --- | --- | --- |
+| Left voice button | switch voice control on/off | strong exact-target path: raw `50 KEY_MFW_PTT_ON` -> ASL key 15; confirm tuple on-car |
+| Left volume roller, rotate | volume up/down | strong mapping candidates `42/43 KEY_MFW_VOLUME_UP/DOWN`; confirm on-car |
+| Left volume roller, press | sound/mute on/off | strong mapping candidate `57 KEY_MFW_MUTE`; confirm on-car |
+| Left previous/next controls | previous / next track or station | OEM function confirmed; exact choice among raw arrow A/B keys remains vehicle-trace open |
+| Right assistance button, upper-left | open assistance-systems menu | physical function confirmed; raw key still open |
+| **Right VIEW button, lower-left** | **short: change VC display version; hold: open the pre-selection menu** | **raw key still open; do not infer JOKER1/JOKER2** |
+| Right scroll wheel, rotate | select data / set values / move in menus; in VC map manually change map scale | press identity strongly maps to raw `44 KEY_MFW_ROLLER_RIGHT`; rotation tuple still needs trace |
+| Right scroll wheel, press | show/confirm selected item; with map turn+press enables automatic map-scale change | raw `44` is the strong exact-target press candidate; confirm tuple on-car |
+| Right menu/back control | display main menu / return to previous level; context can expose telephone menu | physical function confirmed; exact raw key remains open |
+
+For the VIEW button specifically, the OEM behavior invalidates the earlier idea of using a long hold
+as a project-only SafeArea toggle. **Long VIEW is already occupied by the stock preset-selection
+menu** (Auto / Classic / View 1 / View 2 / View 3). Both short and long VIEW behavior must therefore
+remain untouched.
+
+The preferred project behavior is passive/synchronous:
+
+```text
+physical VIEW event
+  -> stock VC behavior continues unchanged
+  -> project observes raw tuple and resulting VC layout/state
+  -> project selects ViewArea 0 or 1
+  -> CarPlay relayout follows through updateViewArea
+```
+
+Only if a later vehicle trace proves a genuinely unused gesture should an additional project-only
+gesture be considered.
+
 ## Mapping procedure
 
 Capture one control at a time:
@@ -127,21 +162,20 @@ python3 tools/parse_keypanel_trace.py --summary keypanel.log
 python3 tools/parse_keypanel_trace.py --csv keypanel.log > keypanel.csv
 ```
 
-## Candidate SafeArea UX
+## Target ViewArea UX
 
-If the physical VIEW control reaches the head unit:
+The first target is two predeclared pairs:
 
 ```text
-short VIEW press -> leave OEM behavior untouched
-long VIEW press  -> toggle SafeArea preset A/B
+ViewArea 0 / SafeArea 0 = MAP_FULL
+ViewArea 1 / SafeArea 1 = GAUGE_REDUCED
 ```
 
-A custom long-hold classifier does not require the OEM to already assign a long-press action: a
-listener can measure PRESSED -> RELEASED duration and only consume the added long-hold action while
-leaving the normal short press alone.
+Do **not** remap VIEW short or long press. Instead observe the stock event/state and mirror the
+resulting VC layout into `updateViewArea(0|1)`.
 
-If the VIEW button never appears on the MIB keypanel DSI, it is likely handled entirely on the
-cluster side and cannot be used from this head-unit input layer.
+If the VIEW button never appears on the MIB keypanel DSI, the project must derive the resulting VC
+layout from another head-unit-visible state rather than intercepting the button itself.
 
 ## Safety rule
 
@@ -175,3 +209,18 @@ utility.
 
 Only after that output is known should a stock-reader command be selected. This preserves the
 zero-patch objective and avoids another desktop/QNX capability assumption.
+
+
+## Evidence sources for the physical-function layer
+
+The physical-function descriptions above are intentionally not used as proof of raw key IDs.
+
+- Škoda Octavia 5E 07/2019 owner's manual, digital-instrument-cluster operation:
+  VIEW short changes display version; VIEW hold opens pre-selection; right roller selects/confirms
+  and controls map scale.
+- The same owner's manual, multifunction-steering-wheel operation:
+  voice, volume/mute, next/previous, assistance-menu and display-menu functions.
+- A period Octavia RS245 owner report independently shows the VC-equipped right-side physical layout
+  as assistance button above VIEW, followed by the option scroll wheel and the menu/MID control.
+
+The raw tuple remains authoritative for code.

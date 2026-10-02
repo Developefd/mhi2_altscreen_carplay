@@ -84,12 +84,43 @@ params.adjacentViewAreas       = [ ... ]
 
 The command does **not** redefine a rectangle. It selects a preset that was negotiated earlier.
 
-Therefore the intended runtime design is:
+### Initial MU1440 two-preset contract
 
-1. advertise several calibrated ViewArea/SafeArea presets during initial negotiation;
-2. provide valid adjacency metadata;
-3. select the appropriate preset in-session through `updateViewArea`;
-4. later bind that index to the physical VC layout once a reliable layout-state signal is identified.
+The first implementation target is deliberately **exactly two** declared ViewAreas, each with its
+own SafeArea:
+
+```text
+ViewArea 0  MAP_FULL
+  viewArea  = calibrated map/full-layout rectangle
+  safeArea  = calibrated SafeArea 0
+  adjacent  = [1]
+
+ViewArea 1  GAUGE_REDUCED
+  viewArea  = calibrated gauge/reduced-layout rectangle
+  safeArea  = calibrated SafeArea 1
+  adjacent  = [0]
+
+initialViewArea = 0
+```
+
+The outer Stream-111 coded/display baseline remains **1010x376**. For the first vehicle calibration
+the two ViewAreas may retain the same outer rectangle and differ only in their nested SafeAreas; if
+the vehicle trace proves that the OEM layouts also require different ViewArea geometry, those
+rectangles can be calibrated independently without changing the two-index control model.
+
+No coordinates beyond the already proven outer canvas are frozen here: the two SafeArea rectangles
+are vehicle-calibration outputs, not values to guess offline.
+
+The intended runtime sequence is therefore:
+
+1. calibrate SafeArea 0 for the map/full VC layout;
+2. calibrate SafeArea 1 for the gauge/reduced VC layout;
+3. advertise both ViewAreas during initial negotiation;
+4. advertise adjacency `0 -> [1]` and `1 -> [0]`;
+5. start with `initialViewArea=0`;
+6. select 0/1 in-session through `updateViewArea`;
+7. bind that index to a proven physical VC layout/button state without consuming the OEM button
+   behavior.
 
 The current GEN2 implementation contains an `updateViewArea` command scaffold, but currently
 advertises only one ViewArea and does not yet serialize the full adjacency list. Multi-ViewArea

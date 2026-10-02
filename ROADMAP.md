@@ -43,7 +43,9 @@ Use **1010x376** as the outer CarPlay secondary-display canvas and:
 - calibrate the nested SafeArea against the real AID10-class gauge overlays;
 - start from the current first estimate and adjust only geometry;
 - keep the already-proven transport and current D2 behavior unchanged during calibration;
-- after calibration, pre-advertise multiple useful ViewAreas / SafeAreas;
+- after calibration, pre-advertise **exactly two** initial ViewArea/SafeArea pairs:
+  `0 = MAP_FULL` and `1 = GAUGE_REDUCED`;
+- advertise symmetric adjacency `0 -> [1]`, `1 -> [0]`, with `initialViewArea=0`;
 - switch between those regions in-session through `updateViewArea` rather than recreating Stream 111.
 
 This is the highest-priority vehicle work.
@@ -81,7 +83,11 @@ The rule is evidence-first:
 
 - capture the physical button through stock raw logging;
 - do not infer the VIEW button from symbolic names such as JOKER1/JOKER2;
-- only after the tuple is proven, consider a developer UX such as short press = OEM behavior and long press = calibrated ViewArea/SafeArea preset cycling.
+- preserve the OEM VIEW semantics: short press changes the VC display version; long press opens the
+  stock pre-selection menu (Auto / Classic / View 1 / View 2 / View 3);
+- therefore do **not** use long VIEW as a project-only toggle;
+- after the raw tuple and/or resulting VC state is proven, mirror the OEM layout change into the
+  two predeclared CarPlay ViewArea/SafeArea presets.
 
 A Green Engineering Menu selector and file/config control remain useful diagnostic fallbacks.
 
