@@ -1266,3 +1266,106 @@ The preferred order is now:
 The first static task is therefore no longer custom-JXE generation.
 
 It is to identify one robust anchor widget in `Cmc` or `Ssm_5458`, verify the exact MU1440 factory ABI and build an exact-stock-compatible factory override that is inert everywhere else.
+
+
+---
+
+# 37. Exact MU1440 WidgetFactory anchor and compile proof
+
+The WidgetFactory path has now been checked against the exact retained MU1440 Java baseline.
+
+## 37.1 Exact App-Connect host
+
+The exact `Ssm_5458.jxe` contains:
+
+```text
+View "SMI_SETUP_MAIN"
+  targetId = 24786208
+  └─ Container "Container"
+     targetId = 81171177
+     x=0 y=84 w=1280 h=556
+     └─ WidgetList "WidgetList"
+        targetId = 47234883
+```
+
+This exactly matches the `SMI_SETUP_MAIN + 81171177` host guard independently reported by a
+compatible VW implementation.
+
+The target ID was recovered from the exact J9 ROM `WidgetInit.initContainer(...)` call, not from a
+free-form string search.
+
+Classification:
+
+`MU1440_SMI_WIDGETFACTORY_HOST_MATCH = PROVEN_EXACT_STATIC`
+
+## 37.2 Exact factory/tree/pooling ABI
+
+The retained MU1440 decompilation is byte/text-identical to the readable public MIB2 source for the
+relevant seam, including:
+
+- `WidgetFactoryImpl`;
+- `WidgetTreeBuilderFactory`;
+- `Container`;
+- `AbstractWidget`;
+- `PoolingWidgetFactory`;
+- `PoolingWidgetFactory$WidgetPool`;
+- `WidgetFactory`.
+
+The stock tree builder creates widgets through the global factory, then separately assigns the stock
+controller and UI and applies the stock parent/child relationships.
+
+The stock factory maps type 11 to `Container`. The exact Container pool is configured for 1,580
+instances, so a replacement class can be created during pool prefill before a view exists. Any
+project subclass must therefore have a side-effect-free constructor and strict runtime host gating.
+
+## 37.3 Compile-only two-class PoC
+
+A private/research compile-only prototype now builds successfully against the exact retained MU1440
+classpath using the target IBM J9 toolchain.
+
+The PoC contains exactly:
+
+```text
+generated/de/vw/mib/global/view/internal/WidgetFactoryImpl.class
+de/mibr/hmi/MibrContainer.class
+```
+
+The modified factory changes only:
+
+```text
+type 11:
+  Container -> MibrContainer
+```
+
+The subclass currently injects **no UI**. It only verifies that the exact host guard can be expressed
+against the stock ABI and that project state is cleared on de-initialization/pool reset.
+
+Both classes compile as classfile major 46.
+
+Build classification:
+
+`WIDGETFACTORY_COMPILE_POC = PROVEN_BUILD`
+
+Vehicle classification:
+
+`VEHICLE_WIDGETFACTORY_POC = NOT_RUN`
+
+## 37.4 Remaining static gate
+
+The next problem is ownership of newly created child widgets.
+
+Stock `WidgetTreeBuilderImpl` normally owns:
+
+```text
+widget allocation
++ controller allocation
++ UI allocation
++ parent/child relationships
++ separate controller/UI/widget destruction
+```
+
+A raw programmatic `new Button()` or `new TextArea()` inside the custom Container does not
+automatically pass through that ownership path.
+
+The first vehicle test should therefore wait until a lifecycle-correct injected-child pattern is
+established or until the first PoC is deliberately reduced to reusing an existing stock child.
