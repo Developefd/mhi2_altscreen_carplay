@@ -1162,3 +1162,107 @@ minimal bootclasspath-only sibling-view PoC
 ```
 
 This is now the preferred order of work.
+
+
+---
+
+# 35. Existing-view WidgetFactory injection
+
+A separate VW MIB2 implementation clarified an important alternative to creating a new ViewHandler.
+
+That implementation leaves stock ViewHandler JXEs unchanged and instead:
+
+- prepends a small Java boot JAR with `-Xbootclasspath/p:`;
+- overrides the generated global `WidgetFactoryImpl`;
+- returns project-owned subclasses for selected stock widget types;
+- builds the extra UI programmatically from normal stock widgets inside an existing stock view;
+- guards activation by the host view identity plus target ID;
+- reuses the stock host view lifecycle and close/back behavior.
+
+This is external implementation evidence rather than vehicle proof for MU1440, but the mechanism matches the readable MIB2 framework architecture closely.
+
+## 35.1 Why the seam exists
+
+The generated global factory implements:
+
+`WidgetModel getWidgetInstance(int widgetType)`
+
+and maps type IDs to concrete widget classes such as:
+
+| Type | Stock widget |
+| ---: | --- |
+| 2 | `Button` |
+| 3 | `Canvas` |
+| 11 | `Container` |
+| 49 | `TextArea` |
+| 54 | `View` |
+| 55 | `WidgetList` |
+
+The stock tree-builder path wraps this factory with `PoolingWidgetFactory`.
+
+Therefore a bootclasspath replacement of the factory can preserve the stock JXE/tree definition while changing the concrete Java class instantiated for one widget type.
+
+## 35.2 Important safety property
+
+This seam is global.
+
+A replacement for a common type such as `Container` or `WidgetList` can be instantiated in many unrelated views and may also be created during pool prefill.
+
+The custom subclass must therefore be completely stock-compatible outside its intended target.
+
+Target gating should happen only after normal tree initialization has provided context such as:
+
+- host `ViewModel`;
+- target ID;
+- widget name;
+- parent/qualified widget path.
+
+The constructor must remain side-effect free.
+
+## 35.3 Relevance to AltScreen
+
+This creates a lower-complexity candidate for the first HMI extension:
+
+```text
+stock Cmc or Ssm_5458 JXE
+        |
+        v
+stock tree builder
+        |
+        v
+bootclasspath-overridden WidgetFactoryImpl
+        |
+        v
+one guarded project widget subclass
+        |
+        v
+small UI subtree made from stock widgets
+```
+
+No new ViewHandler JXE is required by this design.
+
+Preferred final product location remains the stock FPK / Virtual Cockpit area (`Cmc`).
+
+The smaller Smartphone Integration setup view (`Ssm_5458`) remains a useful first engineering proof because the external implementation already demonstrates the same general App-Connect injection pattern.
+
+---
+
+# 36. Updated HMI implementation priority
+
+The preferred order is now:
+
+1. **Existing-view WidgetFactory injection**  
+   Lowest unresolved format/tooling cost. No new JXE and no stock ViewHandler replacement.
+
+2. **New sibling ViewHandler through ordinary Java/bootclasspath resolution**  
+   Still useful if the product UX requires a fully separate page.
+
+3. **Custom JXE / multi-archive XIP overlay**  
+   Keep as a fallback if a separate page cannot be supplied through normal Java loading.
+
+4. **Replace a stock ViewHandler/JXE**  
+   Avoid for the first implementation.
+
+The first static task is therefore no longer custom-JXE generation.
+
+It is to identify one robust anchor widget in `Cmc` or `Ssm_5458`, verify the exact MU1440 factory ABI and build an exact-stock-compatible factory override that is inert everywhere else.
