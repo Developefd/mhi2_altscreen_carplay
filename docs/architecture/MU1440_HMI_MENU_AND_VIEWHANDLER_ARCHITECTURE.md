@@ -1369,3 +1369,72 @@ automatically pass through that ownership path.
 
 The first vehicle test should therefore wait until a lifecycle-correct injected-child pattern is
 established or until the first PoC is deliberately reduced to reusing an existing stock child.
+
+
+---
+
+# 38. Programmatic child ownership and staged proof
+
+Exact MU1440 framework analysis closes most of the lifecycle question for project-owned widgets.
+
+A custom host Container does not have to push manually created children through the stock widget
+pools. It can own them directly.
+
+The exact stock APIs provide:
+
+```text
+widget.setController(controller)
+  -> controller.setWidget(widget)
+
+widget.setUI(ui)
+  -> ui.setWidget(widget)
+
+container.setChildren(...)
+  -> establishes parent relationships
+```
+
+The host Container then naturally propagates:
+
+```text
+activate
+deActivate
+deInit
+```
+
+through its current child array.
+
+For a child appended after `super.init(viewModel)`, the project must explicitly call
+`child.init(viewModel)`, because the stock Container's child-init pass has already completed.
+
+A project-owned directly allocated widget/controller/UI should not be returned to the stock pools.
+After normal de-initialization and removal from the host child array, the objects can be released by
+normal VM garbage collection.
+
+## 38.1 Lower-risk proof before adding children
+
+A compile-only visible-marker variant has also been prepared using an existing stock widget rather
+than creating a new one.
+
+The factory substitutes a `TextArea` subclass only for the exact stock CarPlay row label:
+
+```text
+view       = SMI_SETUP_MAIN
+targetId   = 92192369
+widgetName = TextArea
+```
+
+The subclass keeps the stock UI/lifecycle and only replaces the displayed label with an unmistakable
+test string. It performs no CarPlay/runtime action.
+
+This gives a useful staged validation order:
+
+```text
+P0  factory + strict host guard compile             complete
+P1  existing-widget visible marker                  built; vehicle test pending
+P2  one project-owned Button + TextArea             next
+P3  one semantic AltScreen action                   later
+P4  full stock-style settings controls              later
+```
+
+The intent of P1 is to prove the bootclasspath/factory mechanism on the vehicle before changing the
+stock child tree.
