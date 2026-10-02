@@ -153,8 +153,23 @@ Do not reintroduce the historical combined `NavActiveIgnore.jar` alongside the s
 
 ## Bit26
 
-Bit26 is an AirPlay capability A/B switch, not an AltScreen mode bit. The reference default is
-**stock/unforced**. Force-on and force-off exist only for receiver capability experiments.
+The historical bit26 A/B mutates the **global AirPlay root `features` mask**. It is **not** an
+AltScreen capability switch.
+
+Public Apple-derived AirPlay headers identify root bit 26 (`0x04000000`) as
+`AudioAES_128_MFi_SAPv1`. MU1440 stock already advertises this bit, so force-on is normally a
+no-op. Force-off removes a normal MFi-SAPv1 audio-encryption capability and can perturb or break an
+otherwise valid CarPlay baseline.
+
+The canonical AltScreen gate is instead the SETUP feature token `"altScreen"` in
+`enabledFeatures`, followed by the Type-111 / `ScreenAlt` transport.
+
+Therefore:
+
+- leave bit26 **stock/unforced** for normal use;
+- do not use bit26 to test whether AltScreen is enabled;
+- retain the force-on/off markers only as a legacy/reference capability diagnostic;
+- prefer `altScreen` / `viewAreas` negotiation controls for auxiliary-screen experiments.
 
 ## Recovery note
 
