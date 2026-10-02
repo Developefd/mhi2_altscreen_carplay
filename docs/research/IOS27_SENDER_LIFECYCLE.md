@@ -9,6 +9,7 @@ binaries.
 - device: `iPhone14,2`
 - iOS: `27.2 beta 2`
 - build: `24B5089g`
+- AirPlaySender source generation: **`1005.8.1.0.0`** (`1005.8.1`)
 - IPSW size: `11,347,450,991` bytes
 - IPSW SHA-256:
   `17a161307efffbad74ec6f7045af555ea30c61c565724029dbd8a71b8756139d`
@@ -52,6 +53,57 @@ ipsw --no-color extract \
 
 These hashes are the compatibility authority for the findings below. Do not silently mix another iOS
 build/device slice into the analysis.
+
+## Capability identity: do not confuse four namespaces
+
+The auxiliary-screen path now has a useful four-layer identity model:
+
+```text
+CarKit logical capability     AlternateScreen = 0x01
+AirPlay SETUP token           "altScreen" in enabledFeatures
+screen/display transport      Type 111 / ScreenAlt
+global AirPlay feature mask   separate namespace
+```
+
+The first mapping is recovered from a public iOS 26.1 CarKit decompile:
+`CRCarPlayFeaturesName()` labels bit `0x01` as `AlternateScreen`, and
+`CRCarPlayFeaturesAsAirPlayFeatures()` maps that bit to the AirPlay feature string
+`"altScreen"`.
+
+The exact iOS 27.2 beta-2 binaries pinned above independently retain the `altScreen`,
+`ScreenAlt`, auxiliary-screen and Type-111 lifecycle described below. Until the exact
+`24B5089g` CarKit mapper itself is decompiled, treat the numeric `0x01` mapping as strong
+cross-version compatibility evidence rather than silently claiming a byte-for-byte 27.2 mapper
+proof.
+
+Receiver-side engineering should target the **SETUP negotiation token**: a receiver that supports
+this path must accept `"altScreen"` in the successful `enabledFeatures` response. Merely adding
+a Type-111 display descriptor to `/info` is topology advertisement, not a substitute for feature
+acceptance.
+
+A separate CarKit helper identifies the Ferrite/theme-asset feature family as `0x38`
+(GaugeCluster + DataProtocol + PassengerDisplay). AlternateScreen `0x01` is not part of that
+family.
+
+The global 64-bit AirPlay `features` mask is also unrelated numerically: public Apple-derived
+headers identify root bit 26 as MFi-SAPv1 audio AES and bit 37 as CarPlayControl. Neither is the
+canonical AlternateScreen capability bit.
+
+## Exact AirPlay version for this target
+
+The source-generation question is also closed for this exact build. Public IPSW binary diffs show:
+
+```text
+iOS 26.5 / 23F77             950.7.1.0.0
+iOS 26.6 / 23G5028e         960.4.3.0.0
+iOS 27.2 beta 1 / 24B5084k  1005.7.1.0.0
+iOS 27.2 beta 2 / 24B5089g  1005.8.1.0.0
+```
+
+That matters when interpreting third-party receivers that deliberately advertise
+`sourceVersion=950.7.1`: it is a real Apple AirPlay generation from iOS 26.5, not the current
+27.2 value and not the AltScreen identifier. Treat it as a receiver compatibility persona unless
+an otherwise-identical A/B proves a version-gated behavior.
 
 ## 1. Type 111 is a real Auxiliary / ScreenAlt stream
 
