@@ -279,19 +279,20 @@ If you want to understand the project without reading the entire repository, use
 3. [ScreenAlt control plane](docs/architecture/SCREENALT_CONTROL_PLANE.md) — the current handshake, ownership, `suggestUI` / `showUI`, ViewArea and presentation-refresh problem.
 4. [Auto-Direct runtime](docs/architecture/AUTO_DIRECT_RUNTIME.md) — the current supervisor/watchdog/gate state machine rather than a future installer abstraction.
 5. [Runtime contract](docs/architecture/RUNTIME_CONTRACT.md) — ports, state files, markers and component boundaries.
-6. [Current development status](docs/status/CURRENT_DEVELOPMENT_STATUS.md) — where the implementation has already moved beyond the published binary checkpoint.
-7. [Known issues](docs/findings/KNOWN_ISSUES.md) — the exact lifecycle/provider-switch problems still being worked.
-8. [Compatibility matrix](docs/testing/COMPATIBILITY_MATRIX.md) — what is actually proven, partial, open or only planned.
-9. [Cluster / display transport KB](docs/research/MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md) — MIB2-era VW/Škoda/Audi cluster families, panel vs. map geometry, MOST/LVDS transport and open-source renderer evidence.
-10. [MHI2 firmware profile map](docs/research/MHI2_FIRMWARE_PROFILE_MAP_2026-09-28.md) — six-baseline cross-brand native/Java/config profile relationships and current corpus run status.
-11. [MHI2 patch portability estimate](docs/research/MHI2_PATCH_PORTABILITY_ESTIMATE_2026-09-28.md) — what can likely be reused directly, what needs a target profile, and what needs a new transport/patch.
-12. [MU1440 stock reference](docs/research/MU1440_STOCK_REFERENCE.md) — exact stock component hashes for the first proven target.
-13. [iOS 27 sender research](docs/research/IOS27_SENDER_LIFECYCLE.md) — exact build/hash authority behind the current lifecycle model.
-14. [Public references](docs/research/PUBLIC_REFERENCES.md) — prior art and external projects worth reading.
-15. [Developer installation](docs/INSTALLATION.md) — guarded install/restore path for the exact MU1440 reference target.
-16. [Advanced runtime switches](docs/architecture/ADVANCED_RUNTIME_SWITCHES.md) — persistent defaults, hidden feature flags and diagnostic markers.
-17. [MU1440 QNX shell compatibility](docs/testing/MU1440_QNX_SHELL_COMPATIBILITY.md) — exact-target command/paste constraints behind the scripts.
-18. [Roadmap](ROADMAP.md) — current priorities and concrete help-wanted areas.
+6. [MU1440 HMI menu and ViewHandler architecture](docs/architecture/MU1440_HMI_MENU_AND_VIEWHANDLER_ARCHITECTURE.md) — how the stock CIO-driven main menu, application-local settings navigation and JXE ViewHandler loading fit together, including the proposed additive AltScreen settings path.
+8. [Current development status](docs/status/CURRENT_DEVELOPMENT_STATUS.md) — where the implementation has already moved beyond the published binary checkpoint.
+8. [Known issues](docs/findings/KNOWN_ISSUES.md) — the exact lifecycle/provider-switch problems still being worked.
+9. [Compatibility matrix](docs/testing/COMPATIBILITY_MATRIX.md) — what is actually proven, partial, open or only planned.
+10. [Cluster / display transport KB](docs/research/MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md) — MIB2-era VW/Škoda/Audi cluster families, panel vs. map geometry, MOST/LVDS transport and open-source renderer evidence.
+11. [MHI2 firmware profile map](docs/research/MHI2_FIRMWARE_PROFILE_MAP_2026-09-28.md) — six-baseline cross-brand native/Java/config profile relationships and current corpus run status.
+12. [MHI2 patch portability estimate](docs/research/MHI2_PATCH_PORTABILITY_ESTIMATE_2026-09-28.md) — what can likely be reused directly, what needs a target profile, and what needs a new transport/patch.
+13. [MU1440 stock reference](docs/research/MU1440_STOCK_REFERENCE.md) — exact stock component hashes for the first proven target.
+14. [iOS 27 sender research](docs/research/IOS27_SENDER_LIFECYCLE.md) — exact build/hash authority behind the current lifecycle model.
+15. [Public references](docs/research/PUBLIC_REFERENCES.md) — prior art and external projects worth reading.
+16. [Developer installation](docs/INSTALLATION.md) — guarded install/restore path for the exact MU1440 reference target.
+17. [Advanced runtime switches](docs/architecture/ADVANCED_RUNTIME_SWITCHES.md) — persistent defaults, hidden feature flags and diagnostic markers.
+18. [MU1440 QNX shell compatibility](docs/testing/MU1440_QNX_SHELL_COMPATIBILITY.md) — exact-target command/paste constraints behind the scripts.
+19. [Roadmap](ROADMAP.md) — current priorities and concrete help-wanted areas.
 
 ### Want to help?
 
