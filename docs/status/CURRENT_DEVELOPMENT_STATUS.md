@@ -396,3 +396,23 @@ This is a concrete mechanism for `corrupted/blocky picture -> fresh IDR -> clean
 Recommended discriminators are: disable permanent every-20-frame IDRs first, then test the same 791 geometry at 20 fps, and correlate visible artifacts with bridge `idr_max`, `queue_hi`, `latency-reset`, write-latency and `latency-resume-idr` telemetry.
 
 See [Omonob/QCDWJ 790 vs 791 artifact-path audit](../research/OMONOB_790_791_ARTIFACT_AUDIT_2026-10-03.md).
+
+
+### 2026-10-03: Minimal AID12 30-fps candidate plan
+
+The Omonob/QCDWJ 790/791 audit is now followed by a deliberately minimal AID12 test strategy.
+
+The first candidate should **not** rebuild the producer. It should patch the public 791 `core.so` in place so the ELF/ABI remains unchanged, with only:
+
+```text
+maxFPS: 40 -> 30
+periodic forceKeyFrame divisor: 20 -> 30
+```
+
+At a 30-fps source ceiling this changes the periodic request cadence from roughly 0.5 s to roughly 1.0 s while leaving all startup/recovery-triggered keyframes intact.
+
+The AID12 geometry remains `800x480`; the shared bridge/supervisor remain untouched.
+
+Before any tester receives a binary, the exact instruction/file offsets must be pinned and a post-patch decompile must prove that the only semantic deltas are the intended `40->30` and periodic `20->30` changes. Original/patched hashes and a reversible patch manifest must accompany the candidate.
+
+See [Omonob/QCDWJ 791 AID12 minimal 30-fps test plan](../research/OMONOB_791_30FPS_1S_IDR_TEST_PLAN_2026-10-03.md).
