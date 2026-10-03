@@ -40,6 +40,37 @@ ipsw --no-color extract \
   "https://updates.cdn-apple.com/2026FallSeed/b2cec596-719c-4130-8012-8ceb7f63e568/iPhone14,2_27.2_24B5089g_Restore.ipsw"
 ```
 
+The binary hashes below are hashes of **reconstructed standalone Mach-O files**, not hashes of a
+literal file stored independently in the IPSW. For AirPlaySender, the historical research-authority
+materialization was created with:
+
+```sh
+ipsw --no-color dyld extract "$DSC" \
+  "/System/Library/PrivateFrameworks/AirPlaySender.framework/AirPlaySender" \
+  --objc --slide --force --output work/macho
+```
+
+This detail matters because the pinned `ipsw v3.1.724` can reconstruct the same exact dyld-cache
+image in several byte-distinct ways. A 2026-10-03 reproducibility audit regenerated all relevant
+forms from the same `iPhone14,2 / 24B5089g` cache:
+
+| AirPlaySender materialization | bytes | SHA-256 |
+| --- | ---: | --- |
+| plain `dyld extract` | 4,431,216 | `36d735de29b110d4519bcf2816cab0e7842a2c0e4ad7089c1947923f7b9f23a2` |
+| `dyld extract --slide` | 4,431,216 | `e2a6c13e26acdb8123fcd3e82541e7b2d314c852793dc485746c73c6bf075341` |
+| historical `dyld extract --objc --slide` | 4,437,720 | `ef5daa0e0e0058448e83642a3fecfaa1746877f203b5b04fca95153416406e8d` |
+
+The original successful extraction run `36194741713` and independent reproduction run
+`37121598173` both produce the last hash from the same command. All forms have the same
+`LC_UUID=1AA7B604-5BFF-3288-8234-F53195A83D05`, build metadata and
+`LC_SOURCE_VERSION=1005.8.1.0.0`. Their `__TEXT,__text` and `__TEXT,__cstring` payloads are
+byte-identical. The slide-only and ObjC-enriched authority exports have identical payload hashes for
+all 39 common Mach-O sections; their whole-file difference is reconstructed symbol/`__LINKEDIT`
+material added by ObjC enrichment.
+
+Accordingly, use the hash together with the stated materialization mode. Do not interpret
+`36d735...`, `e2a6c13...` and `ef5daa...` as different Apple AirPlaySender code images.
+
 ## Exact extracted binary hashes
 
 | Component | SHA-256 |
@@ -51,8 +82,10 @@ ipsw --no-color extract \
 | CarPlaySupport | `8c6b77e48f79063080859183aee46922bd15478fb1e558b467b88c373f13a4a3` |
 | CarPlay.framework / CarPlay | `fb5b588570465f9137243853a8445c224bc972529b8b7259e641de3e46606b60` |
 
-These hashes are the compatibility authority for the findings below. Do not silently mix another iOS
-build/device slice into the analysis.
+The table above records the historical `--objc --slide` research-authority materializations.
+Do not silently mix another iOS build/device slice into the analysis, and do not compare whole-file
+SHA-256 values across different reconstruction modes as though they were the same byte
+representation.
 
 ## Capability identity: do not confuse four namespaces
 
