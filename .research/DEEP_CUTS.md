@@ -289,6 +289,11 @@ Official IPSW SHA-256:
 
 Useful extracted binary hashes:
 
+The AirPlaySender hash below specifically refers to the historical `ipsw dyld extract --objc --slide`
+standalone-Mach-O materialization. Plain or slide-only reconstructions from the same exact cache have
+different whole-file hashes; see `docs/research/IOS27_SENDER_LIFECYCLE.md` for the reproduction
+matrix. The executable `__TEXT,__text` payload is identical across those materializations.
+
 ```text
 AirPlaySender
 ef5daa0e0e0058448e83642a3fecfaa1746877f203b5b04fca95153416406e8d
