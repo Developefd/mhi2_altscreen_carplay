@@ -6,6 +6,8 @@
 
 > [!NOTE]
 > This document describes the HMI architecture recovered from the MU1440 reference target and cross-checked against readable public MIB2 framework sources. It is not an end-user installation guide and does not imply cross-firmware compatibility.
+>
+> For the newest cross-topic status — including the current WidgetFactory proof level, settings registry, media/keyframe design and steering-wheel integration — see the [current research preview](../research/CURRENT_RESEARCH_PREVIEW_2026-10-05.md).
 
 ## 1. Executive summary
 
