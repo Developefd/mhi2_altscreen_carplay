@@ -288,3 +288,46 @@ exact MU1440 vehicle/binary evidence
 ```
 
 No single public mirror or third-party implementation overrides contradictory exact-target evidence.
+
+## Current MU1440 AltScreen comparator
+
+### omonob/MHI2-Carplay-Maps
+
+Repository:
+
+https://github.com/omonob/MHI2-Carplay-Maps
+
+Useful public comparator for the MU1440 790/791 AltScreen family, including:
+
+- Type-111 display/persona choices;
+- complete-AU / source-timestamp transport behavior;
+- periodic and event-driven keyframe requests;
+- MOST/TS bridge structure;
+- session/routing lifecycle.
+
+The project treats this as comparative prior art. Exact MU1440 behavior in this repository is still classified
+separately as vehicle-proven, exact-target static, offline/build-proven or design-only.
+
+## Steering-wheel / hardkey lead
+
+### y-batsianouski/mib2-voicecontrol-button-patch
+
+Repository:
+
+https://github.com/y-batsianouski/mib2-voicecontrol-button-patch
+
+Useful public lead for MIB2 ASL key listeners, press/long/double handling and synthetic hardkey events.
+The mechanism was compared against the exact MU1440 Java baseline; see
+[MU1440 steering-wheel / hardkey API](MU1440_BUTTON_INPUT_API.md).
+
+## MIB2 HMI / bootclasspath precedent
+
+### jilleb/mib2-toolbox
+
+Repository:
+
+https://github.com/jilleb/mib2-toolbox
+
+Useful public precedent around MIB2 Java/HMI/runtime integration and focused bootclasspath-style changes.
+It is supporting prior art, not a compatibility claim for the exact MU1440 ViewHandler/WidgetFactory seam.
+
