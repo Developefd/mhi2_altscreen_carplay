@@ -1,5 +1,8 @@
 # Current development status
 
+> [!IMPORTANT]
+> This page primarily tracks the **vehicle-proven/public implementation line**. Newer design-only work on source-timestamp transport, configurable keyframe policy, ownership A/B, HMI integration and steering-wheel control is summarized separately in the [current research preview](../research/CURRENT_RESEARCH_PREVIEW_2026-10-05.md). Those newer items are not vehicle-approved binaries yet.
+
 Last updated: **2026-10-02**
 
 > The downloadable experimental GEN2 binary is intentionally **not the newest development build**.
