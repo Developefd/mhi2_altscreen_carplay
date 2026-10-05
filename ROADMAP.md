@@ -1,5 +1,8 @@
 # Roadmap and help wanted
 
+> [!NOTE]
+> The roadmap keeps the vehicle-proven/public baseline as its anchor. The newest **design-only** work — source-timestamp parity transport, frame/time keyframe policies, ownership A/B, HMI WidgetFactory integration and steering-wheel input — is collected in the [current research preview](docs/research/CURRENT_RESEARCH_PREVIEW_2026-10-05.md). Treat that page as research, not as a released implementation.
+
 This is a research roadmap, not a promise of release dates.
 
 The project deliberately separates the **CarPlay AltScreen / Stream-111 video plane** from complementary native cluster interfaces such as **RGI / NavSD / BAP maneuver guidance**.
