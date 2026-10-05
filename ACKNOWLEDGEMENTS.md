@@ -42,6 +42,31 @@ recovery structure and secondary-display behavior.
 This project does not claim those implementations as its own and does not copy proprietary payloads
 from commercial solutions.
 
+
+## Omonob MU1440 AltScreen work
+
+Thanks to the public [omonob/MHI2-Carplay-Maps](https://github.com/omonob/MHI2-Carplay-Maps) project.
+
+Its MU1440/790/791 work has been a useful behavioral comparator for:
+
+- secondary-display negotiation/profile choices;
+- complete-AU/source-timestamp handling;
+- keyframe request policy;
+- MPEG-TS/MOST transport structure;
+- routing/session lifecycle.
+
+The project uses those observations as comparative evidence and reimplements behavior independently rather than
+redistributing opaque/proprietary payloads.
+
+## Steering-wheel and HMI prior art
+
+Thanks to [y-batsianouski/mib2-voicecontrol-button-patch](https://github.com/y-batsianouski/mib2-voicecontrol-button-patch)
+for a public MIB2 hardkey/listener implementation that provided a strong lead for the exact MU1440 ASL input audit.
+
+Thanks also to [jilleb/mib2-toolbox](https://github.com/jilleb/mib2-toolbox) and other public MIB2 HMI work for
+useful Java/bootclasspath/menu/runtime precedent. Exact-target MU1440 claims in this repository remain independently
+gated and are not inferred solely from those projects.
+
 ## Wider MIB community
 
 Additional public MIB2/JXE/HMI work from projects such as:
