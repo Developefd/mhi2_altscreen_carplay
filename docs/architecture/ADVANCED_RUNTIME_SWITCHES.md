@@ -1,5 +1,8 @@
 # Advanced runtime switches and hidden feature flags
 
+> [!IMPORTANT]
+> This file documents switches available in the current public/runtime line. The next-generation settings design adds a unified temp/persistent/profile registry, configurable frame/time keyframe policy, ownership backend selection, dual ViewArea/SafeArea profiles and runtime sourceVersion selection. Those additions are described in the [current research preview](../research/CURRENT_RESEARCH_PREVIEW_2026-10-05.md) and are **not yet implied to exist in the published vehicle binaries**.
+
 This is the consolidated reference for runtime switches that otherwise live only in scripts or in
 the GEN2 native source.
 
