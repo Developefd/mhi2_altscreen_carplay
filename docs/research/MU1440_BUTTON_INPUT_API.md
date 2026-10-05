@@ -80,3 +80,45 @@ A steering-wheel event could eventually provide a user-facing runtime selector f
 - diagnostics/test mode.
 
 This is complementary to a Green Engineering Menu selector; it does not need to replace one.
+
+## Current project integration direction
+
+**Status:** exact-target static evidence; no final AltScreen steering-wheel binding has been vehicle-proven yet.
+
+The current design deliberately keeps three layers separate:
+
+```text
+physical MFW event
+  -> passive/additive listener
+  -> project action mapping
+  -> AltScreen runtime request
+```
+
+The first target experiment should therefore capture the real physical button/key tuple through the stock input
+path before assigning semantics. Symbolic names such as VIEW/JOKER are not sufficient evidence by themselves.
+
+Candidate project actions include:
+
+- cycle the two advertised ViewArea/SafeArea presets;
+- select a navigation-composition preset;
+- trigger a diagnostic/manual keyframe request;
+- later open or operate the AltScreen settings UI.
+
+Short/long/double-press behavior is architecturally available through the exact-target API substrate, but should
+remain user-configurable and should not shadow stock behavior until the physical key and lifecycle are proven.
+
+The future HMI/settings layer should expose the mapping as policy rather than hard-coding it into the listener.
+The authoritative runtime configuration remains the shared temp/persistent/profile settings registry described in
+the [current research preview](CURRENT_RESEARCH_PREVIEW_2026-10-05.md).
+
+### Recommended first vehicle proof
+
+1. add an inert/passive listener through an additive initialization seam;
+2. log press/release/long/double classification and the exact physical key tuple;
+3. verify no stock action regression;
+4. bind one harmless volatile AltScreen action;
+5. only then evaluate synthetic hardkey injection or remapping.
+
+This keeps the useful exact-target API finding separate from the still-open product decision about which physical
+button should control which AltScreen function.
+
