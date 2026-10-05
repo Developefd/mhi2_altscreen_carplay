@@ -28,7 +28,7 @@
 >
 > SafeArea/ViewArea tuning, reduced-view layout handling, lifecycle hardening and cadence/jitter analysis are still active work.
 
-[**Roadmap**](ROADMAP.md) · [Cluster / display KB](docs/research/MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md) · [FPK firmware/control](docs/research/FPK_FIRMWARE_AND_CONTROL_ACCESS.md) · [Installation](docs/INSTALLATION.md) · [Contributing](CONTRIBUTING.md) · [Support](SUPPORT.md) · [Security & privacy](SECURITY.md)
+[**Roadmap**](ROADMAP.md) · [**Current research preview**](docs/research/CURRENT_RESEARCH_PREVIEW_2026-10-05.md) · [Research index](docs/research/README.md) · [Cluster / display KB](docs/research/MIB2_CLUSTER_DISPLAY_TRANSPORT_KNOWLEDGE_BASE.md) · [FPK firmware/control](docs/research/FPK_FIRMWARE_AND_CONTROL_ACCESS.md) · [Installation](docs/INSTALLATION.md) · [Contributing](CONTRIBUTING.md) · [Support](SUPPORT.md) · [Security & privacy](SECURITY.md)
 
 > [!CAUTION]
 > ## NOT SD-CARD READY — ACTIVE DEVELOPMENT / HELP WANTED
@@ -274,7 +274,7 @@ For the current engineering state, read:
 
 If you want to understand the project without reading the entire repository, use this order:
 
-1. [System overview](docs/architecture/SYSTEM_OVERVIEW.md) — the complete CarPlay -> MHI2 -> Virtual Cockpit architecture and the separation between media and control planes.
+> [!TIP]\n> For the newest **not-yet-vehicle-validated** findings on source-timestamp transport, configurable keyframe policy, DMDT vs writev ownership, HMI/menu injection and steering-wheel input, read the [current research preview](docs/research/CURRENT_RESEARCH_PREVIEW_2026-10-05.md).\n\n1. [System overview](docs/architecture/SYSTEM_OVERVIEW.md) — the complete CarPlay -> MHI2 -> Virtual Cockpit architecture and the separation between media and control planes.
 2. [Direct VC video path](docs/architecture/DIRECT_VC_VIDEO_PATH.md) — the vehicle-proven Stream-111 -> H.264 -> MPEG-TS -> `isoTX2` -> MOST path, including reversible native-map takeover.
 3. [ScreenAlt control plane](docs/architecture/SCREENALT_CONTROL_PLANE.md) — the current handshake, ownership, `suggestUI` / `showUI`, ViewArea and presentation-refresh problem.
 4. [Auto-Direct runtime](docs/architecture/AUTO_DIRECT_RUNTIME.md) — the current supervisor/watchdog/gate state machine rather than a future installer abstraction.
