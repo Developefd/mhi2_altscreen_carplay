@@ -4,10 +4,12 @@
 
 1. [System overview](architecture/SYSTEM_OVERVIEW.md)
 2. [Direct VC video path](architecture/DIRECT_VC_VIDEO_PATH.md)
-3. [ScreenAlt control plane](architecture/SCREENALT_CONTROL_PLANE.md)
-4. [Current development status](status/CURRENT_DEVELOPMENT_STATUS.md)
-5. [Known issues](findings/KNOWN_ISSUES.md)
-6. [Roadmap](../ROADMAP.md)
+3. [Current research preview](research/CURRENT_RESEARCH_PREVIEW_2026-10-05.md) — newest media/keyframe, HMI/menu and steering-wheel findings, explicitly labeled by evidence level
+4. [Research topic index](research/README.md)
+5. [ScreenAlt control plane](architecture/SCREENALT_CONTROL_PLANE.md)
+6. [Current development status](status/CURRENT_DEVELOPMENT_STATUS.md)
+7. [Known issues](findings/KNOWN_ISSUES.md)
+8. [Roadmap](../ROADMAP.md)
 
 ## Architecture
 
@@ -20,6 +22,8 @@
 
 ## Reverse engineering / research
 
+- [Research topic index](research/README.md)
+- [Current research preview — 2026-10-05](research/CURRENT_RESEARCH_PREVIEW_2026-10-05.md)
 - [MU1440 stock component fingerprints](research/MU1440_STOCK_REFERENCE.md)
 - [MU1440 GEN2 AirPlay hook / ABI map](research/MU1440_GEN2_HOOK_MAP.md)
 - [Exact Audi MU1438 vs Skoda MU1440 offline comparison](research/MU1438_MU1440_OFFLINE_COMPARISON_2026-09-28.md)
