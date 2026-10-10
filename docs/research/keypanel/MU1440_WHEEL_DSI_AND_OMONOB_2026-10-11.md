@@ -53,3 +53,34 @@ Independently fetched the public 8,431-byte `CarPlayClusterControls.jar` from th
 
 ## Provenance and publication boundary
 Evidence: vehicle-provided 2026-10-10 five-minute session (sanitized counts/IDs only), the user-observed native-map overlay, public OEM class decompilation and Omonob public repo, and existing M.I.B. research as linked. Interpret wheel warnings as correlation, not a verified numeric encoder ID. No raw capture, full vehicle log, private file, firmware binary, or third-party JAR is embedded here.
+
+## 6. Additional parked-vehicle video: physical right roller and VC scale overlay
+
+Private 21.03-s, 1024x576, 30-fps video supplied on 2026-10-11. **Only sanitized observation is published here; the recording, its audio, still frames, and identifying context are intentionally not redistributed.** The user visibly operates the right steering-wheel roller while the instrument-cluster map is displayed. Several detents change the displayed map scale and a separate OEM-looking black scale/OK prompt appears over the video near the lower-right part of the cluster. Readable example scales at approximate **video-relative** offsets are ~1 s: 50 m; ~3 s: 30 m; ~5 s: 750 m; ~7-18 s: 100 m. The underlying map view changes in concert. These observations establish a working native wheel-to-cluster-zoom consumer, even though the earlier Java ASL logger did not emit `HK Received` on rotation.
+
+**Important separation:** video time is NOT synchronized to the 300-second MLP capture. A numerical raw encoder tuple, the exact renderer responsible for the scale prompt, and a CarPlay semantic `changeMapZoomLevel` message are NOT proven by this video. OEM scale changes may coexist with CarPlay video rather than representing AirPlay zoom. Do not claim a confirmed VW/Škoda/SEAT compatibility matrix from this single Škoda observation.
+
+### Evidence-supported signal split
+
+```text
+physical right MFW roller
+    |
+    +--> DSIKeyPanel updateEncoder/updateEncoder2  ---> OEM registered consumers
+    |       |                                          \-> native VC map zoom/scale overlay
+    |       \-> AslTargetSystemKeyPanelHandling
+    |              \-> unknown ID -> 'A wrong DDS Encoder was recognized'
+    |
+    +--> roller *press* is separate updateKey2, captured as KBD=4 KEY=40
+            |
+            \-> Omonob's MU1440 Free790 key bridge only acts on KEY=38/39
+                 (not on KEY=40, and not on updateEncoder2 rotation)
+```
+
+The 32 earlier wrong-DDS warnings are time-correlated with operator-tagged wheel movement and show that the ASL handler received encoder callbacks, **not** that the branch controls the visible OEM overlay. The numeric `keyboard,encoderId,increment,extra,validity` remains unresolved. A passive tap before dispatch filtering, or narrowly scoped trace of `processEncoderEvent`, is the next diagnostic, not a global remap of 16/17/44.
+
+### Narrow acceptance criteria for the next experiment
+
+- For each physically isolated right +/- and left volume +/- detent, record all five raw `updateEncoder2` fields (plus legacy `updateEncoder` if present), validity, sign and count, with a monotonic NOTE and optional simultaneous video.
+- Keep every existing OEM listener invocation and stock action intact; do not synthesize 38/39 without a proven mapping. The existing public Omonob Free790 dispatcher is `updateKey2`-only and cannot be evidence of rotary tick support.
+- Test two independent questions: did OEM native map scale change, and did the actual CarPlay/AirPlay `changeMapZoomLevel` semantic command reach its retained source-111 session? Screen-overlay appearance alone cannot answer the second.
+- Only contemplate source-111/focus-gated, additive map zoom translation **after** the exact physical DSI tuple is proven and any unintended double-zoom/native-overlay side effects are evaluated.
