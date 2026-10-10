@@ -6,7 +6,7 @@ if [ ! -x "$SELF" ]; then
   echo "ERROR: mibr-keypanel-native missing; cd into installed logger directory first."
   exit 2
 fi
-if [ ! -r /tmp/mibr-keypanel-native-current ]; then
+if [ ! -r ./mibr-keypanel-native-current ]; then
   echo "ERROR: no native capture is active. Start shell 1 first."
   exit 2
 fi

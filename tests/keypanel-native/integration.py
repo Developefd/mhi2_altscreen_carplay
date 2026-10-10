@@ -1,9 +1,9 @@
 import pathlib, socket, subprocess, struct, tempfile, threading, time, sys
 exe=pathlib.Path(sys.argv[1]).resolve()
-# QNX /dev/shmem can reject rename() with ENOLINK ('Improper link').
-# The current-session pointer must be created directly on /tmp.
+# QNX /tmp is unsuitable on this vehicle. Current-session pointer lives on the SD, with no rename.
 source=pathlib.Path('src/native/keypanel/mibr_keypanel_native.c').read_text()
-assert 'rename(' not in source.replace('rename(2)', ''), 'QNX pointer must not use rename()'
+assert 'rename(' not in source, 'QNX pointer must not use rename syscall'
+assert '#define POINTER "./mibr-keypanel-native-current"' in source
 sync=b'\x80MLP'
 def frm(msg):
     msg=msg.encode()
@@ -27,14 +27,14 @@ def server():
             time.sleep(.3)
 th=threading.Thread(target=server);th.start();assert evt.wait(2)
 with tempfile.TemporaryDirectory() as d:
-    proc=subprocess.Popen([str(exe),'--capture','--out',d,'--seconds','10'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+    proc=subprocess.Popen([str(exe),'--capture','--out','.','--seconds','10'],cwd=d,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
     for _ in range(40):
-        if pathlib.Path('/tmp/mibr-keypanel-native-current').exists():break
+        if (pathlib.Path(d)/'mibr-keypanel-native-current').exists():break
         time.sleep(.03)
     time.sleep(.45)
-    note=subprocess.run([str(exe),'--note','6 kurz'],capture_output=True,text=True)
+    note=subprocess.run([str(exe),'--note','6 kurz'],cwd=d,capture_output=True,text=True)
     print('NOTE:',note.returncode,note.stdout,note.stderr)
-    out,err=proc.communicate(timeout=10)
+    out,err=proc.communicate(timeout=15)
     print('CAPTURE:',proc.returncode,out,err)
     th.join(2)
     runs=list(pathlib.Path(d).glob('native-*'));assert len(runs)==1,runs
@@ -47,5 +47,9 @@ with tempfile.TemporaryDirectory() as d:
     assert (runs[0]/'debugspi-original.bin').stat().st_size>0
     assert 'hk_received_events=3' in (runs[0]/'report.txt').read_text()
     assert 'NOTE 6 kurz' in out and 'GESTURE=LONG' in out
-    assert not pathlib.Path('/tmp/mibr-keypanel-native-current').exists(), 'pointer cleanup failed'
-    print('INTEGRATION_TEST=PASS (2 consoles, chronological combined log, split TCP, long events)')
+    assert not (pathlib.Path(d)/'mibr-keypanel-native-current').exists(), 'pointer cleanup failed'
+    (pathlib.Path(d)/'mibr-keypanel-native-current').write_text('STALE_SENTINEL\n')
+    conflict=subprocess.run([str(exe),'--capture','--out','.','--seconds','10'],cwd=d,capture_output=True,text=True,timeout=3)
+    assert conflict.returncode==2 and 'pointer exists' in conflict.stderr,conflict.stderr
+    assert (pathlib.Path(d)/'mibr-keypanel-native-current').read_text()=='STALE_SENTINEL\n'
+    print('INTEGRATION_TEST=PASS (2 consoles, SD-only pointer, stale-marker guard, split TCP, long events)')

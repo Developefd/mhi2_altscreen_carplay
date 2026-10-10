@@ -61,3 +61,6 @@ The workflow `build-mibr-keypanel-native.yml` runs host split-frame tests and bu
 ## Existing pointer after abnormal exit
 
 If startup says `pointer exists`, inspect `/tmp/mibr-keypanel-native-current` and ensure no earlier capture is running before removing that **specific** stale file. Never blindly replace an active capture's pointer. The normal Ctrl+C/timeout path cleans it up automatically.
+
+## v1.3 QNX SD-only pointer fix
+On the physical MU1440, native pointer staging under /tmp returned `pointer rename: Improper link`, despite a wrapper `mv` probe passing. The recorder no longer writes anything under /tmp. Both SSH sessions must use the same project directory on SD. The recorder publishes `./mibr-keypanel-native-current` with one exclusive direct create and single write; the note console reads that SD file. A previous pointer is not overwritten or automatically deleted; inspect before manual stale cleanup. The v1.3 start wrapper tests SD writability, remounts only the SD when needed, and accepts the QNX canonical path alias. The data remains under `./native-<PID>/`; do not remove incomplete folders from failed prior runs without inspecting them.

@@ -3,6 +3,7 @@
  * Passive RX-only client of Java DebugSPI 127.0.0.1:15001.
  * No protocol writes, OEM config edits, preloads, process signals or autostart.
  * Keep log messages as one O_APPEND write to share a chronological stream with notes.
+ * The current-session pointer is one project SD file; no /tmp use.
  */
 #define _POSIX_C_SOURCE 200809L
 #include <arpa/inet.h>
@@ -21,7 +22,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#define POINTER "/tmp/mibr-keypanel-native-current"
+#define POINTER "./mibr-keypanel-native-current"
 #define PORT 15001
 #define FRAME_MAX (256u*1024u)
 #define BUFFER_SIZE (FRAME_MAX + 8192u)
@@ -87,12 +88,10 @@ static int selftest(void){unsigned char f[256]={0},p[160]={0};const char *messag
  f[0]=(unsigned char)((total-4)>>24);f[1]=(unsigned char)((total-4)>>16);f[2]=(unsigned char)((total-4)>>8);f[3]=(unsigned char)(total-4);memcpy(f+4,sync_marker,4);f[20]=0;f[22]=(unsigned char)(pl>>24);f[23]=(unsigned char)(pl>>16);f[24]=(unsigned char)(pl>>8);f[25]=(unsigned char)pl;
  p[0]=p[1]=1;p[12]=(unsigned char)(m>>8);p[13]=(unsigned char)m;memcpy(p+14,message,m);memcpy(f+26,p,pl);
  feed(f,3);feed(f+3,6);feed(f+9,13);feed(f+22,total-22);
- if(frames!=1||texts!=1||events!=1){fprintf(stderr,"SELF_TEST=FAIL frames=%lu texts=%lu events=%lu\n",frames,texts,events);return 1;}puts("SELF_TEST=PASS split-MLP, text, HK-event");return 0;}
-/* QNX /tmp is backed by /dev/shmem on MU1440. Its rename(2) can return ENOLINK
- * ("Improper link") even for two names beneath /tmp. Publish a new pointer
- * directly with O_EXCL and ONE write instead of staging+rename. An existing
- * pointer is never overwritten: another capture (or a stale crash marker)
- * must be inspected first. The NOTE reader already rejects partial paths. */
+ if(frames!=1||texts!=1||events!=1){fprintf(stderr,"SELF_TEST=FAIL frames=%lu texts=%lu events=%lu\n",frames,texts,events);return 1;}puts("SELF_TEST=PASS split-MLP, text, HK-event; SD-pointer-v1.3");return 0;}
+/* Publish one flat SD pointer in the project directory, directly with O_EXCL.
+ * No /tmp and no staging or rename syscall. A previous capture or stale
+ * marker is never overwritten, and must be inspected manually. */
 static int pointer_write(void){
  char line[sizeof combined_path+2];size_t n=strlen(combined_path);int f;
  if(n+1>=sizeof line){fprintf(stderr,"pointer path too long\n");return -1;}
@@ -118,7 +117,7 @@ static int capture(const char *base,int max_seconds){char textpath[640],rawpath[
  snprintf(combined_path,sizeof combined_path,"%s/combined.log",dir_name);snprintf(textpath,sizeof textpath,"%s/debugspi-text.log",dir_name);snprintf(rawpath,sizeof rawpath,"%s/debugspi-original.bin",dir_name);snprintf(metapath,sizeof metapath,"%s/report.txt",dir_name);
  combined_fd=open(combined_path,O_CREAT|O_APPEND|O_WRONLY,0644);tail_fd=open(combined_path,O_RDONLY);raw_fd=open(rawpath,O_CREAT|O_TRUNC|O_WRONLY,0644);text_fd=open(textpath,O_CREAT|O_TRUNC|O_WRONLY,0644);
  if(combined_fd<0||tail_fd<0||raw_fd<0||text_fd<0){perror("create files");return 2;}if(pointer_write())return 2;
- printf("MIBR_NATIVE_KEYPANEL=START\nsession=%s\ncombined=%s\nnotes: /bin/ksh keypanel_note_native.sh\nCtrl+C stops.\n",dir_name,combined_path);fflush(stdout);
+ printf("MIBR_NATIVE_KEYPANEL=START\nversion=SD_POINTER_v1.3\nsession=%s\ncombined=%s\nnotes: /bin/ksh keypanel_note_native.sh\nCtrl+C stops.\n",dir_name,combined_path);fflush(stdout);
  snprintf(row,sizeof row,"[%012lldms] INFO capture=START transport=127.0.0.1:15001 mode=PASSIVE_RX_ONLY duration=%d\n",mono_ms(),max_seconds);record_line(row);tail_print();
  sock=socket(AF_INET,SOCK_STREAM,0);if(sock<0){perror("socket");goto out;}memset(&a,0,sizeof a);a.sin_family=AF_INET;a.sin_port=htons(PORT);a.sin_addr.s_addr=htonl(INADDR_LOOPBACK);if(connect(sock,(struct sockaddr*)&a,sizeof a)){perror("connect 127.0.0.1:15001");snprintf(row,sizeof row,"[%012lldms] ERROR socket_connect errno=%d\n",mono_ms(),errno);record_line(row);goto out;}
  connected=1;record_line("INFO socket_connected=YES (application sends ZERO DebugSPI bytes)\n");tail_print();
@@ -129,7 +128,7 @@ static int capture(const char *base,int max_seconds){char textpath[640],rawpath[
   tail_print();if(mono_ms()-last_report>=10000){snprintf(row,sizeof row,"STATUS frames=%lu text=%lu hk=%lu bytes=%lu\n",frames,texts,events,raw_bytes);fputs(row,stdout);fflush(stdout);last_report=mono_ms();}
  }
  out: if(sock>=0){close(sock);sock=-1;}snprintf(row,sizeof row,"[%012lldms] INFO capture=STOP frames=%lu text=%lu hk=%lu bytes=%lu\n",mono_ms(),frames,texts,events,raw_bytes);record_line(row);tail_print();pointer_cleanup();{
- FILE*f=fopen(metapath,"w");if(f){fprintf(f,"MIBR_NATIVE_KEYPANEL_REPORT\nsession=%s\ntransport=127.0.0.1:15001\nmode=PASSIVE_RX_ONLY\nframes=%lu\ntext_frames=%lu\nbinary_frames=%lu\nother_frames=%lu\nresyncs=%lu\nhk_received_events=%lu\nraw_bytes=%lu\ntext_bytes=%lu\nraw_truncated=%d\ntext_truncated=%d\ncombined=%s\nraw=%s\ntext=%s\n",dir_name,frames,texts,binaries,others,resyncs,events,raw_bytes,text_bytes,raw_truncated,text_truncated,combined_path,rawpath,textpath);fclose(f);}}
+ FILE*f=fopen(metapath,"w");if(f){fprintf(f,"MIBR_NATIVE_KEYPANEL_REPORT\nsession=%s\ntransport=127.0.0.1:15001\nmode=PASSIVE_RX_ONLY\npointer_storage=SD_FLAT_EXCLUSIVE\nframes=%lu\ntext_frames=%lu\nbinary_frames=%lu\nother_frames=%lu\nresyncs=%lu\nhk_received_events=%lu\nraw_bytes=%lu\ntext_bytes=%lu\nraw_truncated=%d\ntext_truncated=%d\ncombined=%s\nraw=%s\ntext=%s\n",dir_name,frames,texts,binaries,others,resyncs,events,raw_bytes,text_bytes,raw_truncated,text_truncated,combined_path,rawpath,textpath);fclose(f);}}
  if(tail_fd>=0)close(tail_fd);
  if(combined_fd>=0)close(combined_fd);
  if(text_fd>=0)close(text_fd);
