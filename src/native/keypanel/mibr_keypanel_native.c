@@ -48,8 +48,8 @@ static uint32_t be32(const unsigned char*p){return ((uint32_t)p[0]<<24)|((uint32
 static uint16_t be16(const unsigned char*p){return (uint16_t)(((unsigned)p[0]<<8)|p[1]);}
 static long long mono_ms(void){struct timespec t; if(clock_gettime(CLOCK_MONOTONIC,&t))return 0;return (long long)t.tv_sec*1000+t.tv_nsec/1000000;}
 static const char *state_name(int st){switch(st){case 0:return "RELEASED";case 1:return "PRESSED";case 2:return "DOUBLEPRESSED";case 3:return "LONGPRESSED";case 4:return "LONGPRESSED2";case 5:return "LONGPRESSED3";case 6:return "APPROACHED";case 7:return "ABANDONED";case 8:return "MOVED";default:return "UNKNOWN";}}
-static void record_line(const char *line){size_t n=strlen(line); if(combined_fd>=0 && n && n<2048){(void)write(combined_fd,line,n);}}
-static void tail_print(void){char b[1024];ssize_t n; if(tail_fd<0)return;while((n=read(tail_fd,b,sizeof b))>0){(void)write(STDOUT_FILENO,b,(size_t)n);}fflush(stdout);}
+static void record_line(const char *line){size_t n=strlen(line); if(combined_fd>=0 && n && n<2048){if(write(combined_fd,line,n)!=(ssize_t)n)perror("combined append");}}
+static void tail_print(void){char b[1024];ssize_t n; if(tail_fd<0)return;while((n=read(tail_fd,b,sizeof b))>0){if(write(STDOUT_FILENO,b,(size_t)n)<0)break;}fflush(stdout);}
 static int note_line(const char*user){char safe[NOTE_CAP+1],line[900];size_t i,j=0;int fd; char ptr[640]; FILE*f=fopen(POINTER,"r");if(!f){fprintf(stderr,"NO_ACTIVE_CAPTURE: %s\n",POINTER);return 2;}if(!fgets(ptr,sizeof ptr,f)){fclose(f);fprintf(stderr,"EMPTY_POINTER\n");return 2;}fclose(f);ptr[strcspn(ptr,"\r\n")]=0;if(strncmp(ptr,"/",1) || !strstr(ptr,"/combined.log")){fprintf(stderr,"BAD_POINTER\n");return 2;}for(i=0;user[i]&&j<NOTE_CAP;i++){unsigned char c=(unsigned char)user[i];safe[j++]=(c=='\r'||c=='\n'||c<32)?' ':c;}safe[j]=0;
  snprintf(line,sizeof line,"[%012lldms] NOTE %s\n",mono_ms(),safe);
  fd=open(ptr,O_WRONLY|O_APPEND);if(fd<0){perror("note open");return 2;}if(write(fd,line,strlen(line))<0){perror("note write");close(fd);return 2;}close(fd);fputs(line,stdout);return 0;}
@@ -58,7 +58,7 @@ static const char*gesture(int b,int k,int st){KeyState*s=getkey(b,k);if(!s)retur
 static void decode_message(const unsigned char*p,size_t n){char msg[4096],row[4700];size_t i,j=0;int b,k,st; const char*found; if(n>=sizeof msg)n=sizeof msg-1;
  for(i=0;i<n;i++){unsigned char c=p[i];if(c==0)continue;msg[j++]=(c=='\r'||c=='\n'||c=='\t')?' ':((c>=32&&c<127)||c>=128?(char)c:'.');}msg[j]=0;
  snprintf(row,sizeof row,"[%012lldms] %s\n",mono_ms(),msg);
- if(text_bytes+strlen(row)<TEXT_CAP && text_fd>=0){(void)write(text_fd,row,strlen(row));text_bytes+=(unsigned long)strlen(row);}else text_truncated=1;
+ if(text_bytes+strlen(row)<TEXT_CAP && text_fd>=0){if(write(text_fd,row,strlen(row))!=(ssize_t)strlen(row))text_truncated=1;else text_bytes+=(unsigned long)strlen(row);}else text_truncated=1;
  found=strstr(msg,"HK Received:");
  if(found && sscanf(found,"HK Received: KBD[%d] KEY[%d] KST[%d]",&b,&k,&st)==3){
    const char*g=gesture(b,k,st);events++;
@@ -107,7 +107,7 @@ static int capture(const char *base,int max_seconds){char textpath[640],rawpath[
  deadline=mono_ms()+(long long)max_seconds*1000;last_report=mono_ms();
  while(!stopping && mono_ms()<deadline){FD_ZERO(&fds);FD_SET(sock,&fds);tv.tv_sec=0;tv.tv_usec=200000;r=select(sock+1,&fds,NULL,NULL,&tv);
   if(r<0){if(errno==EINTR)continue;perror("select");break;}
-  if(r>0){r=recv(sock,b,sizeof b,0);if(r<=0){record_line("INFO socket_closed_or_error\n");break;}if(raw_bytes+(unsigned long)r<=RAW_CAP){(void)write(raw_fd,b,(size_t)r);raw_bytes+=(unsigned long)r;}else{raw_truncated=1;record_line("INFO raw_cap_reached=YES\n");break;}feed(b,(size_t)r);}
+  if(r>0){r=recv(sock,b,sizeof b,0);if(r<=0){record_line("INFO socket_closed_or_error\n");break;}if(raw_bytes+(unsigned long)r<=RAW_CAP){if(write(raw_fd,b,(size_t)r)!=r){perror("raw write");break;}raw_bytes+=(unsigned long)r;}else{raw_truncated=1;record_line("INFO raw_cap_reached=YES\n");break;}feed(b,(size_t)r);}
   tail_print();if(mono_ms()-last_report>=10000){snprintf(row,sizeof row,"STATUS frames=%lu text=%lu hk=%lu bytes=%lu\n",frames,texts,events,raw_bytes);fputs(row,stdout);fflush(stdout);last_report=mono_ms();}
  }
  out: if(sock>=0){close(sock);sock=-1;}snprintf(row,sizeof row,"[%012lldms] INFO capture=STOP frames=%lu text=%lu hk=%lu bytes=%lu\n",mono_ms(),frames,texts,events,raw_bytes);record_line(row);tail_print();pointer_cleanup();{
