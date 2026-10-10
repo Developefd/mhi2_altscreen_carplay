@@ -112,6 +112,14 @@ The exact MU1440 `SystemKeyUtil` translates, among others:
 Raw 35–41 and 58/59 do not receive their own distinct ASL `KeyListener` IDs in the exact
 translation switch. This is one reason the physical VC VIEW key must be mapped at the raw layer.
 
+## 2026-10-11 vehicle correction — do not use speculative left/right names as physical IDs
+
+The 300-second passive DebugSPI capture was decoded offline: 18,571 MLP frames, 524 inner OEM text messages, 65 `HK Received` events. The physical operator annotations strongly associate **right-wheel PRESS with `KBD=4 KEY=40`** (symbolically `KEY_MFW_ROLLER_LEFT`) and **left-wheel PRESS with `KBD=4 KEY=44`** (symbolically `KEY_MFW_ROLLER_RIGHT`). The symbolic LEFT/RIGHT terms demonstrably must not be treated as physical mounting positions. Reconfirm a single isolated button if side or mode is uncertain.
+
+The physical right roller's *rotation* does not generate an `HK Received` line in this capture: its manually annotated +/- periods instead coincide with five/eight `wrong DDS Encoder` warnings. The separate 21-second vehicle video shows the right roller changing the **OEM instrument-cluster navigation map scale and on-screen scale/OK overlay**. This is an encoder-path issue, not proof that the wheel is invisible to the car. Exact `updateEncoder2(keyboard, encoderId, increment, extra, validity)` numeric tuple is still unknown.
+
+Stock `AslTargetSystemKeyPanelHandling` routes `updateKey2` and `updateEncoder2` separately; its normal-level `HK Received` log is KEY ONLY. Its `processEncoderEvent` accepts IDs 16, 17 or 44 and warns for other IDs. The Omonob Free790 MU1440 patch in `CarPlayClusterControls.jar` intercepts `DSIKeyPanelDispatcher.updateKey2` solely for `KBD4/KEY38/39` -> zoom and leaves `updateEncoder2` to OEM delegates, so it cannot zoom from this observed rotary motion by itself. See [full wheel/DSI/Omonob audit](../research/keypanel/MU1440_WHEEL_DSI_AND_OMONOB_2026-10-11.md) and [sanitized capture matrix](../research/keypanel/MU1440_CAPTURE_SANITIZED_MATRIX.tsv). No raw vehicle files/video are published.
+
 ## Physical Octavia 5E Virtual Cockpit controls
 
 The 2019 Octavia 5E owner-manual behavior and matching VC steering-wheel layout give us the
@@ -120,14 +128,14 @@ The 2019 Octavia 5E owner-manual behavior and matching VC steering-wheel layout 
 | Physical control | OEM function | Raw-ID status on MU1440 |
 | --- | --- | --- |
 | Left voice button | switch voice control on/off | strong exact-target path: raw `50 KEY_MFW_PTT_ON` -> ASL key 15; confirm tuple on-car |
-| Left volume roller, rotate | volume up/down | strong mapping candidates `42/43 KEY_MFW_VOLUME_UP/DOWN`; confirm on-car |
-| Left volume roller, press | sound/mute on/off | strong mapping candidate `57 KEY_MFW_MUTE`; confirm on-car |
+| Left volume roller, rotate | volume up/down | no `HK` in annotated session; exact encoder/volume path not captured; 42/43 are OEM key constants, not proof of physical detent mapping |
+| Left volume roller, press | sound/mute on/off | operator-tagged left centre: **observed `KBD4/KEY44`**, despite symbolic `ROLLER_RIGHT`; isolated recheck recommended |
 | Left previous/next controls | previous / next track or station | OEM function confirmed; exact choice among raw arrow A/B keys remains vehicle-trace open |
 | Right assistance button, upper-left | open assistance-systems menu | physical function confirmed; raw key still open |
 | **Right VIEW button, lower-left** | **short: change VC display version; hold: open the pre-selection menu** | **raw key still open; do not infer JOKER1/JOKER2** |
-| Right scroll wheel, rotate | select data / set values / move in menus; in VC map manually change map scale | press identity strongly maps to raw `44 KEY_MFW_ROLLER_RIGHT`; rotation tuple still needs trace |
-| Right scroll wheel, press | show/confirm selected item; with map turn+press enables automatic map-scale change | raw `44` is the strong exact-target press candidate; confirm tuple on-car |
-| Right menu/back control | display main menu / return to previous level; context can expose telephone menu | physical function confirmed; exact raw key remains open |
+| Right scroll wheel, rotate | select data / set values / move in menus; VC native map scale visibly changes in video | encoder callback reached stock ASL warning path in tagged periods; exact numeric `updateEncoder2` tuple open; separate from wheel press |
+| Right scroll wheel, press | show/confirm selected item; with map turn+press enables automatic map-scale change | **observed `KBD4/KEY40`**, including `1,3,4,5,0` long press; symbolic name `ROLLER_LEFT` is not physical side |
+| Right menu/back control | display main menu / return to previous level; context can expose telephone menu | operator-tagged right Back: **observed `KBD4/KEY41`** incl. long-press stages; distinguish from separate VIEW control |
 
 For the VIEW button specifically, the OEM behavior invalidates the earlier idea of using a long hold
 as a project-only SafeArea toggle. **Long VIEW is already occupied by the stock preset-selection
