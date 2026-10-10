@@ -69,11 +69,35 @@ static void decode_message(const unsigned char*p,size_t n){char msg[4096],row[47
    snprintf(row,sizeof row,"[%012lldms] RELATED %s\n",mono_ms(),msg);record_line(row);
  }
 }
+/* VW log4mib stores actual OEM text within MLP type=1 binary frames:
+ * inner type 0x0104, header[45]=0x07, big-endian UTF-16 code-unit count
+ * at [46..49], and UTF-16BE at [50..]. Confirmed against actual MU1440
+ * 6,096,627-byte raw capture: 18,571 MLP frames, 524 text logs, 65 HK.
+ * Other inner type 0x0110 messages are kept verbatim in the raw dump. */
+static void decode_oem_binary_text(const unsigned char *p,size_t n){
+ unsigned char out[4096];size_t k=0,pos=50;uint32_t count;
+ if(n<50 || p[0]!=255 || p[1]!=1 || p[2]!=4 || p[45]!=7)return;
+ count=be32(p+46);
+ if(count>(n-50)/2 || count>16384)return;
+ for(uint32_t i=0;i<count;i++){
+  uint32_t cp=be16(p+pos);pos+=2;
+  if(cp>=0xD800 && cp<=0xDBFF){
+   if(i+1<count){uint32_t lo=be16(p+pos);if(lo>=0xDC00 && lo<=0xDFFF){cp=0x10000+((cp-0xD800)<<10)+(lo-0xDC00);i++;pos+=2;}else cp='?';}
+   else cp='?';
+  }else if(cp>=0xDC00 && cp<=0xDFFF)cp='?';
+  if(k+5>=sizeof out)break;
+  if(cp<0x80)out[k++]=(unsigned char)cp;
+  else if(cp<0x800){out[k++]=(unsigned char)(0xc0|(cp>>6));out[k++]=(unsigned char)(0x80|(cp&63));}
+  else if(cp<0x10000){out[k++]=(unsigned char)(0xe0|(cp>>12));out[k++]=(unsigned char)(0x80|((cp>>6)&63));out[k++]=(unsigned char)(0x80|(cp&63));}
+  else{out[k++]=(unsigned char)(0xf0|(cp>>18));out[k++]=(unsigned char)(0x80|((cp>>12)&63));out[k++]=(unsigned char)(0x80|((cp>>6)&63));out[k++]=(unsigned char)(0x80|(cp&63));}
+ }
+ texts++;decode_message(out,k);
+}
 static void frame_decode(const unsigned char *f,size_t n){uint8_t type;uint32_t paylen; const unsigned char *payload;frames++;
  if(n<FRAME_PREFIX){others++;return;}type=f[20];paylen=be32(f+22);payload=f+FRAME_PREFIX;
  if(paylen!=n-FRAME_PREFIX){others++;return;}
  if(type==0){uint16_t length;if(paylen<14){others++;return;}length=be16(payload+12);if(length>paylen-14){others++;return;}texts++;decode_message(payload+14,length);
- }else if(type==1)binaries++;else others++;
+ }else if(type==1){binaries++;decode_oem_binary_text(payload,paylen);}else others++;
 }
 static void feed(const unsigned char *data,size_t n){size_t found,need;uint32_t l;while(n){size_t room=BUFFER_SIZE-pending_size;if(!room){pending_size=0;resyncs++;room=BUFFER_SIZE;}if(n<room)room=n;memcpy(pending+pending_size,data,room);pending_size+=room;data+=room;n-=room;
  while(pending_size>=8){if(memcmp(pending+4,sync_marker,4)!=0){found=0;for(size_t i=5;i+4<=pending_size;i++)if(!memcmp(pending+i,sync_marker,4)){found=i;break;}if(found>=4){memmove(pending,pending+found-4,pending_size-(found-4));pending_size-=found-4;resyncs++;continue;}if(pending_size>16){memmove(pending,pending+pending_size-7,7);pending_size=7;resyncs++;}break;}
@@ -88,7 +112,7 @@ static int selftest(void){unsigned char f[256]={0},p[160]={0};const char *messag
  f[0]=(unsigned char)((total-4)>>24);f[1]=(unsigned char)((total-4)>>16);f[2]=(unsigned char)((total-4)>>8);f[3]=(unsigned char)(total-4);memcpy(f+4,sync_marker,4);f[20]=0;f[22]=(unsigned char)(pl>>24);f[23]=(unsigned char)(pl>>16);f[24]=(unsigned char)(pl>>8);f[25]=(unsigned char)pl;
  p[0]=p[1]=1;p[12]=(unsigned char)(m>>8);p[13]=(unsigned char)m;memcpy(p+14,message,m);memcpy(f+26,p,pl);
  feed(f,3);feed(f+3,6);feed(f+9,13);feed(f+22,total-22);
- if(frames!=1||texts!=1||events!=1){fprintf(stderr,"SELF_TEST=FAIL frames=%lu texts=%lu events=%lu\n",frames,texts,events);return 1;}puts("SELF_TEST=PASS split-MLP, text, HK-event; SD-pointer-v1.3");return 0;}
+ if(frames!=1||texts!=1||events!=1){fprintf(stderr,"SELF_TEST=FAIL frames=%lu texts=%lu events=%lu\n",frames,texts,events);return 1;}puts("SELF_TEST=PASS split-MLP, text, HK-event; SD-pointer-v1.3; inner-0104-v1.4");return 0;}
 /* Publish one flat SD pointer in the project directory, directly with O_EXCL.
  * No /tmp and no staging or rename syscall. A previous capture or stale
  * marker is never overwritten, and must be inspected manually. */
@@ -117,7 +141,7 @@ static int capture(const char *base,int max_seconds){char textpath[640],rawpath[
  snprintf(combined_path,sizeof combined_path,"%s/combined.log",dir_name);snprintf(textpath,sizeof textpath,"%s/debugspi-text.log",dir_name);snprintf(rawpath,sizeof rawpath,"%s/debugspi-original.bin",dir_name);snprintf(metapath,sizeof metapath,"%s/report.txt",dir_name);
  combined_fd=open(combined_path,O_CREAT|O_APPEND|O_WRONLY,0644);tail_fd=open(combined_path,O_RDONLY);raw_fd=open(rawpath,O_CREAT|O_TRUNC|O_WRONLY,0644);text_fd=open(textpath,O_CREAT|O_TRUNC|O_WRONLY,0644);
  if(combined_fd<0||tail_fd<0||raw_fd<0||text_fd<0){perror("create files");return 2;}if(pointer_write())return 2;
- printf("MIBR_NATIVE_KEYPANEL=START\nversion=SD_POINTER_v1.3\nsession=%s\ncombined=%s\nnotes: /bin/ksh keypanel_note_native.sh\nCtrl+C stops.\n",dir_name,combined_path);fflush(stdout);
+ printf("MIBR_NATIVE_KEYPANEL=START\nversion=SD_POINTER_v1.3+INNER_0104_v1.4\nsession=%s\ncombined=%s\nnotes: /bin/ksh keypanel_note_native.sh\nCtrl+C stops.\n",dir_name,combined_path);fflush(stdout);
  snprintf(row,sizeof row,"[%012lldms] INFO capture=START transport=127.0.0.1:15001 mode=PASSIVE_RX_ONLY duration=%d\n",mono_ms(),max_seconds);record_line(row);tail_print();
  sock=socket(AF_INET,SOCK_STREAM,0);if(sock<0){perror("socket");goto out;}memset(&a,0,sizeof a);a.sin_family=AF_INET;a.sin_port=htons(PORT);a.sin_addr.s_addr=htonl(INADDR_LOOPBACK);if(connect(sock,(struct sockaddr*)&a,sizeof a)){perror("connect 127.0.0.1:15001");snprintf(row,sizeof row,"[%012lldms] ERROR socket_connect errno=%d\n",mono_ms(),errno);record_line(row);goto out;}
  connected=1;record_line("INFO socket_connected=YES (application sends ZERO DebugSPI bytes)\n");tail_print();
