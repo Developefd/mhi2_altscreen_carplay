@@ -88,7 +88,25 @@ static int selftest(void){unsigned char f[256]={0},p[160]={0};const char *messag
  p[0]=p[1]=1;p[12]=(unsigned char)(m>>8);p[13]=(unsigned char)m;memcpy(p+14,message,m);memcpy(f+26,p,pl);
  feed(f,3);feed(f+3,6);feed(f+9,13);feed(f+22,total-22);
  if(frames!=1||texts!=1||events!=1){fprintf(stderr,"SELF_TEST=FAIL frames=%lu texts=%lu events=%lu\n",frames,texts,events);return 1;}puts("SELF_TEST=PASS split-MLP, text, HK-event");return 0;}
-static int pointer_write(void){char tmp[128];int f;snprintf(tmp,sizeof tmp,"%s.%ld",POINTER,(long)getpid());f=open(tmp,O_CREAT|O_EXCL|O_WRONLY,0600);if(f<0){perror("pointer create");return -1;}if(write(f,combined_path,strlen(combined_path))<0 || write(f,"\n",1)<0){close(f);unlink(tmp);return -1;}close(f);if(rename(tmp,POINTER)){perror("pointer rename");unlink(tmp);return -1;}return 0;}
+/* QNX /tmp is backed by /dev/shmem on MU1440. Its rename(2) can return ENOLINK
+ * ("Improper link") even for two names beneath /tmp. Publish a new pointer
+ * directly with O_EXCL and ONE write instead of staging+rename. An existing
+ * pointer is never overwritten: another capture (or a stale crash marker)
+ * must be inspected first. The NOTE reader already rejects partial paths. */
+static int pointer_write(void){
+ char line[sizeof combined_path+2];size_t n=strlen(combined_path);int f;
+ if(n+1>=sizeof line){fprintf(stderr,"pointer path too long\n");return -1;}
+ memcpy(line,combined_path,n);line[n++]='\n';
+ f=open(POINTER,O_CREAT|O_EXCL|O_WRONLY,0600);
+ if(f<0){
+  if(errno==EEXIST)fprintf(stderr,"pointer exists: %s (inspect active/stale capture; do not overwrite)\n",POINTER);
+  else perror("pointer create");
+  return -1;
+ }
+ if(write(f,line,n)!=(ssize_t)n){perror("pointer write");close(f);unlink(POINTER);return -1;}
+ if(close(f)){perror("pointer close");unlink(POINTER);return -1;}
+ return 0;
+}
 static void pointer_cleanup(void){char p[640];FILE*f=fopen(POINTER,"r");if(!f)return;if(fgets(p,sizeof p,f)){p[strcspn(p,"\r\n")]=0;if(!strcmp(p,combined_path)){fclose(f);unlink(POINTER);return;}}fclose(f);}
 static int capture(const char *base,int max_seconds){char textpath[640],rawpath[640],metapath[640],row[1000],absbase[420],cwd[420];int connected=0;long long deadline,last_report;ssize_t r;fd_set fds;struct timeval tv;unsigned char b[8192];struct sockaddr_in a;
  start_ms=mono_ms();

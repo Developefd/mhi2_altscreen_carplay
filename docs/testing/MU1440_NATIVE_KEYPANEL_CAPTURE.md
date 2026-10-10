@@ -7,7 +7,7 @@
 - Java OEM DebugSPI listener observed on `*.15001 LISTEN` on the actual MU1440. Connection and actual HMI event visibility **still require an on-vehicle test**.
 - The source is intended for QNX 6.5 ARMv7 and must be built by the project's pinned QNX toolchain. A Linux ARM executable is not interchangeable.
 - **Receive only:** it does not send DebugSPI protocol bytes or change filters, J9, logging.properties, LSD, preload, media, CarPlay, `isoTX2`, or autostart. Establishing a TCP connection can activate the Java DebugSPI sink.
-- Saves raw `.bin` (16 MiB cap), all decoded text (4 MiB cap), and joined NOTE/EVENT chronology. No temporary subdirectories under `/tmp`; only one flat current-session pointer there. Session output is under its own SD directory.
+- Saves raw `.bin` (16 MiB cap), all decoded text (4 MiB cap), and joined NOTE/EVENT chronology. No temporary subdirectories under `/tmp`; only one flat current-session pointer there. MU1440 `/dev/shmem` rejects `rename()` of the pointer (`Improper link`), so the native v1.1 hotfix creates it directly with `O_CREAT|O_EXCL` and one write, without overwriting an existing active/stale session. Session output is under its own SD directory.
 - Default duration 120 seconds; allowed 10..1800 seconds. Stop with Ctrl+C. Test **while parked**, not while driving or operating SSH.
 - Treat `KEY_MFW_JOKER1/2` as symbolic names only, NOT proven physical VIEW/Assist assignments. The decoder logs what firmware actually reports.
 - If `hk_received_events=0` but `text_frames>0`, check `debugspi-text.log` before assuming no button signal. The MVC/VIEW physical button may be VC-only, or the OEM normal log may not reach the sink.
@@ -58,3 +58,6 @@ Ctrl+C in shell 1. Copy its printed session directory from SD to PC, then share 
 ## Build from repository source
 
 The workflow `build-mibr-keypanel-native.yml` runs host split-frame tests and builds using the pinned QNX 6.5 / ARMv7 compiler image. Expected ELF ARM EABI executable, softfp-compatible with existing MU1440 build config. Vehicle execution remains a separate validation step.
+## Existing pointer after abnormal exit
+
+If startup says `pointer exists`, inspect `/tmp/mibr-keypanel-native-current` and ensure no earlier capture is running before removing that **specific** stale file. Never blindly replace an active capture's pointer. The normal Ctrl+C/timeout path cleans it up automatically.

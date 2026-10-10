@@ -1,5 +1,9 @@
 import pathlib, socket, subprocess, struct, tempfile, threading, time, sys
 exe=pathlib.Path(sys.argv[1]).resolve()
+# QNX /dev/shmem can reject rename() with ENOLINK ('Improper link').
+# The current-session pointer must be created directly on /tmp.
+source=pathlib.Path('src/native/keypanel/mibr_keypanel_native.c').read_text()
+assert 'rename(' not in source.replace('rename(2)', ''), 'QNX pointer must not use rename()'
 sync=b'\x80MLP'
 def frm(msg):
     msg=msg.encode()
@@ -43,4 +47,5 @@ with tempfile.TemporaryDirectory() as d:
     assert (runs[0]/'debugspi-original.bin').stat().st_size>0
     assert 'hk_received_events=3' in (runs[0]/'report.txt').read_text()
     assert 'NOTE 6 kurz' in out and 'GESTURE=LONG' in out
+    assert not pathlib.Path('/tmp/mibr-keypanel-native-current').exists(), 'pointer cleanup failed'
     print('INTEGRATION_TEST=PASS (2 consoles, chronological combined log, split TCP, long events)')
