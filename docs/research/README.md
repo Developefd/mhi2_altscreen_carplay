@@ -37,6 +37,8 @@ This directory collects research that is useful to contributors before it become
 
 - [MU1440 HMI menu and ViewHandler architecture](../architecture/MU1440_HMI_MENU_AND_VIEWHANDLER_ARCHITECTURE.md)
 - [MU1440 steering-wheel / hardkey API](MU1440_BUTTON_INPUT_API.md)
+- **[MU1440 wheel DSI / decoded vehicle evidence / Omonob Java bytecode / VC zoom video (2026-10-11)](keypanel/MU1440_WHEEL_DSI_AND_OMONOB_2026-10-11.md)** — distinguishes `updateKey2` from `updateEncoder2`, documents the public Omonob KEY38/39-only interception, and defines a passive next-step probe.
+- [Sanitized physical key/encoder evidence matrix](keypanel/MU1440_CAPTURE_SANITIZED_MATRIX.tsv) · [updated raw-key mapping](../testing/MU1440_MFW_RAW_KEY_MAPPING.md).
 - [Java / IBM J9 build notes](JAVA_J9_BUILD_NOTES.md)
 
 Current status:
@@ -45,7 +47,7 @@ Current status:
 menu/ViewHandler architecture        exact-target static + compile-only PoC
 WidgetFactory injection              offline/build-proven, not vehicle-proven
 steering-wheel ASL APIs              exact-target static
-final physical button binding        open / requires vehicle trace
+physical MFW press subset           vehicle-log mapped / isolated recheck\nrotary encoder ID/direction         open / passive updateEncoder2 probe
 ```
 
 ## Media / transport / comparator research
