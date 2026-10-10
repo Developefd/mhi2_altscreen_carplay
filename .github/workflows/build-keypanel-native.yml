@@ -1,0 +1,115 @@
+name: Build native MU1440 keypanel logger
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/build-keypanel-native.yml'
+      - 'src/native/keypanel/**'
+      - 'runtime/diagnostics/keypanel_*_native.sh'
+      - 'tools/build_keypanel_native.sh'
+      - 'tests/keypanel-native/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mu1440-keypanel-native-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TOOLCHAIN_REPO: https://github.com/luka-dev/qnx65-armv7-toolchain.git
+  TOOLCHAIN_COMMIT: 56a66557245af14077678cd28a83ce3a337d9e2d
+  TOOLCHAIN_DOCKERFILE_SHA256: 9a867a7ae70f2c0222a241b80232856526ccec0db2cfe013f8991ca31c74bcb1
+  IMAGE: mhi2-qnx65-armv7-public:4.9
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Host selftest + two-console integration
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p build/keypanel-host
+          gcc -O2 -std=gnu99 -Wall -Wextra -Werror \
+            src/native/keypanel/mibr_keypanel_native.c \
+            -o build/keypanel-host/mibr-keypanel-host
+          build/keypanel-host/mibr-keypanel-host --self-test
+          python3 tests/keypanel-native/integration.py build/keypanel-host/mibr-keypanel-host
+          bash -n runtime/diagnostics/keypanel_start_native.sh runtime/diagnostics/keypanel_note_native.sh
+      - name: Build pinned QNX ARMv7 image
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git clone "$TOOLCHAIN_REPO" "$RUNNER_TEMP/qnx-toolchain"
+          git -C "$RUNNER_TEMP/qnx-toolchain" checkout "$TOOLCHAIN_COMMIT"
+          test "$(sha256sum "$RUNNER_TEMP/qnx-toolchain/Dockerfile" | awk '{print $1}')" = \
+            "$TOOLCHAIN_DOCKERFILE_SHA256"
+          python3 - "$RUNNER_TEMP/qnx-toolchain/Dockerfile" <<'PY'
+          from pathlib import Path
+          import sys
+          p = Path(sys.argv[1])
+          s = p.read_text()
+          needle = "RUN dpkg --add-architecture i386 && apt-get update && \\\n"
+          replacement = (
+              "RUN sed -i 's#http://deb.debian.org/debian-security#"
+              "http://snapshot.debian.org/archive/debian-security/20260903T220410Z#g' "
+              "/etc/apt/sources.list && \\\n"
+              "    echo 'Acquire::Check-Valid-Until \"false\";' "
+              "> /etc/apt/apt.conf.d/99snapshot && \\\n"
+              "    dpkg --add-architecture i386 && apt-get update && \\\n"
+          )
+          if needle not in s:
+              raise SystemExit("qnx-sdp apt bootstrap anchor not found")
+          p.write_text(s.replace(needle, replacement, 1))
+          PY
+          docker buildx build \
+            --platform=linux/amd64 --target base-env --build-arg BASE=base-4.9 \
+            --cache-from type=gha --cache-to type=gha,mode=max --load \
+            -t "$IMAGE" "$RUNNER_TEMP/qnx-toolchain"
+      - name: Cross-build QNX 6.5 ARMv7 executable
+        shell: bash
+        run: |
+          set -euxo pipefail
+          docker run --rm --platform=linux/amd64 \
+            -v "$PWD:/src" -w /src "$IMAGE" \
+            bash tools/build_keypanel_native.sh build/keypanel
+          sudo chown -R "$(id -u):$(id -g)" build/keypanel
+          file build/keypanel/mibr-keypanel-native | tee build/keypanel/file.txt
+          docker run --rm --platform=linux/amd64 \
+            -v "$PWD:/src" -w /src "$IMAGE" \
+            arm-unknown-nto-qnx6.5.0eabi-readelf -h build/keypanel/mibr-keypanel-native \
+            > build/keypanel/ELF.txt
+          docker run --rm --platform=linux/amd64 \
+            -v "$PWD:/src" -w /src "$IMAGE" \
+            arm-unknown-nto-qnx6.5.0eabi-readelf -d build/keypanel/mibr-keypanel-native \
+            > build/keypanel/NEEDED.txt
+          grep -Eq 'Machine:.*ARM' build/keypanel/ELF.txt
+          grep -Eq 'Class:.*ELF32' build/keypanel/ELF.txt
+          grep -Eq 'ELF 32-bit.*ARM' build/keypanel/file.txt
+          sha256sum build/keypanel/mibr-keypanel-native > build/keypanel/SHA256SUMS.txt
+      - name: Prepare install-only artifact
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p build/keypanel/dist
+          cp build/keypanel/mibr-keypanel-native build/keypanel/dist/
+          cp runtime/diagnostics/keypanel_start_native.sh build/keypanel/dist/
+          cp runtime/diagnostics/keypanel_note_native.sh build/keypanel/dist/
+          cp docs/testing/MU1440_NATIVE_KEYPANEL_CAPTURE.md build/keypanel/dist/README-DE.md
+          (cd build/keypanel/dist && sha256sum mibr-keypanel-native keypanel_start_native.sh keypanel_note_native.sh > SHA256SUMS.txt)
+          cp build/keypanel/ELF.txt build/keypanel/dist/
+          cp build/keypanel/NEEDED.txt build/keypanel/dist/
+      - name: Upload verified QNX binary and installer
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mibr-native-keypanel-MU1440-QNX65-ARMv7
+          path: build/keypanel/dist/
+          if-no-files-found: error
