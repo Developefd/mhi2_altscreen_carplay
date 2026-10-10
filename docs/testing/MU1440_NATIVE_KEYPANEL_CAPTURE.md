@@ -64,3 +64,7 @@ If startup says `pointer exists` or `active_or_stale_sd_pointer`, inspect `./mib
 
 ## v1.3 QNX SD-only pointer fix
 On the physical MU1440, native pointer staging under /tmp returned `pointer rename: Improper link`, despite a wrapper `mv` probe passing. The recorder no longer writes anything under /tmp. Both SSH sessions must use the same project directory on SD. The recorder publishes `./mibr-keypanel-native-current` with one exclusive direct create and single write; the note console reads that SD file. A previous pointer is not overwritten or automatically deleted; inspect before manual stale cleanup. The v1.3 start wrapper tests SD writability, remounts only the SD when needed, and accepts the QNX canonical path alias. The data remains under `./native-<PID>/`; do not remove incomplete folders from failed prior runs without inspecting them.
+
+## Physical wheel / Omonob follow-up (2026-10-11)
+
+See [MU1440 wheel DSI + Omonob audit](../research/keypanel/MU1440_WHEEL_DSI_AND_OMONOB_2026-10-11.md) and its [sanitized measurement matrix](../research/keypanel/MU1440_CAPTURE_SANITIZED_MATRIX.tsv). v1.4 is a **passive DebugSPI text-decoder upgrade** only: a missing wheel HK event is not proof of a missing rotary input. OEM `updateEncoder2` (distinct from `updateKey2`) and the 32 wrong-DDS warnings are the next diagnostic boundary. No firmware input patch is part of the logger.
