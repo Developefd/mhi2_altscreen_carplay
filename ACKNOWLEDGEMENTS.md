@@ -34,7 +34,7 @@ MOST rendering path.
 The following public projects have been useful comparators:
 
 - https://github.com/Lanye-z/MHI2Q-CarPlay-MMI-Mirror
-- https://github.com/yuedizhibo/MHI2Q-CarPlay-AltScreen
+- [yuedizhibo/MHI2Q-CarPlay-AltScreen](https://github.com/yuedizhibo/MHI2Q-CarPlay-AltScreen) — owner: yuedizhibo; separate Audi MHI2Q comparison
 
 Their value here is primarily architectural and comparative: control-plane vocabulary, hook roles,
 recovery structure and secondary-display behavior.
@@ -43,7 +43,7 @@ This project does not claim those implementations as its own and does not copy p
 from commercial solutions.
 
 
-## Omonob MU1440 AltScreen work
+## omonob/MHI2-Carplay-Maps (owner: omonob/QCDWJ) MU1440 AltScreen work
 
 Thanks to the public [omonob/MHI2-Carplay-Maps](https://github.com/omonob/MHI2-Carplay-Maps) project.
 
