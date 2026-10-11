@@ -6,6 +6,10 @@ This directory collects research that is useful to contributors before it become
 > Start with the [current research preview](CURRENT_RESEARCH_PREVIEW_2026-10-05.md). It summarizes the newest
 > media/timing, HMI/menu and steering-wheel findings and clearly labels what is vehicle-proven vs static/design-only.
 
+## CPU / Tegra clock and QNX timebase (exact MU1440; read-only)
+
+- **[MU1440 Tegra T30 CPU clock, power, QNX Global Timer/timebase and Stream-111 load — consolidated research audit (2026-10-11)](MU1440_TEGRA_T30_CPU_CLOCK_POWER_TIMEBASE_AUDIT_2026-10-11.md)** — live four-core 900-MHz confirmation, industrial vs non-IT 1.4/1.3-GHz distinction, on-unit getter inventories, proprietary-binary fingerprint/ARM function-map without publishing vendor bytes, unresolved voltage/OPP and 450-MHz QNX timebase, controlled CP/VC performance A/B/C, corrected native-navigation-only Most20FPS scope and read-only next gates. **Research only: no validated overclock, no runnable clock-changing commands.**
+
 ## Current cross-topic preview
 
 - [Current research preview — 2026-10-05](CURRENT_RESEARCH_PREVIEW_2026-10-05.md)
