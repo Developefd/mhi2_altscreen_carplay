@@ -23,6 +23,8 @@
 ## Reverse engineering / research
 
 - [Research topic index](research/README.md)
+- **[MU1440 Tegra T30 CPU/clock/power/timebase and Stream-111 load (2026-10-11)](research/MU1440_TEGRA_T30_CPU_CLOCK_POWER_TIMEBASE_AUDIT_2026-10-11.md)** — detailed read-only hardware research; no overclocking payload.
+
 - [Current research preview — 2026-10-05](research/CURRENT_RESEARCH_PREVIEW_2026-10-05.md)
 - [MU1440 stock component fingerprints](research/MU1440_STOCK_REFERENCE.md)
 - [MU1440 GEN2 AirPlay hook / ABI map](research/MU1440_GEN2_HOOK_MAP.md)
