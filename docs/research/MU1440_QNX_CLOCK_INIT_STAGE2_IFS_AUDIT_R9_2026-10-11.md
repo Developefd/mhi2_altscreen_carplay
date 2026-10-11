@@ -5,6 +5,9 @@
 
 **Target:** `MHI2_ER_SKG13_P4526_MU1440`, QNX 6.5, NVIDIA Tegra T30. Related: [R5 RAM_CODE strap](MU1440_TEGRA_RAM_CODE_BOOT_MEMORY_CLOCK_AUDIT_R5_2026-10-11.md), [R6 nvmemctrl MC IRQ handler](MU1440_NVMEMCTRL_MC_ERROR_HANDLER_AUDIT_R6_2026-10-11.md), [R7 ASINFO](MU1440_QNX_ASINFO_BOOT_MEMORY_LAYOUT_AUDIT_R7_2026-10-11.md), [R8 initial binary QNX startup script](MU1440_QNX_STARTUP_SCRIPT_PMU_HANDOFF_AUDIT_R8_2026-10-11.md), [consolidated Tegra clock/timebase audit](MU1440_TEGRA_T30_CPU_CLOCK_POWER_TIMEBASE_AUDIT_2026-10-11.md).
 
+> [!IMPORTANT]
+> **R10 follow-up:** The recovered exact `clock_init` binary is now statically audited: [R10](MU1440_CLOCK_INIT_STATIC_AND_IFSLOADER_AUDIT_R10_2026-10-11.md). It does configure clocks, but its two byte-identical named POR PLL tables contain PLLC0/PLLC1/PLLM1/PLLA1/PLLA0, **not PLLX0 or PLLM0**. Additionally, a separately supplied live `ifsloader` report confirms that the 84-MiB `-r` *reservation* corresponds to a **74-MiB actual mounted Stage-2 IFS**, leaving a 10-MiB difference of unverified purpose. Do not manually re-run `clock_init` or `ifsloader` on a running unit.
+
 ## 1. New concrete lead: `clock_init`
 
 Lines 11–22 of the recovered plain-text `/usr/sbin/startup.sh` explicitly launch the MC error/IRQ handler, clock resource manager and NVOS before the clock initializer:
