@@ -61,6 +61,18 @@ Before enabling output, isolate first-direction versus *actual OEM map scale IN/
 
 A globally swallowed `updateEncoder2(4,40,...)` would also kill normal VC menu scroll. **Do not suppress it there**. Observe at DSI; investigate an additional, *separately proven* semantic OEM map-scale request/action immediately before it changes the native map. Suppress **only the stock zoom side effect** when CarPlay is visually active and native VC map focus is confirmed, while preserving protocol ACK/status and non-map consumers. Neither donor NavSD BAP function45 nor native-looking scale overlay alone proves which exact MU1440 method owns this action. First test mirrored CarPlay zoom with original OEM forwarding and watch for overlay/double zoom; defer any selective stock suppression to a host/QEMU-tested narrow hook. If OEM wheel is in VC menu, allow exact stock event and no CarPlay zoom.
 
+## 5. Verified AirPlay command shape in Chinese implementation
+
+The exact Chinese C function is `alt_send_cluster_zoom(receiver,stream,generation,event_seq,direction)` in `Toolbox/carplay_alt_screen/src/p1404_airplay.c`. It first checks non-null *retained* receiver/stream, current generation, sequence and the cluster display UUID; resolves `AirPlayReceiverSessionSendCommand`, and constructs this conceptual CFDictionary (shown here in readable notation, **not** a literal JSON/network packet):
+
+```json
+{"type":"changeMapZoomLevel","params":{"uuid":"<negotiated cluster display UUID>","zoomDirection":0}}
+```
+
+Direction 0 = zoom in, direction 1 = zoom out. Submission uses the current AirPlay receiver and guarded source-111 command acquisition, with an asynchronous response context; submit success is **not** proof of completed visible iPhone map zoom. Chinese native scheduler (in `p1404_cockpit_native.c`) uses a 50ms monitor tick, dynamic paced single-step sends, target-vs-sent relative steps with a bounded outstanding target (12) and reverse-direction retargeting. It does not directly apply pixel scaling to the entire video.
+
+For **our MU1440**, source111 is already owned by `libaltscreen111.so`; the new input adapter must submit a typed intent to **that existing owner**. A second unrelated Chinese or Omonob AirPlay worker would create competing ownership and is not an acceptable transplant. The MIBR source111 tree presently contains research on `changeMapZoomLevel`, but this document does not assert that an equivalent *working sender* has already been linked into the current MU1440 production binary.
+
 ## 5. Patch options and vehicle release gate
 
 | Option | Feasibility | Scope |
