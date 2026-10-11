@@ -40,7 +40,8 @@ This directory collects research that is useful to contributors before it become
 - **[MU1440 wheel DSI / decoded vehicle evidence / Omonob Java bytecode / VC zoom video (2026-10-11)](keypanel/MU1440_WHEEL_DSI_AND_OMONOB_2026-10-11.md)** — distinguishes `updateKey2` from `updateEncoder2`, documents the public Omonob KEY38/39-only interception, and defines a passive next-step probe.
 - [Sanitized physical key/encoder evidence matrix](keypanel/MU1440_CAPTURE_SANITIZED_MATRIX.tsv) · [updated raw-key mapping](../testing/MU1440_MFW_RAW_KEY_MAPPING.md).
 - **[New actual 12-detent MU1440 five-int mapping](keypanel/MU1440_F902_FIVE_INT_ENCODER_CAPTURE_2026-10-11.md)** — right 4/40 ±1 and left 4/44 ±1; supersedes earlier warnings-only uncertainty; [offline read-only decoder](../../tools/decode_keypanel_f902.py).
-- **[yuedizhibo/MHI2Q-CarPlay-AltScreen vs. MU1440: wheel-zoom port and patch feasibility](keypanel/MU1440_MHI2Q_ALTSCREEN_ZOOM_PORT_BINARY_PATCH_OPTIONS_2026-10-11.md)** — concrete MU1440 input listener, native-zoom focus gate, AirPlay command pipeline, source/JAR versus unsupported MHI2Q hex-port. Design only; not installed.
+- **[Primary: omonob/MHI2-Carplay-Maps (owner: omonob/QCDWJ) — exact MU1440/790 wheel-input correction and JAR patch options](keypanel/MU1440_OMONOB_MHI2_WHEEL_ENCODER_BINARY_PATCH_OPTIONS_2026-10-11.md)** — the relevant Free790 `CarPlayClusterControls.jar`, `updateEncoder2` gap, real 4/40 ±1 detents, Omonob core zoom worker and safe adapter strategy. Design only; no patch installed.
+- **[Separate comparator: yuedizhibo/MHI2Q-CarPlay-AltScreen (owner: yuedizhibo)](keypanel/MU1440_MHI2Q_ALTSCREEN_ZOOM_PORT_BINARY_PATCH_OPTIONS_2026-10-11.md)** — Audi MHI2Q/AUG22 absolute-magnification/pacing reference, **not** the Omonob MHI2 implementation or a compatible MU1440 binary.
 - [Java / IBM J9 build notes](JAVA_J9_BUILD_NOTES.md)
 
 Current status:
