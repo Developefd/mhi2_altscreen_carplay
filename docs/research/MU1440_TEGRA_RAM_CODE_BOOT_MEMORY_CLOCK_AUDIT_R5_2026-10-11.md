@@ -5,6 +5,9 @@
 
 **Reference:** `MHI2_ER_SKG13_P4526_MU1440`; QNX 6.5, Tegra T30. Preceding reports: [consolidated clock/power/timebase audit](MU1440_TEGRA_T30_CPU_CLOCK_POWER_TIMEBASE_AUDIT_2026-10-11.md) and [R4 libnvsku wrapper audit](MU1440_TEGRA_SKU_STATIC_AUDIT_R4_2026-10-11.md).
 
+> [!IMPORTANT]
+> **R6 follow-up:** The subsequently recovered original `/sbin/nvmemctrl` is an MC fault/IRQ reporting service, **not** the SDRAM timing initializer or EMC frequency governor. See the [exact-target R6 nvmemctrl audit](MU1440_NVMEMCTRL_MC_ERROR_HANDLER_AUDIT_R6_2026-10-11.md). R5's former proposal to inspect nvmemctrl was a research lead and is now resolved negatively. Continue with trusted original boot/BCT and QNX startup images instead. No overclock is validated.
+
 ## 1. Original binary and scope
 
 - Private source: live `devg-nvsku`, backed up unchanged as `MU1440_devg-nvsku.stock`; proprietary original **not included** in the public repository.
@@ -73,7 +76,7 @@ A Tegra30 **Boot Configuration Table (BCT)** can contain multiple `SDRAM[n]` ent
 
 ## 4. Specific next evidence and read-only collection
 
-1. Locate and privately back up the exact `nvmemctrl` executable; inspect its imported libraries, RAM timing tables and reference to `ram_code` / EMC transitions.
+1. **Completed in R6:** the exact `/sbin/nvmemctrl` executable was collected and audited; it implements MC error/IRQ handling, **not** the RAM timing/clock control path. See [R6](MU1440_NVMEMCTRL_MC_ERROR_HANDLER_AUDIT_R6_2026-10-11.md).
 2. Identify the exact MU1440 early boot image and **offline** parse original BCT/SDRAM entries where available; correlate the RAM_CODE=2 selector to an actual profile, and check PLLM/EMC getter discrepancy.
 3. Locate the QNX startup/BSP and inspect Global Timer / PLLX handling; investigate speedo/fuse independently of NVSKU board metadata.
 4. Implement a read-only `mibr-tegradiag`; avoid adding persistent write load to active 111 frame-pacing tests.
@@ -93,4 +96,4 @@ ls -l /dev | grep -E 'sd|mmc|spi'
 
 An earlier live process listing contained `nvmemctrl`, so this is a targeted next file, not speculative deployment. Preserve privacy: never publish serial-number contents, vendor boot binaries, raw captures or personal paths.
 
-**Conclusion:** R5 proves the physical source of `ram_code`; it does not yet find the MU1440 SDRAM timing table. The next investigation is **early boot BCT/SDRAM + nvmemctrl**, whereas CPU overclocking needs a *separate* PLLX/PMIC/QNX-clocksource validation route.
+**Conclusion:** R5 proves the physical source of `ram_code`; it does not yet find the MU1440 SDRAM timing table. The next investigation is **the verified original early boot/BCT/SDRAM image**, not `nvmemctrl` (ruled out as the clock/timing governor by R6); CPU overclocking needs a *separate* PLLX/PMIC/QNX-clocksource validation route.
