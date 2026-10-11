@@ -9,6 +9,7 @@ This directory collects research that is useful to contributors before it become
 ## CPU / Tegra clock and QNX timebase (exact MU1440; read-only)
 
 - [R4: exact MU1440 libnvsku static audit](MU1440_TEGRA_SKU_STATIC_AUDIT_R4_2026-10-11.md) — confirms board-SKU wrapper only; speedo/fuse qualification remains open.
+- **[R8: binary QNX startup-script / PMU-I²C5 handoff audit](MU1440_QNX_STARTUP_SCRIPT_PMU_HANDOFF_AUDIT_R8_2026-10-11.md)** — actual boot command/argument order, mNAND clock vs SDRAM distinction, I²C5-before-power sequence and next-stage `/usr/sbin/startup.sh` target. Research only.
 - **[R7: exact QNX ASINFO startup/imagefs and RAM-layout audit](MU1440_QNX_ASINFO_BOOT_MEMORY_LAYOUT_AUDIT_R7_2026-10-11.md)** — records 2,047-MiB QNX RAM mapping, 104-KiB startup region, 6.42-MiB imagefs, early SKU metadata and the next startup.script/boot-image acquisition gate. Read-only.
 - **[R6: exact MU1440 nvmemctrl MC error-handler audit](MU1440_NVMEMCTRL_MC_ERROR_HANDLER_AUDIT_R6_2026-10-11.md)** — disassembly identifies MC IRQ/fault logging at 0x7000F000, not the RAM training/EMC frequency governor; redirects SDRAM profile work to the original early boot/BCT. Research only.
 - **[R5: RAM_CODE physical strap and boot-memory/CPU-clock separation](MU1440_TEGRA_RAM_CODE_BOOT_MEMORY_CLOCK_AUDIT_R5_2026-10-11.md)** — exact devg-nvsku ARM disassembly, 0x70000008 bits [7:4], RAM_CODE=2 selector, BCT/SDRAM investigation, nvmemctrl next target and boot-vs-runtime risk matrix. Research only; no clock-changing code.
