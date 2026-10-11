@@ -106,7 +106,7 @@ Root license observed upstream: MIT.
 
 No Lanye code is currently required by the MU1440 runtime.
 
-### Yuedi — public MHI2Q CarPlay AltScreen
+### yuedizhibo/MHI2Q-CarPlay-AltScreen (owner: yuedizhibo)
 
 Project: `yuedizhibo/MHI2Q-CarPlay-AltScreen`
 
@@ -120,7 +120,7 @@ classification and secondary-screen implementation structure.
 Root license observed upstream: **PolyForm Noncommercial License 1.0.0**.
 
 Because that license is materially different from this repository's GPL-3.0-or-later licensing,
-Yuedi source/binaries are treated as **comparative research/prior art only**. They must not be copied
+yuedizhibo/MHI2Q-CarPlay-AltScreen source/binaries are treated as **comparative research/prior art only**. They must not be copied
 into project-owned GPL source merely because they are publicly visible.
 
 ## Apple / CarPlay reverse engineering
