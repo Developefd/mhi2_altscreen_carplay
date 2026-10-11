@@ -50,7 +50,9 @@ Current status:
 menu/ViewHandler architecture        exact-target static + compile-only PoC
 WidgetFactory injection              offline/build-proven, not vehicle-proven
 steering-wheel ASL APIs              exact-target static
-physical MFW press subset           vehicle-log mapped / isolated recheck\nrotary encoder ID/direction         open / passive updateEncoder2 probe
+physical MFW press subset           vehicle-log mapped / isolated recheck
+rotary five-int baseline           12 direct f902 events / offline-parsed
+actual semantic zoom/focus path     OPEN / targeted map-versus-menu correlation
 ```
 
 ## Media / transport / comparator research
