@@ -5,6 +5,9 @@
 
 Target: \`MHI2_ER_SKG13_P4526_MU1440\`, Tegra T30, QNX 6.5. Refer to [R9 startup.sh and Stage-2 reserve](MU1440_QNX_CLOCK_INIT_STAGE2_IFS_AUDIT_R9_2026-10-11.md), [R8 first-stage script](MU1440_QNX_STARTUP_SCRIPT_PMU_HANDOFF_AUDIT_R8_2026-10-11.md), [R7 ASINFO](MU1440_QNX_ASINFO_BOOT_MEMORY_LAYOUT_AUDIT_R7_2026-10-11.md), [R5 RAM_CODE](MU1440_TEGRA_RAM_CODE_BOOT_MEMORY_CLOCK_AUDIT_R5_2026-10-11.md), and [consolidated clock/power/timebase](MU1440_TEGRA_T30_CPU_CLOCK_POWER_TIMEBASE_AUDIT_2026-10-11.md).
 
+> [!IMPORTANT]
+> **R11 follow-up:** The exact front `libnvclockapi.so` was recovered and [traced end-to-end](MU1440_NVCLOCKAPI_FRONT_BACKEND_SPECIAL_CLOCK_AUDIT_R11_2026-10-11.md) through `/dev/nvclock` to the matching implementation. The backend has five separate special-clock write handlers (`SCLK`, `CCLK`, `HCLK`, `PCLK`, `EMC`); the stock `clock_init` default directly names **only SCLK/HCLK/PCLK**. Backend CCLK/EMC capability is not proof of a default stock invocation. The origin of initial PLLX0=900 MHz and QNX qtime=450 MHz remains unresolved. No live write test is approved.
+
 ## 1. Input/provenance
 
 | Exact property | Value |
