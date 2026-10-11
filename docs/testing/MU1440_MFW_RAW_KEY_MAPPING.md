@@ -1,6 +1,6 @@
 # MU1440 raw steering-wheel/keypanel mapping
 
-## Goal
+**Current mapping update (2026-10-11):** A later v1.4 capture directly recovered twelve structured right `(4,40,+/-1,0,1)` and left `(4,44,+/-1,0,1)` wheel records, three per direction. Statements further below that raw numeric tuples are still unknown apply to the earlier v1.3-only evidence. See [actual f902 records](../research/keypanel/MU1440_F902_FIVE_INT_ENCODER_CAPTURE_2026-10-11.md) and [omonob/MHI2-Carplay-Maps (owner: omonob/QCDWJ) input fix study](../research/keypanel/MU1440_OMONOB_MHI2_WHEEL_ENCODER_BINARY_PATCH_OPTIONS_2026-10-11.md).\n\n## Goal
 
 Map the physical steering-wheel controls to the **raw** MHI2 keypanel tuples before choosing any
 button for runtime ViewArea/SafeArea switching.
