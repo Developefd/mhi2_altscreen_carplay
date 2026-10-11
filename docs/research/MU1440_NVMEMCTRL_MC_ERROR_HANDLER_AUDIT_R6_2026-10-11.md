@@ -96,6 +96,26 @@ For CPU frequency separately, any future persistent configuration would need coo
 4. Correlate stock runtime EMC getters with the recovered boot parameters; investigate which APIs provide \`get_device_clk_freq/EMC\` and \`get_max_device_clk_freq/EMC\`.
 5. Keep \`mibr-tegradiag\` read-only and distinguish any MC error reports from ordinary CPU/thread load and Stream-111 frame timing.
 
+## Live validation addendum — process/MMIO mapping (2026-10-11)
+
+A subsequent exact-target read-only session corroborated the previously static findings:
+
+```text
+pidin ar | grep nvmemctrl
+   49167 nvmemctrl
+
+pidin -p 49167 mem
+   49167   1 sbin/nvmemctrl   10r NANOSLEEP
+   49167   2 sbin/nvmemctrl   10r INTR
+            nvmemctrl          @  100000             8192  4096
+            libc.so.3          @ 1000000             536K   12K
+            /dev/mem           @28000000 (7000f000)        4096
+```
+
+Two live threads and the interrupt wait state independently match the static error/IRQ handler analysis; the 4,096-byte device-memory map at physical `0x7000F000` is the exact MC register base seen in disassembly. This is a **runtime corroboration of the fault-handler role**, not a claim to have decoded a live RAM timing table, and no MC error occurrence was observed by this output.
+
+The same session's `ls -l /proc/boot` listed `startup.script` (4,828 bytes), `procnto-smp-instr` (663,552 bytes), `libc.so.3`, `libz.so.2` and symlinks, but no separately visible startup executable. The command `pidin syspage=asinfo` wrote a private SD diagnostic file; its **contents have not yet been reviewed**. Next inspect this file and privately copied `/proc/boot/startup.script` (with publication privacy review) to identify QNX driver order and boot/startup clues. Neither the file list nor the script alone establishes the location or structure of the exact original Tegra BCT.
+
 ## 6. Read-only reference capture (already vehicle-proven)
 
 \`\`\`sh
