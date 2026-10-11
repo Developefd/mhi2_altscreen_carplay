@@ -1,6 +1,6 @@
 # MU1440 Keypanel / wheel encoder / VC zoom — final chat handoff (2026-10-11)
 
-**Status:** Public, sanitized, evidence-based research/handoff. The physical right-roller video and the five-minute vehicle capture are separate tests, not time-synchronized. No Java patch/firmware change/zoom injection has been installed or validated as part of this investigation.
+**Later evidence update:** The v1.4 on-car run has since yielded twelve direct structured encoder records: right `(4,40,+/-1,0,1)`, left `(4,44,+/-1,0,1)`, three per direction. The earlier pending v1.4-live and raw-ID statements below describe the point in time of this handoff, not the current status. See [new measured evidence](MU1440_F902_FIVE_INT_ENCODER_CAPTURE_2026-10-11.md) and [omonob/MHI2-Carplay-Maps (owner: omonob/QCDWJ) adapter study](MU1440_OMONOB_MHI2_WHEEL_ENCODER_BINARY_PATCH_OPTIONS_2026-10-11.md).\n\n**Status:** Public, sanitized, evidence-based research/handoff. The physical right-roller video and the five-minute vehicle capture are separate tests, not time-synchronized. No Java patch/firmware change/zoom injection has been installed or validated as part of this investigation.
 
 This document preserves the response that could not be displayed in the previous full conversation. Read it alongside [the complete DSI/Omonob/roller audit](MU1440_WHEEL_DSI_AND_OMONOB_2026-10-11.md), [the measurement matrix](MU1440_CAPTURE_SANITIZED_MATRIX.tsv), and [capture/install instructions](../../testing/MU1440_NATIVE_KEYPANEL_CAPTURE.md). Do not restart the research from scratch.
 
