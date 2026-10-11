@@ -73,7 +73,7 @@ https://github.com/Lanye-z/MHI2Q-CarPlay-MMI-Mirror
 Useful comparator for MHI2Q native hooks, cluster presentation, watchdog/recovery and Luka-derived
 RGI/HMI structure.
 
-### Yuedi — public MHI2Q CarPlay AltScreen
+### yuedizhibo/MHI2Q-CarPlay-AltScreen (owner: yuedizhibo)
 
 https://github.com/yuedizhibo/MHI2Q-CarPlay-AltScreen
 
@@ -291,7 +291,7 @@ No single public mirror or third-party implementation overrides contradictory ex
 
 ## Current MU1440 AltScreen comparator
 
-### omonob/MHI2-Carplay-Maps
+### omonob/MHI2-Carplay-Maps (owner: omonob/QCDWJ)
 
 Repository:
 
