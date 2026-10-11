@@ -9,6 +9,7 @@ This directory collects research that is useful to contributors before it become
 ## CPU / Tegra clock and QNX timebase (exact MU1440; read-only)
 
 - [R4: exact MU1440 libnvsku static audit](MU1440_TEGRA_SKU_STATIC_AUDIT_R4_2026-10-11.md) — confirms board-SKU wrapper only; speedo/fuse qualification remains open.
+- **[R6: exact MU1440 nvmemctrl MC error-handler audit](MU1440_NVMEMCTRL_MC_ERROR_HANDLER_AUDIT_R6_2026-10-11.md)** — disassembly identifies MC IRQ/fault logging at 0x7000F000, not the RAM training/EMC frequency governor; redirects SDRAM profile work to the original early boot/BCT. Research only.
 - **[R5: RAM_CODE physical strap and boot-memory/CPU-clock separation](MU1440_TEGRA_RAM_CODE_BOOT_MEMORY_CLOCK_AUDIT_R5_2026-10-11.md)** — exact devg-nvsku ARM disassembly, 0x70000008 bits [7:4], RAM_CODE=2 selector, BCT/SDRAM investigation, nvmemctrl next target and boot-vs-runtime risk matrix. Research only; no clock-changing code.
 
 - **[MU1440 Tegra T30 CPU clock, power, QNX Global Timer/timebase and Stream-111 load — consolidated research audit (2026-10-11)](MU1440_TEGRA_T30_CPU_CLOCK_POWER_TIMEBASE_AUDIT_2026-10-11.md)** — live four-core 900-MHz confirmation, industrial vs non-IT 1.4/1.3-GHz distinction, on-unit getter inventories, proprietary-binary fingerprint/ARM function-map without publishing vendor bytes, unresolved voltage/OPP and 450-MHz QNX timebase, controlled CP/VC performance A/B/C, corrected native-navigation-only Most20FPS scope and read-only next gates. **Research only: no validated overclock, no runnable clock-changing commands.**
