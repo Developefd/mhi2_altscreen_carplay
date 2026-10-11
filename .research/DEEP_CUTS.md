@@ -151,7 +151,7 @@ Useful as a comparator for:
 
 Do not assume Qualcomm-side offsets or rendering APIs transfer directly to Harman MU1440.
 
-### Yuedi public AltScreen
+### yuedizhibo/MHI2Q-CarPlay-AltScreen (owner: yuedizhibo)
 
 https://github.com/yuedizhibo/MHI2Q-CarPlay-AltScreen
 
@@ -688,7 +688,7 @@ Then compare:
 
 This was much more useful than treating any package as an oracle.
 
-The public Yuedi implementation is especially valuable because it provides a legally inspectable
+The public yuedizhibo/MHI2Q-CarPlay-AltScreen implementation is especially valuable because it provides a legally inspectable
 comparator for many of these roles.
 
 No proprietary/commercial payload is mirrored in this repository.
